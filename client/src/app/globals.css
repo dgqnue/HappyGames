@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    /* Bright Yellow Gradient Colors */
+    --background-start-rgb: 255, 241, 118;
+    /* Light Yellow */
+    --background-end-rgb: 255, 167, 38;
+    /* Orange Yellow */
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Keep dark mode readable but maybe with a golden tint or just dark */
+        /* User asked for "bright yellow", usually implies light mode preference or brand color. 
+       Let's keep dark mode dark for accessibility but maybe add yellow accents later. 
+       For now, let's make the default "bright yellow" as requested. */
+        --foreground-rgb: 255, 255, 255;
+        --background-start-rgb: 50, 40, 0;
+        --background-end-rgb: 0, 0, 0;
+    }
+}
+
+body {
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(135deg,
+            rgb(var(--background-start-rgb)),
+            rgb(var(--background-end-rgb)));
+    min-height: 100vh;
+}
