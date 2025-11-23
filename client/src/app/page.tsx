@@ -21,7 +21,7 @@ export default function Home() {
                 if (storedUser) {
                     const piUser = JSON.parse(storedUser);
                     // Fetch full profile from our backend to get _id and avatar
-                    const res = await fetch(`http://localhost:5000/api/users/login`, {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: piUser.username, piId: piUser.uid })
@@ -50,7 +50,7 @@ export default function Home() {
             console.log('Pi Auth Success:', piUser);
 
             // 2. Send Pi User info to our backend to create session/account
-            const res = await fetch('http://localhost:5000/api/users/login', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
