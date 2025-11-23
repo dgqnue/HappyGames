@@ -216,7 +216,10 @@ const translations = {
             type_withdraw: "出金",
             status_pending: "保留中",
             status_completed: "完了",
-            status_failed: "失敗"
+            status_failed: "失敗",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -294,7 +297,10 @@ const translations = {
             type_withdraw: "출금",
             status_pending: "대기 중",
             status_completed: "완료됨",
-            status_failed: "실패"
+            status_failed: "실패",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -372,7 +378,10 @@ const translations = {
             type_withdraw: "Вывод",
             status_pending: "В ожидании",
             status_completed: "Завершено",
-            status_failed: "Ошибка"
+            status_failed: "Ошибка",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -450,7 +459,10 @@ const translations = {
             type_withdraw: "Auszahlung",
             status_pending: "Ausstehend",
             status_completed: "Abgeschlossen",
-            status_failed: "Fehlgeschlagen"
+            status_failed: "Fehlgeschlagen",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -528,7 +540,10 @@ const translations = {
             type_withdraw: "Retrait",
             status_pending: "En attente",
             status_completed: "Terminé",
-            status_failed: "Échoué"
+            status_failed: "Échoué",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -606,7 +621,10 @@ const translations = {
             type_withdraw: "سحب",
             status_pending: "قيد الانتظار",
             status_completed: "مكتمل",
-            status_failed: "فشل"
+            status_failed: "فشل",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -684,7 +702,10 @@ const translations = {
             type_withdraw: "Rút tiền",
             status_pending: "Đang xử lý",
             status_completed: "Hoàn thành",
-            status_failed: "Thất bại"
+            status_failed: "Thất bại",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -762,7 +783,10 @@ const translations = {
             type_withdraw: "Retiro",
             status_pending: "Pendiente",
             status_completed: "Completado",
-            status_failed: "Fallido"
+            status_failed: "Fallido",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -840,7 +864,10 @@ const translations = {
             type_withdraw: "Saque",
             status_pending: "Pendente",
             status_completed: "Concluído",
-            status_failed: "Falhou"
+            status_failed: "Falhou",
+            deposit_success: "Deposit Successful!",
+            received: "Received",
+            great: "Great!"
         },
         // Lobby
         lobby_title: 'Game Lobby',
@@ -918,7 +945,10 @@ const translations = {
             type_withdraw: "提現",
             status_pending: "處理中",
             status_completed: "已完成",
-            status_failed: "失敗"
+            status_failed: "失敗",
+            deposit_success: "充值成功！",
+            received: "已到賬",
+            great: "太棒了！"
         },
         // Lobby
         lobby_title: 'Game Lobby',
