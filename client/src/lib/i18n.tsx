@@ -57,13 +57,13 @@ const translations = {
             status_failed: "Failed",
             deposit_success: "Deposit Successful!",
             received: "Received",
-            great: "Great!",
-            lobby_feed: "Lobby Feed",
-            recent_activity: "Recent Activity",
-            feed_joined: "joined the lobby",
-            feed_win: "won",
-            feed_jackpot: "hit the Jackpot!"
+            great: "Great!"
         },
+        lobby_feed: "Lobby Feed",
+        recent_activity: "Recent Activity",
+        feed_joined: "joined the lobby",
+        feed_win: "won",
+        feed_jackpot: "hit the Jackpot!",
         // Lobby
         lobby_title: 'Game Lobby',
         online_players: 'Online Players',
@@ -138,12 +138,7 @@ const translations = {
             status_failed: "失败",
             deposit_success: "充值成功！",
             received: "已到账",
-            great: "太棒了！",
-            lobby_feed: "大厅动态",
-            recent_activity: "最新动态",
-            feed_joined: "进入了大厅",
-            feed_win: "赢得了",
-            feed_jackpot: "中了头奖！"
+            great: "太棒了！"
         },
         // Lobby
         lobby_title: '游戏大厅',
@@ -163,6 +158,14 @@ const translations = {
         official_wallet: '官方生态钱包',
         copy: '复制',
         copied: '已复制!',
+        pi_explorer: '区块链浏览器',
+        wallet_query: '钱包查询',
+        min_reserve: '最低储备',
+        lobby_feed: "大厅动态",
+        recent_activity: "最新动态",
+        feed_joined: "进入了大厅",
+        feed_win: "赢得了",
+        feed_jackpot: "中了头奖！",
     },
     ja: {
         home_title: "HappyGames",
@@ -938,7 +941,11 @@ const translations = {
         pi_explorer: '區塊鏈瀏覽器',
         wallet_query: '錢包查詢',
         min_reserve: '最低儲備',
-
+        lobby_feed: "大廳動態",
+        recent_activity: "最新動態",
+        feed_joined: "進入了大廳",
+        feed_win: "贏得了",
+        feed_jackpot: "中了頭獎！",
     },
     ms: {
         home_title: "HappyGames",
@@ -992,13 +999,13 @@ const translations = {
             status_failed: "Gagal",
             deposit_success: "Deposit Berjaya!",
             received: "Diterima",
-            great: "Hebat!",
-            lobby_feed: "Suapan Lobi",
-            recent_activity: "Aktiviti Terkini",
-            feed_joined: "menyertai lobi",
-            feed_win: "menang",
-            feed_jackpot: "memenangi Jackpot!"
+            great: "Hebat!"
         },
+        lobby_feed: "Suapan Lobi",
+        recent_activity: "Aktiviti Terkini",
+        feed_joined: "menyertai lobi",
+        feed_win: "menang",
+        feed_jackpot: "memenangi Jackpot!",
         // Lobby
         lobby_title: 'Game Lobby',
         online_players: 'Online Players',
@@ -1073,13 +1080,13 @@ const translations = {
             status_failed: "נכשל",
             deposit_success: "!הפקדה הצליחה",
             received: "התקבל",
-            great: "!מצוין",
-            lobby_feed: "עדכוני לובי",
-            recent_activity: "פעילות אחרונה",
-            feed_joined: "הצטרף ללובי",
-            feed_win: "זכה ב",
-            feed_jackpot: "!זכה בכל הקופה"
+            great: "!מצוין"
         },
+        lobby_feed: "עדכוני לובי",
+        recent_activity: "פעילות אחרונה",
+        feed_joined: "הצטרף ללובי",
+        feed_win: "זכה ב",
+        feed_jackpot: "!זכה בכל הקופה",
         // Lobby
         lobby_title: 'Game Lobby',
         online_players: 'Online Players',
