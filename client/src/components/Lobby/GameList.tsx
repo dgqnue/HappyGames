@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { useLanguage } from '@/lib/i18n';
 
-
 export default function GameList() {
     const [socket, setSocket] = useState<any>(null);
     const [lobbyData, setLobbyData] = useState<any>(null);
@@ -16,6 +15,32 @@ export default function GameList() {
     ]);
     const [isMatching, setIsMatching] = useState(false);
     const { t } = useLanguage();
+
+    // Carousel State
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const slides = [
+        {
+            id: 1,
+            image: '/artifacts/banner_referral_v3.png',
+            title: 'Invite & Earn!',
+            desc: 'Get 10% Commission!',
+            color: 'from-amber-400 to-orange-500'
+        },
+        {
+            id: 2,
+            image: '/artifacts/banner_gomoku_v2.png',
+            title: 'Gomoku',
+            desc: 'Coming Soon',
+            color: 'from-blue-400 to-indigo-500'
+        },
+        {
+            id: 3,
+            image: '/artifacts/banner_chinese_chess_v2.png',
+            title: 'Xiangqi',
+            desc: 'Coming Soon',
+            color: 'from-red-400 to-rose-500'
+        }
+    ];
 
     useEffect(() => {
         const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
@@ -38,30 +63,79 @@ export default function GameList() {
         };
     }, [t]);
 
+    // Carousel Auto-play
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % slides.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, [slides.length]);
+
     const handleMatchmaking = () => {
         if (socket) {
             setIsMatching(true);
-            // Default criteria or empty since settings are now per-room
             socket.emit('start_matchmaking', { minBeans: 1000, maxBeans: 5000 });
         }
     };
 
     return (
         <div className="page-container">
-            {/* Header Row */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                <div>
-                    <h2 className="text-mobile-xl font-bold text-amber-900 flex items-center gap-3">
-                        🎮 {t.lobby_title}
-                    </h2>
-                    <p className="text-amber-800/60 mt-1 font-medium text-mobile-base">{t.lobby_subtitle}</p>
-                </div>
+            {/* Header Carousel & Back Button */}
+            <div className="relative mb-8 rounded-2xl overflow-hidden shadow-xl group">
+                {/* Back Button (Absolute Top-Right) */}
                 <a
                     href="/"
-                    className="w-full md:w-auto text-center px-6 py-2.5 bg-white/80 hover:bg-white text-amber-900 rounded-xl shadow-sm hover:shadow-md transition-all font-bold flex items-center justify-center gap-2 backdrop-blur-sm relative z-[9999] cursor-pointer"
+                    className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
+                    title={t.back_home}
                 >
-                    <span>🏠</span> {t.back_home}
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
                 </a>
+
+                {/* Carousel Slides */}
+                <div className="relative h-48 md:h-64 transition-all duration-500 ease-in-out">
+                    {slides.map((slide, index) => (
+                        <div
+                            key={slide.id}
+                            className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                                }`}
+                        >
+                            {/* Fallback Gradient if Image Fails/Loading */}
+                            <div className={`w-full h-full bg-gradient-to-br ${slide.color} flex items-center justify-center relative overflow-hidden`}>
+                                {/* Decorative Circles */}
+                                <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-10 -translate-y-10 blur-xl"></div>
+                                <div className="absolute bottom-0 right-0 w-40 h-40 bg-black/10 rounded-full translate-x-10 translate-y-10 blur-xl"></div>
+
+                                {/* Content */}
+                                <div className="text-center text-white p-6 relative z-10">
+                                    <h2 className="text-3xl md:text-4xl font-bold mb-2 drop-shadow-md">{slide.title}</h2>
+                                    <p className="text-white/90 font-medium text-lg">{slide.desc}</p>
+                                </div>
+
+                                {/* Attempt to load image if available (Overlay) */}
+                                <img
+                                    src={slide.image}
+                                    alt={slide.title}
+                                    className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+                                    onError={(e) => e.currentTarget.style.display = 'none'}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Carousel Indicators */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                    {slides.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setCurrentSlide(index)}
+                            className={`w-2 h-2 rounded-full transition-all ${index === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'
+                                }`}
+                        />
+                    ))}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
