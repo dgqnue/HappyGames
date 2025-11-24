@@ -101,7 +101,7 @@ export default function UserProfile() {
                                     setIsEditing(true);
                                 }}
                                 className="text-amber-600 hover:text-amber-800 transition-colors"
-                                title="Edit Nickname"
+                                title={t.edit_nickname}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -152,7 +152,7 @@ export default function UserProfile() {
                             </div>
                             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                 <span className="text-gray-600">{t.total_flow}</span>
-                                <span className="font-bold text-mobile-base">{profile.referralStats.totalFlow.toLocaleString()} Beans</span>
+                                <span className="font-bold text-mobile-base">{profile.referralStats.totalFlow.toLocaleString()} {t.beans}</span>
                             </div>
                             <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
                                 <p className="text-sm text-orange-800 font-medium mb-2">{t.referral_link}:</p>
@@ -168,13 +168,13 @@ export default function UserProfile() {
             {isEditing && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
-                        <h3 className="text-xl font-bold text-amber-900 mb-4">Edit Nickname</h3>
+                        <h3 className="text-xl font-bold text-amber-900 mb-4">{t.edit_nickname}</h3>
                         <input
                             type="text"
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             className="w-full p-3 border border-gray-200 rounded-xl mb-4 focus:ring-2 focus:ring-amber-500 outline-none"
-                            placeholder="Enter new nickname"
+                            placeholder={t.enter_nickname}
                         />
                         <div className="flex gap-3 justify-end">
                             <button
@@ -205,7 +205,7 @@ export default function UserProfile() {
                                 }}
                                 className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors"
                             >
-                                Save
+                                {t.save}
                             </button>
                         </div>
                     </div>

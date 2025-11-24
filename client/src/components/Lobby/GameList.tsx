@@ -146,12 +146,12 @@ export default function GameList() {
                     {/* Game List */}
                     <div>
                         <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
-                            🔥 Available Games
+                            🔥 {t.available_games}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group transform hover:-translate-y-1">
                                 <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-md z-10">
-                                    HOT
+                                    {t.hot}
                                 </div>
                                 <div className="flex items-start gap-5">
                                     <div className="w-20 h-20 bg-gradient-to-br from-amber-200 to-orange-200 rounded-2xl flex items-center justify-center text-4xl shadow-inner group-hover:scale-110 transition-transform">
@@ -161,11 +161,11 @@ export default function GameList() {
                                         <h3 className="text-2xl font-bold text-amber-900">{t.game_poker}</h3>
                                         <div className="flex items-center gap-2 mt-2">
                                             <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-full border border-amber-200">
-                                                Texas Hold'em
+                                                {t.texas_holdem}
                                             </span>
                                         </div>
                                         <p className="text-sm text-gray-600 mt-3 flex items-center gap-1">
-                                            <span>💰</span> {t.min_entry}: <span className="font-bold text-amber-700">1,000 Beans</span>
+                                            <span>💰</span> {t.min_entry}: <span className="font-bold text-amber-700">1,000 {t.beans}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -188,15 +188,15 @@ export default function GameList() {
                             {/* Coming Soon Card */}
                             <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-sm relative overflow-hidden grayscale opacity-70">
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-10">
-                                    <span className="bg-black/10 text-black/50 px-4 py-1 rounded-full text-sm font-bold backdrop-blur-md border border-white/20">Coming Soon</span>
+                                    <span className="bg-black/10 text-black/50 px-4 py-1 rounded-full text-sm font-bold backdrop-blur-md border border-white/20">{t.coming_soon}</span>
                                 </div>
                                 <div className="flex items-start gap-5">
                                     <div className="w-20 h-20 bg-gray-200 rounded-2xl flex items-center justify-center text-4xl shadow-inner">
                                         🎲
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-bold text-gray-700">Lucky Dice</h3>
-                                        <p className="text-sm text-gray-500 mt-3">High stakes, high rewards.</p>
+                                        <h3 className="text-2xl font-bold text-gray-700">{t.lucky_dice}</h3>
+                                        <p className="text-sm text-gray-500 mt-3">{t.high_stakes}</p>
                                     </div>
                                 </div>
                             </div>
