@@ -3,20 +3,21 @@
 import { useLanguage } from '@/lib/i18n';
 import { useState, useRef, useEffect } from 'react';
 
-{ code: 'en', name: 'English', flag: '🇺🇸' },
-{ code: 'zh', name: '简体中文', flag: '🇨🇳' },
-{ code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
-{ code: 'ja', name: '日本語', flag: '🇯🇵' },
-{ code: 'ko', name: '한국어', flag: '🇰🇷' },
-{ code: 'ru', name: 'Русский', flag: '🇷🇺' },
-{ code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-{ code: 'fr', name: 'Français', flag: '🇫🇷' },
-{ code: 'ar', name: 'العربية', flag: '🇸🇦' },
-{ code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
-{ code: 'es', name: 'Español', flag: '🇪🇸' },
-{ code: 'pt', name: 'Português', flag: '🇵🇹' },
-{ code: 'ms', name: 'Bahasa Melayu', flag: '🇲🇾' },
-{ code: 'he', name: 'עברית', flag: '🇮🇱' },
+const languages = [
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'zh', name: '简体中文', flag: '🇨🇳' },
+    { code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
+    { code: 'ja', name: '日本語', flag: '🇯🇵' },
+    { code: 'ko', name: '한국어', flag: '🇰🇷' },
+    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+    { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹' },
+    { code: 'ms', name: 'Bahasa Melayu', flag: '🇲🇾' },
+    { code: 'he', name: 'עברית', flag: '🇮🇱' },
 ];
 
 export default function LanguageSwitcher() {
