@@ -18,31 +18,19 @@ export default function GameList() {
     const { t } = useLanguage();
 
     useEffect(() => {
-        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
+        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
-            newSocket.emit('join_lobby');
+            newSocket.emit('join_lobby', { username: 'Guest' });
         });
 
         newSocket.on('lobby_update', (data: any) => {
             setLobbyData(data);
         });
 
-        // ---- 实时大厅动态 ----
-        newSocket.on('lobby_feed', (item: any) => {
-            setLobbyFeed(prev => {
-                const updated = [item, ...prev];
-                return updated.length > 20 ? updated.slice(0, 20) : updated;
-            });
-        });
-
-        newSocket.on('match_success', (data: any) => {
-            console.log('Match found!', data);
-            setIsMatching(false);
-            // Redirect to game room
-            // router.push(`/game/${data.roomId}/${data.tableId}`);
-            alert(t.match_found + ' ' + t.joining);
+        newSocket.on('lobby_feed', (feedItem: any) => {
+            setLobbyFeed(prev => [feedItem, ...prev].slice(0, 20));
         });
 
         return () => {

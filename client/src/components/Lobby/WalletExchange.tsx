@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import { useLanguage } from '@/lib/i18n';
 
 interface WalletExchangeProps {
     userId: string;
+    nickname: string;
 }
 
-export default function WalletExchange({ userId }: WalletExchangeProps) {
+export default function WalletExchange({ userId, nickname }: WalletExchangeProps) {
     const [wallet, setWallet] = useState<any>(null);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -15,6 +17,7 @@ export default function WalletExchange({ userId }: WalletExchangeProps) {
     const [exchangeAmount, setExchangeAmount] = useState('');
     const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
     const { t } = useLanguage();
+    const [socket, setSocket] = useState<any>(null);
 
     // Withdraw Form State
     const [withdrawAddress, setWithdrawAddress] = useState('');
@@ -22,6 +25,14 @@ export default function WalletExchange({ userId }: WalletExchangeProps) {
     // Deposit Success Modal State
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successData, setSuccessData] = useState<{ amount: number; orderId?: string } | null>(null);
+
+    useEffect(() => {
+        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
+        setSocket(newSocket);
+        return () => {
+            newSocket.disconnect();
+        };
+    }, []);
 
     const fetchWallet = async () => {
         try {
@@ -78,6 +89,15 @@ export default function WalletExchange({ userId }: WalletExchangeProps) {
                     setShowSuccessModal(true);
                     fetchWallet();
                     fetchTransactions();
+
+                    // Emit deposit event to lobby feed
+                    if (socket) {
+                        socket.emit('deposit', {
+                            amount: data.beansReceived, // Or Pi amount if available
+                            txId: data.orderId,
+                            username: nickname
+                        });
+                    }
                 } else {
                     const err = await res.json();
                     alert('Deposit Failed: ' + err.error);
@@ -113,6 +133,15 @@ export default function WalletExchange({ userId }: WalletExchangeProps) {
                     fetchTransactions();
                     setExchangeAmount('');
                     setWithdrawAddress('');
+
+                    // Emit withdraw event to lobby feed
+                    if (socket) {
+                        socket.emit('withdraw', {
+                            amount: parseFloat(exchangeAmount),
+                            txId: data.txHash,
+                            username: nickname
+                        });
+                    }
                 } else {
                     const err = await res.json();
                     alert('Withdrawal Failed: ' + err.error);

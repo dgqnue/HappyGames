@@ -8,7 +8,7 @@ module.exports = (io, socket) => {
     // Start matchmaker if not started
     Matchmaker.start();
 
-    socket.on('join_lobby', async () => {
+    socket.on('join_lobby', async (data) => {
         socket.join('lobby');
 
         // Get Eco Pool Stats
@@ -25,10 +25,11 @@ module.exports = (io, socket) => {
         });
 
         // Create a feed entry for this join
+        const username = data?.username || 'Unknown Pioneer';
         const joinItem = {
             id: Date.now(),
             type: 'join',
-            user: socket.id,
+            user: username,
             time: new Date().toLocaleTimeString()
         };
         feed.unshift(joinItem);
@@ -37,11 +38,11 @@ module.exports = (io, socket) => {
     });
 
     // Deposit Handler
-    socket.on('deposit', ({ amount, txId }) => {
+    socket.on('deposit', ({ amount, txId, username }) => {
         const depositItem = {
             id: Date.now(),
             type: 'deposit',
-            user: socket.id,
+            user: username || 'Unknown Pioneer',
             amount,
             txId,
             time: new Date().toLocaleTimeString()
@@ -52,11 +53,11 @@ module.exports = (io, socket) => {
     });
 
     // Withdraw Handler
-    socket.on('withdraw', ({ amount, txId }) => {
+    socket.on('withdraw', ({ amount, txId, username }) => {
         const withdrawItem = {
             id: Date.now(),
             type: 'withdraw',
-            user: socket.id,
+            user: username || 'Unknown Pioneer',
             amount,
             txId,
             time: new Date().toLocaleTimeString()
