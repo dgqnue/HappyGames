@@ -90,10 +90,8 @@ export default function GameList() {
                                         🌱
                                     </div>
                                     <div>
-                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">
-                                            {t.eco_pool} (Pi) · {t.min_reserve}: {lobbyData.ecoPool.minReserve.toFixed(2)} Pi
-                                        </p>
-                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
+                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool_min_reserve}</p>
+                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)} / {lobbyData.ecoPool.minReserve.toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -170,7 +168,7 @@ export default function GameList() {
                                         onClick={handleMatchmaking}
                                         className="text-amber-600 font-bold text-sm hover:underline"
                                     >
-                                        Join Now &rarr;
+                                        {t.join_now} &rarr;
                                     </button>
                                 </div>
                             </div>
