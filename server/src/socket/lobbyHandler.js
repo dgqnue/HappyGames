@@ -1,4 +1,8 @@
-const feed = [];
+const RoomManager = require('../game/RoomManager');
+const Matchmaker = require('../game/Matchmaker');
+const WalletService = require('../services/WalletService');
+
+const feed = [];   // Save last 20 feed items
 
 module.exports = (io, socket) => {
     // Start matchmaker if not started
@@ -28,10 +32,57 @@ module.exports = (io, socket) => {
             time: new Date().toLocaleTimeString()
         };
         feed.unshift(joinItem);
-        // Keep only latest 20 items
         if (feed.length > 20) feed.pop();
-        // Broadcast to all lobby participants
         io.to('lobby').emit('lobby_feed', joinItem);
     });
 
-// Existing handlers ...
+    // Deposit Handler
+    socket.on('deposit', ({ amount, txId }) => {
+        const depositItem = {
+            id: Date.now(),
+            type: 'deposit',
+            user: socket.id,
+            amount,
+            txId,
+            time: new Date().toLocaleTimeString()
+        };
+        feed.unshift(depositItem);
+        if (feed.length > 20) feed.pop();
+        io.to('lobby').emit('lobby_feed', depositItem);
+    });
+
+    // Withdraw Handler
+    socket.on('withdraw', ({ amount, txId }) => {
+        const withdrawItem = {
+            id: Date.now(),
+            type: 'withdraw',
+            user: socket.id,
+            amount,
+            txId,
+            time: new Date().toLocaleTimeString()
+        };
+        feed.unshift(withdrawItem);
+        if (feed.length > 20) feed.pop();
+        io.to('lobby').emit('lobby_feed', withdrawItem);
+    });
+
+    socket.on('start_matchmaking', (criteria) => {
+        // User must be authenticated and attached to socket
+        // For demo, we assume socket.user is set by auth middleware
+        if (!socket.user) return socket.emit('error', 'Not authenticated');
+
+        Matchmaker.addToQueue(socket.user, socket, criteria);
+        socket.emit('matchmaking_started');
+    });
+
+    socket.on('join_table', ({ roomId, tableId }) => {
+        if (!socket.user) return socket.emit('error', 'Not authenticated');
+        const result = RoomManager.joinTable(roomId, tableId, socket.user, socket);
+        if (result.success) {
+            socket.join(tableId);
+            io.to(tableId).emit('table_update', result.table);
+        } else {
+            socket.emit('error', result.message);
+        }
+    });
+};
