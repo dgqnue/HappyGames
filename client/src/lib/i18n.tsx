@@ -765,6 +765,8 @@ const translations = {
         feed_joined: "님이 로비에 입장했습니다",
         feed_win: "님이 승리했습니다",
         feed_jackpot: "님이 잭팟을 터뜨렸습니다!",
+        feed_deposit: "입금했습니다",
+        feed_withdraw: "출금했습니다",
         lobby_title: '게임 로비',
         lobby_subtitle: 'Happy Beans를 획득하려면 게임을 선택하세요!',
         online_players: '온라인 플레이어',
