@@ -29,6 +29,14 @@ export default function GameList() {
             setLobbyData(data);
         });
 
+        // ---- 实时大厅动态 ----
+        newSocket.on('lobby_feed', (item: any) => {
+            setLobbyFeed(prev => {
+                const updated = [item, ...prev];
+                return updated.length > 20 ? updated.slice(0, 20) : updated;
+            });
+        });
+
         newSocket.on('match_success', (data: any) => {
             console.log('Match found!', data);
             setIsMatching(false);
@@ -204,15 +212,19 @@ export default function GameList() {
                                 <div key={item.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-white/60 shadow-sm hover:bg-white/80 transition-colors">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm
                                         ${item.type === 'join' ? 'bg-blue-100 text-blue-600' :
-                                            item.type === 'win' ? 'bg-green-100 text-green-600' :
-                                                'bg-amber-100 text-amber-600'}`}>
-                                        {item.type === 'join' ? '👋' : item.type === 'win' ? '🏆' : '🎰'}
+                                            item.type === 'deposit' ? 'bg-green-100 text-green-600' :
+                                                item.type === 'withdraw' ? 'bg-red-100 text-red-600' :
+                                                    item.type === 'win' ? 'bg-green-100 text-green-600' :
+                                                        'bg-amber-100 text-amber-600'}`}>
+                                        {item.type === 'join' ? '👋' : item.type === 'deposit' ? '💰' : item.type === 'withdraw' ? '🏧' : item.type === 'win' ? '🏆' : '🎰'}
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm text-gray-800">
                                             <span className="font-bold text-amber-900">{item.user}</span>
                                             {' '}
                                             {item.type === 'join' && <span className="text-gray-500">{t.feed_joined}</span>}
+                                            {item.type === 'deposit' && <span className="text-gray-500">{t.feed_deposit}: {item.amount} Pi</span>}
+                                            {item.type === 'withdraw' && <span className="text-gray-500">{t.feed_withdraw}: {item.amount} Pi</span>}
                                             {item.type === 'win' && <span className="text-gray-500">{t.feed_win} <span className="font-bold text-green-600">{item.amount} Beans</span></span>}
                                             {item.type === 'jackpot' && <span className="font-bold text-amber-600">{t.feed_jackpot} <span className="text-amber-800">({item.amount})</span></span>}
                                         </p>
