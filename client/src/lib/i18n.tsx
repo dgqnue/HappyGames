@@ -1130,13 +1130,13 @@ const translations = {
             commission_history: "Commission History",
             view_details: "View Details",
 
-        }
-    };
 
-    type Translations = typeof translations.en;
+        };
 
-    interface LanguageContextType {
-        language: Language;
+        type Translations = typeof translations.en;
+
+        interface LanguageContextType {
+            language: Language;
 setLanguage: (lang: Language) => void;
 t: Translations;
 }
