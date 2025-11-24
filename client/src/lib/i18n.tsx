@@ -66,6 +66,7 @@ const translations = {
         feed_jackpot: "hit the Jackpot!",
         // Lobby
         lobby_title: 'Game Lobby',
+        lobby_subtitle: 'Select a game to start earning Happy Beans!',
         online_players: 'Online Players',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
@@ -157,6 +158,7 @@ const translations = {
         },
         // Lobby
         lobby_title: '游戏大厅',
+        lobby_subtitle: '选择一个游戏开始赚取欢乐豆！',
         online_players: '在线玩家',
         eco_pool: '生态池',
         quick_match: '快速匹配',
@@ -252,6 +254,7 @@ const translations = {
         },
         // Lobby
         lobby_title: 'Game Lobby',
+        lobby_subtitle: 'اختر لعبة لبدء كسب Happy Beans!',
         online_players: 'Online Players',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
@@ -347,6 +350,7 @@ const translations = {
         },
         // Lobby
         lobby_title: 'Game Lobby',
+        lobby_subtitle: 'Chọn một trò chơi để bắt đầu kiếm Happy Beans!',
         online_players: 'Online Players',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
@@ -443,6 +447,7 @@ const translations = {
         },
         // Lobby
         lobby_title: 'Game Lobby',
+        lobby_subtitle: '¡Selecciona un juego para comenzar a ganar Happy Beans!',
         online_players: 'Online Players',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
@@ -538,6 +543,7 @@ const translations = {
         },
         // Lobby
         lobby_title: 'Game Lobby',
+        lobby_subtitle: '選擇一個遊戲開始賺取歡樂豆！',
         online_players: 'Online Players',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
@@ -637,6 +643,7 @@ const translations = {
         feed_win: "が勝利しました",
         feed_jackpot: "がジャックポットを当てました！",
         lobby_title: 'ゲームロビー',
+        lobby_subtitle: 'ゲームを選択してHappy Beansを獲得しましょう！',
         online_players: 'オンラインプレイヤー',
         eco_pool: 'エコプール',
         quick_match: 'クイックマッチ',
@@ -731,6 +738,7 @@ const translations = {
         feed_win: "님이 승리했습니다",
         feed_jackpot: "님이 잭팟을 터뜨렸습니다!",
         lobby_title: '게임 로비',
+        lobby_subtitle: 'Happy Beans를 획득하려면 게임을 선택하세요!',
         online_players: '온라인 플레이어',
         eco_pool: '에코 풀',
         quick_match: '빠른 매치',

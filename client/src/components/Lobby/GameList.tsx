@@ -58,7 +58,7 @@ export default function GameList() {
                     <h2 className="text-mobile-xl font-bold text-amber-900 flex items-center gap-3">
                         🎮 {t.lobby_title}
                     </h2>
-                    <p className="text-amber-800/60 mt-1 font-medium text-mobile-base">Select a game to start earning Happy Beans!</p>
+                    <p className="text-amber-800/60 mt-1 font-medium text-mobile-base">{t.lobby_subtitle}</p>
                 </div>
                 <a
                     href="/"
