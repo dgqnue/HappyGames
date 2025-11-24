@@ -5,6 +5,7 @@
 
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const Transaction = require('../models/Transaction');
 
 /**
  * Get User Profile
@@ -174,6 +175,49 @@ exports.updateProfile = async (req, res) => {
         await user.save();
 
         res.json({ message: 'Profile updated', user });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Get Referrals
+ * Retrieves list of users invited by the current user.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.getReferrals = async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ message: 'User ID required' });
+
+        const referrals = await User.find({ referrer: userId })
+            .select('username nickname avatar createdAt referralLevel')
+            .sort({ createdAt: -1 });
+
+        res.json(referrals);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Get Commission History
+ * Retrieves commission transactions for the user.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.getCommissionHistory = async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ message: 'User ID required' });
+
+        const commissions = await Transaction.find({
+            user: userId,
+            type: 'COMMISSION'
+        }).sort({ createdAt: -1 });
+
+        res.json(commissions);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

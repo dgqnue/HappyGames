@@ -39,6 +39,7 @@ class GameService {
                 amount: -p.betAmount,
                 currency: 'BEANS',
                 status: 'COMPLETED',
+                orderId: 'BET' + Date.now() + Math.floor(Math.random() * 100000),
                 description: `Bet in game ${roomId}`
             });
 
@@ -71,6 +72,7 @@ class GameService {
                     amount: winAmountPerUser,
                     currency: 'BEANS',
                     status: 'COMPLETED',
+                    orderId: 'WIN' + Date.now() + Math.floor(Math.random() * 100000),
                     description: `Won in game ${roomId}`
                 });
             }

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const Transaction = require('../models/Transaction');
 
 // Commission Rates
 const REFERRAL_LEVELS = {
@@ -29,8 +30,16 @@ class ReferralService {
                     referrerWallet.totalCommissionEarned += commission;
                     await referrerWallet.save();
 
-                    // Optional: Create Transaction for Commission?
-                    // await Transaction.create({ ... type: 'COMMISSION' ... });
+                    // Create Transaction for Commission
+                    await Transaction.create({
+                        user: referrer._id,
+                        type: 'COMMISSION',
+                        amount: commission,
+                        currency: 'BEANS',
+                        status: 'COMPLETED',
+                        orderId: 'COM' + Date.now() + Math.floor(Math.random() * 10000),
+                        description: `Commission from ${player.username} (Lv.${referrer.referralLevel})`
+                    });
                 }
             }
         }

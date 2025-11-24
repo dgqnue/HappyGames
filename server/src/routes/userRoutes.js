@@ -30,4 +30,7 @@ router.post('/update', userController.updateProfile);
  */
 router.get('/reset', userController.resetDb); // Temporary dev route
 
+router.get('/referrals', userController.getReferrals);
+router.get('/commissions', userController.getCommissionHistory);
+
 module.exports = router;

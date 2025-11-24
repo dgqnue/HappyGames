@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import WalletExchange from '../Lobby/WalletExchange';
+import ReferralDetailsModal from './ReferralDetailsModal';
 import { useLanguage } from '@/lib/i18n';
 
 /**
@@ -22,6 +23,9 @@ export default function UserProfile() {
 
     // State for logout confirmation modal
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    // State for referral details modal
+    const [showReferralDetails, setShowReferralDetails] = useState(false);
 
     // Get userId from URL query
     const userId = searchParams.get('userId');
@@ -160,6 +164,12 @@ export default function UserProfile() {
                                     {process.env.NEXT_PUBLIC_CLIENT_URL}?ref={profile.referralCode}
                                 </code>
                             </div>
+                            <button
+                                onClick={() => setShowReferralDetails(true)}
+                                className="w-full py-2 mt-2 bg-amber-100 text-amber-800 rounded-lg font-bold hover:bg-amber-200 transition-colors"
+                            >
+                                {t.view_details || 'View Details'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -239,6 +249,14 @@ export default function UserProfile() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Referral Details Modal */}
+            {showReferralDetails && (
+                <ReferralDetailsModal
+                    userId={profile._id}
+                    onClose={() => setShowReferralDetails(false)}
+                />
             )}
         </div>
     );
