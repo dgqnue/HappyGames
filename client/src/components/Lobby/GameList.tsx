@@ -90,11 +90,10 @@ export default function GameList() {
                                         🌱
                                     </div>
                                     <div>
-                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool} (Pi)</p>
-                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
-                                        <p className="text-xs text-green-700 mt-1 font-medium bg-green-100 px-2 py-0.5 rounded-full inline-block">
-                                            📉 {t.min_reserve}: {lobbyData.ecoPool.minReserve.toFixed(2)}
+                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">
+                                            {t.eco_pool} (Pi) · {t.min_reserve}: {lobbyData.ecoPool.minReserve.toFixed(2)} Pi
                                         </p>
+                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
