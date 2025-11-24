@@ -90,7 +90,7 @@ export default function GameList() {
                                         🌱
                                     </div>
                                     <div>
-                                        <p className="text-green-800 font-medium mb-1 text-mobile-base">{t.eco_pool} (Pi)</p>
+                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool} (Pi)</p>
                                         <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
                                         <p className="text-xs text-green-700 mt-1 font-medium bg-green-100 px-2 py-0.5 rounded-full inline-block">
                                             📉 {t.min_reserve}: {lobbyData.ecoPool.minReserve.toFixed(2)}
@@ -115,20 +115,11 @@ export default function GameList() {
                                             alert(t.copied);
                                         }}
                                     >
-                                        {t.copy}
+                                        📋
                                     </button>
                                 </div>
 
                                 <div className="flex gap-4 text-lg">
-                                    <a
-                                        href="https://minepi.com/blockexplorer"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-amber-700 hover:text-amber-900 hover:scale-110 transition-transform"
-                                        title={t.pi_explorer}
-                                    >
-                                        🔗
-                                    </a>
                                     <a
                                         href={`https://minepi.com/blockexplorer/account/${lobbyData.ecoPool.officialWallet}`}
                                         target="_blank"
