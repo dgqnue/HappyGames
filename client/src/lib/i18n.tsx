@@ -257,9 +257,9 @@ const translations = {
             great: "Great!"
         },
         // Lobby
-        lobby_title: 'Game Lobby',
+        lobby_title: 'ردهة الألعاب',
         lobby_subtitle: 'اختر لعبة لبدء كسب Happy Beans!',
-        online_players: 'Online Players',
+        online_players: 'اللاعبون على الإنترنت',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
         min_entry: 'Min Entry',
@@ -355,9 +355,9 @@ const translations = {
             great: "Great!"
         },
         // Lobby
-        lobby_title: 'Game Lobby',
+        lobby_title: 'Sảnh chơi',
         lobby_subtitle: 'Chọn một trò chơi để bắt đầu kiếm Happy Beans!',
-        online_players: 'Online Players',
+        online_players: 'Người chơi trực tuyến',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
         min_entry: 'Min Entry',
@@ -454,9 +454,9 @@ const translations = {
             great: "Great!"
         },
         // Lobby
-        lobby_title: 'Game Lobby',
+        lobby_title: 'Vestíbulo de juegos',
         lobby_subtitle: '¡Selecciona un juego para comenzar a ganar Happy Beans!',
-        online_players: 'Online Players',
+        online_players: 'Jugadores en línea',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
         min_entry: 'Min Entry',
@@ -552,9 +552,9 @@ const translations = {
             great: "太棒了！"
         },
         // Lobby
-        lobby_title: 'Game Lobby',
+        lobby_title: '遊戲大廳',
         lobby_subtitle: '選擇一個遊戲開始賺取歡樂豆！',
-        online_players: 'Online Players',
+        online_players: '線上玩家',
         eco_pool: 'Eco Pool',
         quick_match: 'Quick Match',
         min_entry: 'Min Entry',
