@@ -10,6 +10,7 @@ export default function Home() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [user, setUser] = useState<any>(null);
     const { t } = useLanguage();
 
@@ -33,6 +34,8 @@ export default function Home() {
                 }
             } catch (error) {
                 console.error('Auto-login check failed', error);
+            } finally {
+                setIsCheckingAuth(false);
             }
         };
         checkLogin();
@@ -108,8 +111,13 @@ export default function Home() {
                 </p>
 
                 {/* Login Card - Only show if NOT logged in */}
-                {!user ? (
-                    <div className="w-full max-w-md bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/50 flex flex-col items-center">
+                {isCheckingAuth ? (
+                    <div className="animate-pulse flex flex-col items-center">
+                        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-amber-900 font-medium">{t.connecting}</p>
+                    </div>
+                ) : !user ? (
+                    <div className="w-full max-w-md bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/50 flex flex-col items-center animate-fade-in">
                         <h2 className="text-2xl font-bold text-amber-900 mb-2">{t.welcome}</h2>
                         <p className="text-gray-600 mb-6 text-center">
                             {t.auth_msg}
