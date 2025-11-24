@@ -55,7 +55,7 @@ export default function GameList() {
             {/* Header Row */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-amber-900 flex items-center gap-3">
+                    <h2 className="text-xl md:text-3xl font-bold text-amber-900 flex items-center gap-3">
                         🎮 {t.lobby_title}
                     </h2>
                     <p className="text-amber-800/60 mt-1 font-medium text-sm md:text-base">Select a game to start earning Happy Beans!</p>
@@ -82,7 +82,7 @@ export default function GameList() {
                                     </div>
                                     <div>
                                         <p className="text-amber-800 font-medium mb-1">{t.total_beans}</p>
-                                        <p className="text-3xl font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
+                                        <p className="text-2xl md:text-3xl font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
@@ -91,7 +91,7 @@ export default function GameList() {
                                     </div>
                                     <div>
                                         <p className="text-green-800 font-medium mb-1">{t.eco_pool} (Pi)</p>
-                                        <p className="text-3xl font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
+                                        <p className="text-2xl md:text-3xl font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
                                         <p className="text-xs text-green-700 mt-1 font-medium bg-green-100 px-2 py-0.5 rounded-full inline-block">
                                             📉 {t.min_reserve}: {lobbyData.ecoPool.minReserve.toFixed(2)}
                                         </p>

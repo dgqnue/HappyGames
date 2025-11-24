@@ -103,10 +103,10 @@ export default function Home() {
 
             {/* Hero Section */}
             <div className="z-10 flex flex-col items-center text-center max-w-4xl mt-10 md:mt-0">
-                <h1 className="text-4xl md:text-8xl font-extrabold text-white drop-shadow-lg mb-4 tracking-tight">
+                <h1 className="text-3xl md:text-8xl font-extrabold text-white drop-shadow-lg mb-4 tracking-tight">
                     Happy<span className="text-amber-600">Games</span>
                 </h1>
-                <p className="text-lg md:text-2xl text-amber-900/80 font-medium mb-8 max-w-2xl px-4">
+                <p className="text-base md:text-2xl text-amber-900/80 font-medium mb-8 max-w-2xl px-4">
                     {t.home_subtitle}
                 </p>
 

@@ -83,16 +83,16 @@ export default function UserProfile() {
     };
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-4 md:p-6 max-w-4xl mx-auto">
             {/* Profile Header */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl mb-6 flex flex-col md:flex-row items-center justify-between border border-white/50 gap-4">
-                <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-amber-200 rounded-full flex items-center justify-center text-3xl shadow-inner">
+                <div className="flex items-center gap-4 md:gap-6">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-200 rounded-full flex items-center justify-center text-3xl shadow-inner">
                         {profile.avatar ? <img src={profile.avatar} alt="Avatar" className="w-full h-full rounded-full" /> : '👤'}
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-3xl font-bold text-amber-900">
+                            <h1 className="text-2xl md:text-3xl font-bold text-amber-900">
                                 {profile.nickname || profile.username}
                             </h1>
                             <button
@@ -148,11 +148,11 @@ export default function UserProfile() {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                 <span className="text-gray-600">{t.invited_users}</span>
-                                <span className="font-bold text-lg">{profile.referralStats.inviteCount}</span>
+                                <span className="font-bold text-base md:text-lg">{profile.referralStats.inviteCount}</span>
                             </div>
                             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                 <span className="text-gray-600">{t.total_flow}</span>
-                                <span className="font-bold text-lg">{profile.referralStats.totalFlow.toLocaleString()} Beans</span>
+                                <span className="font-bold text-base md:text-lg">{profile.referralStats.totalFlow.toLocaleString()} Beans</span>
                             </div>
                             <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
                                 <p className="text-sm text-orange-800 font-medium mb-2">{t.referral_link}:</p>
