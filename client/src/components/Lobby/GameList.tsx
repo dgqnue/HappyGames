@@ -53,16 +53,16 @@ export default function GameList() {
     return (
         <div className="max-w-7xl mx-auto">
             {/* Header Row */}
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
+                    <h2 className="text-2xl md:text-3xl font-bold text-amber-900 flex items-center gap-3">
                         🎮 {t.lobby_title}
                     </h2>
-                    <p className="text-amber-800/60 mt-1 font-medium">Select a game to start earning Happy Beans!</p>
+                    <p className="text-amber-800/60 mt-1 font-medium text-sm md:text-base">Select a game to start earning Happy Beans!</p>
                 </div>
                 <a
                     href="/"
-                    className="px-6 py-2.5 bg-white/80 hover:bg-white text-amber-900 rounded-xl shadow-sm hover:shadow-md transition-all font-bold flex items-center gap-2 backdrop-blur-sm relative z-[9999] cursor-pointer"
+                    className="w-full md:w-auto text-center px-6 py-2.5 bg-white/80 hover:bg-white text-amber-900 rounded-xl shadow-sm hover:shadow-md transition-all font-bold flex items-center justify-center gap-2 backdrop-blur-sm relative z-[9999] cursor-pointer"
                 >
                     <span>🏠</span> {t.back_home}
                 </a>
@@ -74,8 +74,8 @@ export default function GameList() {
 
                     {/* Stats Row */}
                     {lobbyData && (
-                        <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-6 relative overflow-hidden">
-                            <div className="grid grid-cols-2 gap-8 relative z-10">
+                        <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-4 md:p-6 relative overflow-hidden">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10">
                                 <div className="flex items-center gap-4">
                                     <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center text-3xl">
                                         💰
@@ -85,7 +85,7 @@ export default function GameList() {
                                         <p className="text-3xl font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4 border-l border-amber-200 pl-8">
+                                <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
                                     <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-3xl">
                                         🌱
                                     </div>
@@ -101,15 +101,15 @@ export default function GameList() {
 
                             {/* Official Wallet Address */}
                             <div className="mt-6 pt-4 border-t border-amber-200/50">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-sm text-amber-800/80">
-                                        <span className="font-bold">🏦 {t.official_wallet}:</span>
-                                        <span className="font-mono bg-white/50 px-2 py-1 rounded border border-amber-100">
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3">
+                                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-sm text-amber-800/80 w-full">
+                                        <span className="font-bold whitespace-nowrap">🏦 {t.official_wallet}:</span>
+                                        <span className="font-mono bg-white/50 px-2 py-1 rounded border border-amber-100 text-xs md:text-sm break-all">
                                             {lobbyData.ecoPool.officialWallet}
                                         </span>
                                     </div>
                                     <button
-                                        className="text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-1 rounded-full font-bold transition-colors"
+                                        className="w-full md:w-auto text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-2 md:py-1 rounded-full font-bold transition-colors"
                                         onClick={() => {
                                             navigator.clipboard.writeText(lobbyData.ecoPool.officialWallet);
                                             alert(t.copied);

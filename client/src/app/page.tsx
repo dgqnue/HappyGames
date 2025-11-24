@@ -77,11 +77,11 @@ export default function Home() {
     };
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-24 relative overflow-hidden">
+        <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 relative overflow-hidden">
 
             {/* Header / Nav */}
-            <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20">
-                <div className="font-bold text-xl text-amber-900">{t.home_title}</div>
+            <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-20">
+                <div className="font-bold text-lg md:text-xl text-amber-900">{t.home_title}</div>
                 <div className="flex items-center gap-4">
                     <LanguageSwitcher />
                     {user && (
@@ -99,11 +99,11 @@ export default function Home() {
             </div>
 
             {/* Hero Section */}
-            <div className="z-10 flex flex-col items-center text-center max-w-4xl">
-                <h1 className="text-6xl md:text-8xl font-extrabold text-white drop-shadow-lg mb-4 tracking-tight">
+            <div className="z-10 flex flex-col items-center text-center max-w-4xl mt-10 md:mt-0">
+                <h1 className="text-4xl md:text-8xl font-extrabold text-white drop-shadow-lg mb-4 tracking-tight">
                     Happy<span className="text-amber-600">Games</span>
                 </h1>
-                <p className="text-xl md:text-2xl text-amber-900/80 font-medium mb-8 max-w-2xl">
+                <p className="text-lg md:text-2xl text-amber-900/80 font-medium mb-8 max-w-2xl px-4">
                     {t.home_subtitle}
                 </p>
 
