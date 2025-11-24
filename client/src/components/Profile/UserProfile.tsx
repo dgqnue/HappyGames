@@ -126,6 +126,15 @@ export default function UserProfile() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <a
+                        href="/"
+                        className="w-10 h-10 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-sm"
+                        title={t.back_home}
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                    </a>
                     <button
                         onClick={handleLogout}
                         className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center gap-2"
