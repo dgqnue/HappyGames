@@ -51,14 +51,14 @@ export default function GameList() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="page-container">
             {/* Header Row */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-xl md:text-3xl font-bold text-amber-900 flex items-center gap-3">
+                    <h2 className="text-mobile-xl font-bold text-amber-900 flex items-center gap-3">
                         🎮 {t.lobby_title}
                     </h2>
-                    <p className="text-amber-800/60 mt-1 font-medium text-sm md:text-base">Select a game to start earning Happy Beans!</p>
+                    <p className="text-amber-800/60 mt-1 font-medium text-mobile-base">Select a game to start earning Happy Beans!</p>
                 </div>
                 <a
                     href="/"
@@ -74,15 +74,15 @@ export default function GameList() {
 
                     {/* Stats Row */}
                     {lobbyData && (
-                        <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-4 md:p-6 relative overflow-hidden">
+                        <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-3 md:p-6 relative overflow-hidden">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10">
                                 <div className="flex items-center gap-4">
                                     <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center text-3xl">
                                         💰
                                     </div>
                                     <div>
-                                        <p className="text-amber-800 font-medium mb-1">{t.total_beans}</p>
-                                        <p className="text-2xl md:text-3xl font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
+                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.total_beans}</p>
+                                        <p className="text-mobile-lg font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
@@ -90,8 +90,8 @@ export default function GameList() {
                                         🌱
                                     </div>
                                     <div>
-                                        <p className="text-green-800 font-medium mb-1">{t.eco_pool} (Pi)</p>
-                                        <p className="text-2xl md:text-3xl font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
+                                        <p className="text-green-800 font-medium mb-1 text-mobile-base">{t.eco_pool} (Pi)</p>
+                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)}</p>
                                         <p className="text-xs text-green-700 mt-1 font-medium bg-green-100 px-2 py-0.5 rounded-full inline-block">
                                             📉 {t.min_reserve}: {lobbyData.ecoPool.minReserve.toFixed(2)}
                                         </p>

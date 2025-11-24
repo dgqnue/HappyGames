@@ -30,3 +30,25 @@ body {
             rgb(var(--background-end-rgb)));
     min-height: 100vh;
 }
+
+@layer components {
+    .page-container {
+        @apply w-full px-3 md:max-w-7xl md:mx-auto md:px-6;
+    }
+
+    .text-mobile-base {
+        @apply text-sm md:text-base;
+    }
+
+    .text-mobile-lg {
+        @apply text-lg md:text-2xl;
+    }
+
+    .text-mobile-xl {
+        @apply text-xl md:text-3xl;
+    }
+
+    .text-mobile-huge {
+        @apply text-4xl md:text-8xl;
+    }
+}

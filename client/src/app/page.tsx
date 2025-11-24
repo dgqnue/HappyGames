@@ -84,7 +84,7 @@ export default function Home() {
 
             {/* Header / Nav */}
             <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-20">
-                <div className="font-bold text-lg md:text-xl text-amber-900">{t.home_title}</div>
+                <div className="font-bold text-mobile-xl text-amber-900">{t.home_title}</div>
                 <div className="flex items-center gap-4">
                     <LanguageSwitcher />
                     {user && (
@@ -103,19 +103,17 @@ export default function Home() {
 
             {/* Hero Section */}
             <div className="z-10 flex flex-col items-center text-center max-w-4xl mt-10 md:mt-0">
-                <h1 className="text-3xl md:text-8xl font-extrabold text-white drop-shadow-lg mb-4 tracking-tight">
+                <h1 className="text-mobile-huge font-extrabold text-white drop-shadow-lg mb-4 tracking-tight">
                     Happy<span className="text-amber-600">Games</span>
                 </h1>
-                <p className="text-base md:text-2xl text-amber-900/80 font-medium mb-8 max-w-2xl px-4">
+                <p className="text-mobile-lg text-amber-900/80 font-medium mb-8 max-w-2xl px-4">
                     {t.home_subtitle}
                 </p>
 
                 {/* Login Card - Only show if NOT logged in */}
                 {isCheckingAuth ? (
-                    <div className="animate-pulse flex flex-col items-center">
-                        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-amber-900 font-medium">{t.connecting}</p>
-                    </div>
+                    // Show nothing while checking auth (Silent Login)
+                    <div className="h-[300px]"></div>
                 ) : !user ? (
                     <div className="w-full max-w-md bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/50 flex flex-col items-center animate-fade-in">
                         <h2 className="text-2xl font-bold text-amber-900 mb-2">{t.welcome}</h2>
