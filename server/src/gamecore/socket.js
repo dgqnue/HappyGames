@@ -3,6 +3,7 @@ const { verifyToken } = require('./auth');
 const fs = require('fs');
 const path = require('path');
 const lobbyHandler = require('../socket/lobbyHandler'); // Import existing lobby handler
+const UserGameStats = require('../models/UserGameStats');
 
 class SocketDispatcher {
     constructor(server) {
@@ -70,6 +71,30 @@ class SocketDispatcher {
 
             // Integrate existing Lobby Handler
             lobbyHandler(this.io, socket);
+
+            // Handle User Stats Request
+            socket.on('get_stats', async ({ gameType }) => {
+                try {
+                    if (!socket.user) return;
+                    let stats = await UserGameStats.findOne({ userId: socket.user._id, gameType });
+                    if (!stats) {
+                        stats = await UserGameStats.create({
+                            userId: socket.user._id,
+                            gameType,
+                            rating: 1200,
+                            title: '初出茅庐',
+                            gamesPlayed: 0,
+                            wins: 0,
+                            losses: 0,
+                            draws: 0
+                        });
+                    }
+                    socket.emit('user_stats', stats);
+                } catch (err) {
+                    console.error('Error fetching stats:', err);
+                    socket.emit('error', 'Failed to fetch stats');
+                }
+            });
 
             // 监听玩家请求开始游戏事件
             socket.on('start_game', (gameId) => {
