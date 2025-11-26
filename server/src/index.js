@@ -1,19 +1,19 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const lobbyHandler = require('./socket/lobbyHandler');
+const SocketDispatcher = require('./gamecore/socket');
+const initCronJobs = require('./cron/eloCron');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*", // Allow all for now, restrict in production
-        methods: ["GET", "POST"]
-    }
-});
+
+// Initialize Socket Dispatcher (handles IO and game logic)
+new SocketDispatcher(server);
+
+// Initialize Cron Jobs
+initCronJobs();
 
 // Middleware
 app.use(cors());
@@ -28,16 +28,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/wallet', require('./routes/walletRoutes'));
-
-// Socket.io
-io.on('connection', (socket) => {
-    console.log('New client connected:', socket.id);
-    lobbyHandler(io, socket);
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
-});
+app.use('/api', require('./routes/settle')); // Register settlement route
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

@@ -224,3 +224,199 @@ HappyGames 是一个基于 Pi Network 生态的游戏平台，允许用户通过
 - `lobby_feed`: 大厅动态
 - `recent_activity`: 最新动态
 
+
+---
+
+## 9. 平台核心架构 (Platform Core Architecture)
+为了支持多游戏快速扩展与高并发稳定性，平台采用了 **插件化 + 持久化** 的核心架构。
+
+### 9.1 服务端架构 (Server Side)
+位于 `server/src/gamecore`，实现了游戏逻辑与平台服务的解耦。
+
+#### A. 插件化分发器 (SocketDispatcher)
+- **文件**: `server/src/gamecore/socket.js`
+- **功能**: 
+    - 自动扫描 `server/src/games/` 目录，动态加载所有游戏管理器。
+    - 统一处理 Socket 连接鉴权 (`verifyToken`)。
+    - 根据 `start_game` 事件将流量分发至对应的游戏管理器。
+
+#### B. 游戏基类 (BaseGameRoom)
+- **文件**: `server/src/gamecore/BaseGameRoom.js`
+- **功能**: 所有游戏房间的父类，提供标准接口。
+    - `broadcast(event, data)`: 房间广播。
+    - `settle(result)`: **异步结算**。自动生成 `BatchId`、时间戳与 Nonce，并使用 HMAC-SHA256 签名请求结算 API。
+
+#### C. 资金安全系统 (Wallet & Settlement)
+- **文件**: `server/src/gamecore/wallet.js` & `routes/settle.js`
+- **机制**:
+    - **幂等性 (Idempotency)**: 使用 `Batch` 数据库模型记录每一笔结算的 `BatchId`。在事务 (Transaction) 中原子性地检查 `BatchId` 是否重复，防止资金双重扣除。
+    - **签名验证**: 结算 API 校验 HTTP Header 中的 `x-signature`，防止伪造请求。
+
+#### D. 持久化层 (Persistence Layer)
+- **状态管理**: `server/src/gamecore/StateManager.js`
+    - 使用文件系统 (`server/data/gamestate.json`) 持久化存储游戏状态，防止服务器重启导致对局数据丢失。
+- **消息队列**: `server/src/gamecore/queue.js`
+    - 使用文件系统 (`server/data/queue.json`) 持久化结算任务。即使在处理结算时服务器宕机，重启后也会自动恢复并重试任务。
+
+### 9.2 客户端架构 (Client Side)
+位于 `client/src/gamecore`，实现了前端游戏逻辑的插件化。
+
+#### A. 游戏客户端基类 (BaseGameClient)
+- **文件**: `client/src/gamecore/BaseGameClient.ts`
+- **功能**: 抽象类，封装了 Socket 通信的基础逻辑。
+    - `init/dispose`: 统一管理事件监听器的生命周期。
+    - `updateState`: 标准化的状态更新与 UI 通知机制。
+
+#### B. 客户端管理器 (GameClientManager)
+- **文件**: `client/src/gamecore/GameClientManager.ts`
+- **功能**: 单例模式，管理当前激活的游戏客户端实例，负责不同游戏之间的切换与资源释放。
+
+---
+
+## 10. ELO 等级分系统 (ELO Rating System)
+为双人竞技类游戏提供公平的技能评估与匹配机制。
+
+### 10.1 动态 K 值计算
+采用双因素平滑算法，避免积分剧烈波动。
+
+#### 公式
+```
+K_Final = 4 + 36 × f_rating × f_games
+```
+
+- **对局数因子 (f_games)**:
+  ```
+  f_games = 1 / (1 + Games/50)
+  ```
+  新手玩家（对局数少）K值较高，积分变化快；老手K值低，积分稳定。
+
+- **等级分因子 (f_rating)**:
+  ```
+  若 Rating < mu_dynamic: f_rating = 1
+  若 Rating >= mu_dynamic: f_rating = 1 / (1 + (Rating - mu_dynamic)/1000)
+  ```
+  `mu_dynamic` 为当前游戏所有玩家的平均等级分，每日 11:00 UTC 计算，12:00 UTC 生效。
+
+#### 预期胜率与积分变动
+- **预期胜率**: `E_A = 1 / (1 + 10^((R_B - R_A)/400))`
+- **积分变动**: `Delta = Round(K_Final × (实际得分 - 预期得分))`
+  - 胜: 1分，和: 0.5分，负: 0分
+
+### 10.2 时间衰减机制
+防止高分玩家长期不活跃导致排行榜僵化。
+
+- **衰减阈值**: 1600分
+- **不活跃周期**: 7天
+- **衰减率**: 每周 1%
+- **衰减公式**: `Decay = 0.01 × (Rating - 1600)`
+- **执行时间**: 每日 10:00 UTC
+
+### 10.3 实现文件
+- **服务端**: `server/src/gamecore/EloService.js`
+- **数据模型**: `server/src/models/UserGameStats.js`, `server/src/models/GameMeta.js`
+- **定时任务**: `server/src/cron/eloCron.js`
+
+---
+
+## 11. 称号系统 (Title System)
+基于百分比排名的荣誉称号体系，适用于中国象棋等竞技游戏。
+
+### 11.1 称号分段
+| 编号 | 称号名称 | 人数占比 | 颜色 | 定位 |
+|------|----------|----------|------|------|
+| 1 | 初出茅庐 | 22% | 黑色 #000000 | 新手 |
+| 2 | 小试牛刀 | 19% | 棕色 #8f2d56 | 普通进阶 |
+| 3 | 渐入佳境 | 16% | 绿色 #00FF00 | 低中水平 |
+| 4 | 锋芒毕露 | 13% | 蓝色 #0000FF | 中等偏上 |
+| 5 | 出类拔萃 | 10% | 红色 #FF0000 | 高水平精英 |
+| 6 | 炉火纯青 | 8% | 青色 #00FFFF | 顶尖技术 |
+| 7 | 名满江湖 | 6% | 黄色 #ffee32 | 稀有强者 |
+| 8 | 傲视群雄 | 4% | 紫色 #800080 | 高端极少数 |
+| 9 | 登峰造极 | 2% | 金色 #ffba08 | 服务器顶尖 |
+| 10 | 举世无双 | 仅1人 | 橙色 #FF6200 | 绝对唯一荣誉 |
+
+### 11.2 更新机制
+- **统计时间**: 每日 9:00 UTC
+- **生效时间**: 次日 9:00 UTC
+- **计算逻辑**: 按等级分降序排列，根据百分比分配称号
+- **显示位置**: 用户名后，使用对应颜色
+
+### 11.3 实现文件
+- **服务端**: `server/src/gamecore/TitleService.js`
+- **定时任务**: `server/src/cron/eloCron.js`
+
+---
+
+## 12. 中国象棋游戏 (Chinese Chess - Xiangqi)
+完整实现中国象棋游戏规则与分级房间系统。
+
+### 12.1 游戏架构
+采用插件化设计，完全符合平台核心架构规范。
+
+#### 服务端结构
+```
+server/src/games/chinesechess/
+├── index.js                    # ChineseChessManager (游戏管理器)
+├── logic/
+│   └── XiangqiRules.js        # 规则引擎
+└── rooms/
+    └── ChineseChessRoom.js    # 游戏房间逻辑
+```
+
+#### 客户端结构
+```
+client/src/
+├── app/game/chinesechess/
+│   ├── page.tsx               # 游戏中心 (房间选择)
+│   └── play/page.tsx          # 游戏对局页面
+└── components/ChineseChess/
+    ├── ChineseChessClient.ts  # 游戏客户端逻辑
+    └── ChessBoard.tsx         # 棋盘 UI (Canvas)
+```
+
+### 12.2 房间分级系统
+| 房间类型 | 等级分要求 | 底豆 | 说明 |
+|----------|------------|------|------|
+| 免费室 | 无限制 | 0 | 所有玩家可参与，不消耗游戏豆 |
+| 初级室 | < 1500 | 100 | 新手专属 |
+| 中级室 | 1500-1800 | 1000 | 中等水平玩家 |
+| 高级室 | > 1800 | 10000 | 高手对决 |
+
+- **访问控制**: 玩家只能进入符合自己等级分的房间对局
+- **观战功能**: 可进入任意房间观战
+
+### 12.3 游戏规则实现
+`XiangqiRules.js` 完整实现所有棋子走法验证：
+
+- **帅/将 (King)**: 九宫格内直线移动1步
+- **仕/士 (Advisor)**: 九宫格内斜线移动1步
+- **相/象 (Elephant)**: 田字移动，不可过河，检查象眼阻挡
+- **马 (Horse)**: 日字移动，检查马腿阻挡
+- **车 (Rook)**: 直线移动，路径无阻挡
+- **炮 (Cannon)**: 直线移动，吃子需隔一子
+- **兵/卒 (Pawn)**: 过河前只能前进，过河后可横移
+
+### 12.4 棋盘渲染
+- **技术**: HTML5 Canvas
+- **尺寸**: 9×10 格
+- **棋子**: 使用中文字符 (帅/将、仕/士、相/象、马、车、炮、兵/卒)
+- **颜色**: 红方 (#FF6B6B)，黑方 (#4ECDC4)
+- **交互**: 点击选中，再次点击移动
+
+### 12.5 结算流程
+1. **胜负判定**: 吃掉对方将/帅
+2. **ELO 更新**: 调用 `EloService.processMatchResult()`
+3. **游戏豆结算**: 非免费室调用 `BaseGameRoom.settle()`
+4. **称号刷新**: 次日 9:00 UTC 自动更新
+
+### 12.6 国际化支持
+游戏中心和对局页面已集成多语言支持，主要文本键值：
+- `chess_center`: 象棋中心
+- `free_room`: 免费室
+- `beginner_room`: 初级室
+- `intermediate_room`: 中级室
+- `advanced_room`: 高级室
+- `your_turn`: 你的回合
+- `waiting_opponent`: 等待对手
+
+

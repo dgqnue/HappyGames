@@ -149,7 +149,7 @@ export default function GameList() {
                                 <div className="flex items-center gap-4">
                                     <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center text-3xl">
                                         💰
-                                    </div>
+                                    </div>-
                                     <div>
                                         <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.total_beans}</p>
                                         <p className="text-mobile-lg font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
