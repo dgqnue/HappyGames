@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import io from 'socket.io-client';
-import ChessBoard from '../../../components/ChineseChess/ChessBoard';
-import { ChineseChessClient } from '../../../components/ChineseChess/ChineseChessClient';
+import ChessBoard from '../../../../components/ChineseChess/ChessBoard';
+import { ChineseChessClient } from '../../../../components/ChineseChess/ChineseChessClient';
 
 export default function ChineseChessPlay() {
     const router = useRouter();
