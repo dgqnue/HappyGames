@@ -25,7 +25,7 @@ export default function ChineseChessCenter() {
             return;
         }
 
-        const newSocket = io('http://localhost:5000', {
+        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
             auth: { token }
         });
 
@@ -136,8 +136,8 @@ export default function ChineseChessCenter() {
                                         onClick={() => handleEnterRoom(tier.id)}
                                         disabled={!accessible}
                                         className={`w-full py-3 rounded-xl font-bold transition-all ${accessible
-                                                ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             }`}
                                     >
                                         {accessible ? '进入' : '等级不符'}

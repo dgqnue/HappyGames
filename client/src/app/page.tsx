@@ -33,6 +33,9 @@ export default function Home() {
                     clearTimeout(timeoutId);
                     if (res.ok) {
                         const data = await res.json();
+                        if (data.token) {
+                            localStorage.setItem('token', data.token);
+                        }
                         setUser(data.user);
                     }
                 }
@@ -70,6 +73,9 @@ export default function Home() {
 
             if (res.ok) {
                 const data = await res.json();
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
                 setUser(data.user);
             } else {
                 const errData = await res.json();

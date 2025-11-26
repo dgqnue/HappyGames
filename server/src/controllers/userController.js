@@ -6,6 +6,7 @@
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
+const jwt = require('jsonwebtoken');
 
 /**
  * Get User Profile
@@ -78,9 +79,12 @@ exports.loginOrRegister = async (req, res) => {
             }
             if (updated) await user.save();
 
+            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
+
             return res.json({
                 message: 'Login successful',
                 user,
+                token,
                 isNew: false
             });
         }
@@ -113,9 +117,12 @@ exports.loginOrRegister = async (req, res) => {
         // Create Wallet
         await Wallet.create({ user: user._id });
 
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
+
         res.status(201).json({
             message: 'Account created',
             user,
+            token,
             isNew: true
         });
 
