@@ -82,7 +82,7 @@ export default function GameList() {
         <div className="page-container">
             {/* Header Carousel & Back Button */}
             <div className="relative mb-8 rounded-2xl overflow-hidden shadow-xl group">
-                {/* Back Button (Absolute Top-Right) */}
+                {/* Back Button */}
                 <a
                     href="/"
                     className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
@@ -101,19 +101,15 @@ export default function GameList() {
                             className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
                                 }`}
                         >
-                            {/* Fallback Gradient if Image Fails/Loading */}
                             <div className={`w-full h-full bg-gradient-to-br ${slide.color} flex items-center justify-center relative overflow-hidden`}>
-                                {/* Decorative Circles */}
                                 <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-10 -translate-y-10 blur-xl"></div>
                                 <div className="absolute bottom-0 right-0 w-40 h-40 bg-black/10 rounded-full translate-x-10 translate-y-10 blur-xl"></div>
 
-                                {/* Content */}
                                 <div className="text-center text-white p-6 relative z-10">
                                     <h2 className="text-3xl md:text-4xl font-bold mb-2 drop-shadow-md">{slide.title}</h2>
                                     <p className="text-white/90 font-medium text-lg">{slide.desc}</p>
                                 </div>
 
-                                {/* Attempt to load image if available (Overlay) */}
                                 <img
                                     src={slide.image}
                                     alt={slide.title}
@@ -138,10 +134,11 @@ export default function GameList() {
                 </div>
             </div>
 
+            {/* Main Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
                 {/* Left Column: Stats & Games (2/3 width) */}
                 <div className="lg:col-span-2 space-y-8">
-
                     {/* Stats Row */}
                     {lobbyData && (
                         <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-3 md:p-6 relative overflow-hidden">
@@ -202,6 +199,41 @@ export default function GameList() {
                     )}
 
                     {/* Game List */}
+                    <div
+                        className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group transform hover:-translate-y-1"
+                        onClick={() => window.location.href = '/game/chinesechess'}
+                    >
+                        <div className="absolute top-0 right-0 bg-gradient-to-bl from-red-500 to-rose-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-md z-10">
+                            NEW
+                        </div>
+                        <div className="flex items-start gap-5">
+                            <div className="w-20 h-20 bg-gradient-to-br from-red-200 to-rose-200 rounded-2xl flex items-center justify-center text-4xl shadow-inner group-hover:scale-110 transition-transform">
+                                🏮
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-amber-900">中国象棋</h3>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <span className="px-2.5 py-0.5 bg-red-100 text-red-800 text-xs font-bold rounded-full border border-red-200">
+                                        Xiangqi
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-3 flex items-center gap-1">
+                                    <span>🎯</span> 分级房间 | ELO排名
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                                免费室 · 初级 · 中级 · 高级
+                            </div>
+                            <button className="text-red-600 font-bold text-sm hover:underline">
+                                进入 &rarr;
+                            </button>
+                        </div>
+                    </div>
+
+
+
                     <div className="flex items-start gap-5">
                         <div className="w-20 h-20 bg-gray-200 rounded-2xl flex items-center justify-center text-4xl shadow-inner">
                             🎲
@@ -212,52 +244,55 @@ export default function GameList() {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-                </div >
+                {/* 左侧栏结束 (Left Column Ends Here) */}
 
-        {/* Right Column: Match Settings (1/3 width) */ }
-        < div className = "lg:col-span-1" >
-            <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/50 sticky top-6">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6 text-lg border-b border-gray-100 pb-4">
-                    📢 {t.lobby_feed}
-                </h3>
+                {/* Right Column: Match Settings (1/3 width) */}
+                <div className="lg:col-span-1">
+                    <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/50 sticky top-6">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6 text-lg border-b border-gray-100 pb-4">
+                            📢 {t.lobby_feed}
+                        </h3>
 
-                <div className="space-y-4">
-                    {lobbyFeed.map((item) => (
-                        <div key={item.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-white/60 shadow-sm hover:bg-white/80 transition-colors">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm
+                        <div className="space-y-4">
+                            {lobbyFeed.map((item) => (
+                                <div key={item.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-white/60 shadow-sm hover:bg-white/80 transition-colors">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm
                                         ${item.type === 'join' ? 'bg-blue-100 text-blue-600' :
-                                    item.type === 'deposit' ? 'bg-green-100 text-green-600' :
-                                        item.type === 'withdraw' ? 'bg-red-100 text-red-600' :
-                                            item.type === 'win' ? 'bg-green-100 text-green-600' :
-                                                'bg-amber-100 text-amber-600'}`}>
-                                {item.type === 'join' ? '👋' : item.type === 'deposit' ? '💰' : item.type === 'withdraw' ? '🏧' : item.type === 'win' ? '🏆' : '🎰'}
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm text-gray-800">
-                                    <span className="font-bold text-amber-900">{item.user}</span>
-                                    {' '}
-                                    {item.type === 'join' && <span className="text-gray-500">{t.feed_joined}</span>}
-                                    {item.type === 'deposit' && <span className="text-gray-500">{t.feed_deposit}: {item.amount} Pi</span>}
-                                    {item.type === 'withdraw' && <span className="text-gray-500">{t.feed_withdraw}: {item.amount} Pi</span>}
-                                    {item.type === 'win' && <span className="text-gray-500">{t.feed_win} <span className="font-bold text-green-600">{item.amount} Beans</span></span>}
-                                    {item.type === 'jackpot' && <span className="font-bold text-amber-600">{t.feed_jackpot} <span className="text-amber-800">({item.amount})</span></span>}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">{item.time}</p>
-                            </div>
+                                            item.type === 'deposit' ? 'bg-green-100 text-green-600' :
+                                                item.type === 'withdraw' ? 'bg-red-100 text-red-600' :
+                                                    item.type === 'win' ? 'bg-green-100 text-green-600' :
+                                                        'bg-amber-100 text-amber-600'}`}>
+                                        {item.type === 'join' ? '👋' : item.type === 'deposit' ? '💰' : item.type === 'withdraw' ? '🏧' : item.type === 'win' ? '🏆' : '🎰'}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-gray-800">
+                                            <span className="font-bold text-amber-900">{item.user}</span>
+                                            {' '}
+                                            {item.type === 'join' && <span className="text-gray-500">{t.feed_joined}</span>}
+                                            {item.type === 'deposit' && <span className="text-gray-500">{t.feed_deposit}: {item.amount} Pi</span>}
+                                            {item.type === 'withdraw' && <span className="text-gray-500">{t.feed_withdraw}: {item.amount} Pi</span>}
+                                            {item.type === 'win' && <span className="text-gray-500">{t.feed_win} <span className="font-bold text-green-600">{item.amount} Beans</span></span>}
+                                            {item.type === 'jackpot' && <span className="font-bold text-amber-600">{t.feed_jackpot} <span className="text-amber-800">({item.amount})</span></span>}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-1">{item.time}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-                    <p className="text-xs text-gray-400 italic">
-                        {t.recent_activity}
-                    </p>
+                        <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                            <p className="text-xs text-gray-400 italic">
+                                {t.recent_activity}
+                            </p>
+                        </div>
+                    </div>
                 </div>
+                {/* 右侧栏结束 (Right Column Ends Here) */}
+
             </div>
-                </div >
-            </div >
-        </div >
+            {/* Grid 结束 (End of Grid) */}
+
+        </div>
+        /* Page Container 结束 (End of Page Container) */
     );
 }
