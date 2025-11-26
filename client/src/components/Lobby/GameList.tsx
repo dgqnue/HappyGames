@@ -137,6 +137,39 @@ export default function GameList() {
             {/* Main Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
+                <div
+                    className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group transform hover:-translate-y-1"
+                    onClick={() => window.location.href = '/game/chinesechess'}
+                >
+                    <div className="absolute top-0 right-0 bg-gradient-to-bl from-red-500 to-rose-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-md z-10">
+                        NEW
+                    </div>
+                    <div className="flex items-start gap-5">
+                        <div className="w-20 h-20 bg-gradient-to-br from-red-200 to-rose-200 rounded-2xl flex items-center justify-center text-4xl shadow-inner group-hover:scale-110 transition-transform">
+                            🏮
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-bold text-amber-900">中国象棋</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className="px-2.5 py-0.5 bg-red-100 text-red-800 text-xs font-bold rounded-full border border-red-200">
+                                    Xiangqi
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-3 flex items-center gap-1">
+                                <span>🎯</span> 分级房间 | ELO排名
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                        <div className="text-sm text-gray-600">
+                            免费室 · 初级 · 中级 · 高级
+                        </div>
+                        <button className="text-red-600 font-bold text-sm hover:underline">
+                            进入 &rarr;
+                        </button>
+                    </div>
+                </div>
+
                 {/* Left Column: Stats & Games (2/3 width) */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Stats Row */}
@@ -199,39 +232,6 @@ export default function GameList() {
                     )}
 
                     {/* Game List */}
-                    <div
-                        className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group transform hover:-translate-y-1"
-                        onClick={() => window.location.href = '/game/chinesechess'}
-                    >
-                        <div className="absolute top-0 right-0 bg-gradient-to-bl from-red-500 to-rose-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-md z-10">
-                            NEW
-                        </div>
-                        <div className="flex items-start gap-5">
-                            <div className="w-20 h-20 bg-gradient-to-br from-red-200 to-rose-200 rounded-2xl flex items-center justify-center text-4xl shadow-inner group-hover:scale-110 transition-transform">
-                                🏮
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-amber-900">中国象棋</h3>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <span className="px-2.5 py-0.5 bg-red-100 text-red-800 text-xs font-bold rounded-full border border-red-200">
-                                        Xiangqi
-                                    </span>
-                                </div>
-                                <p className="text-sm text-gray-600 mt-3 flex items-center gap-1">
-                                    <span>🎯</span> 分级房间 | ELO排名
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
-                                免费室 · 初级 · 中级 · 高级
-                            </div>
-                            <button className="text-red-600 font-bold text-sm hover:underline">
-                                进入 &rarr;
-                            </button>
-                        </div>
-                    </div>
-
 
 
                     <div className="flex items-start gap-5">
