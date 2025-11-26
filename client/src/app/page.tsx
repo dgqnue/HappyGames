@@ -22,11 +22,15 @@ export default function Home() {
                 if (storedUser) {
                     const piUser = JSON.parse(storedUser);
                     // Fetch full profile from our backend to get _id and avatar
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: piUser.username, piId: piUser.uid })
+                        body: JSON.stringify({ username: piUser.username, piId: piUser.uid }),
+                        signal: controller.signal
                     });
+                    clearTimeout(timeoutId);
                     if (res.ok) {
                         const data = await res.json();
                         setUser(data.user);
@@ -155,11 +159,11 @@ export default function Home() {
                     </div>
                 )}
 
-            </div >
+            </div>
 
             {/* Decorative Elements */}
-            < div className="absolute top-20 left-20 w-32 h-32 bg-white/20 rounded-full blur-2xl animate-pulse" ></div >
+            <div className="absolute top-20 left-20 w-32 h-32 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
             <div className="absolute bottom-20 right-20 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl"></div>
-        </main >
+        </main>
     );
 }
