@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n';
 
 export default function GameList() {
+    const router = useRouter();
     const [socket, setSocket] = useState<any>(null);
     const [lobbyData, setLobbyData] = useState<any>(null);
     const [lobbyFeed, setLobbyFeed] = useState<any[]>([
@@ -205,7 +207,7 @@ export default function GameList() {
 
                     <div
                         className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group transform hover:-translate-y-1"
-                        onClick={() => window.location.href = '/game/chinesechess'}
+                        onClick={() => router.push('/game/chinesechess')}
                     >
                         <div className="absolute top-0 right-0 bg-gradient-to-bl from-red-500 to-rose-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-md z-10">
                             NEW
