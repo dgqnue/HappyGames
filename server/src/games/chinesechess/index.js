@@ -29,12 +29,20 @@ class ChineseChessManager {
 
     // Called by SocketDispatcher when user emits 'start_game'
     onPlayerJoin(socket, user) {
+        console.log(`Player ${user.username} joined Chinese Chess manager`);
         // Just register event listeners for this game type
         // Don't auto-join a room yet. Wait for user to request room list or join specific room.
 
         socket.on('get_rooms', ({ tier }) => {
-            const roomList = this.getRoomList(tier);
-            socket.emit('room_list', roomList);
+            console.log(`Player ${user.username} requested rooms for tier: ${tier}`);
+            if (this.rooms[tier]) {
+                const roomList = this.getRoomList(tier);
+                console.log(`Sending ${roomList.length} rooms to player`);
+                socket.emit('room_list', roomList);
+            } else {
+                console.error(`Invalid tier requested: ${tier}`);
+                socket.emit('room_list', []);
+            }
         });
 
         socket.on('chess_join', (data) => this.handleJoin(socket, data));
