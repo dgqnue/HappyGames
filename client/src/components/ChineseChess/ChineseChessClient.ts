@@ -66,4 +66,8 @@ export class ChineseChessClient extends BaseGameClient {
     public joinTier(tier: string) {
         this.socket.emit('chess_join', { tier });
     }
+
+    public joinRoom(tier: string, roomId: string) {
+        this.socket.emit('chess_join', { tier, roomId });
+    }
 }
