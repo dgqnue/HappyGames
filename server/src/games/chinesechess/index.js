@@ -18,13 +18,16 @@ class ChineseChessManager {
     initRooms() {
         // Create initial rooms for each tier
         const tiers = ['free', 'beginner', 'intermediate', 'advanced'];
+        console.log('[ChineseChess] Initializing rooms...');
         tiers.forEach(tier => {
             for (let i = 0; i < 3; i++) { // 3 rooms per tier initially
                 const roomId = `${this.gameType}_${tier}_${i}`;
                 const room = new ChineseChessRoom(roomId, this.io, tier);
                 this.rooms[tier].push(room);
+                console.log(`[ChineseChess] Created room: ${roomId}`);
             }
         });
+        console.log(`[ChineseChess] Total rooms created: ${Object.values(this.rooms).flat().length}`);
     }
 
     // Called by SocketDispatcher when user emits 'start_game'
@@ -119,12 +122,16 @@ class ChineseChessManager {
     }
 
     getRoomList(tier) {
-        return this.rooms[tier].map(room => ({
+        console.log(`[ChineseChess] getRoomList called for tier: ${tier}`);
+        console.log(`[ChineseChess] Rooms in tier ${tier}:`, this.rooms[tier].length);
+        const roomList = this.rooms[tier].map(room => ({
             id: room.roomId,
             status: room.status,
             players: Object.keys(room.players).filter(k => room.players[k]).length,
             spectators: room.spectators.length
         }));
+        console.log(`[ChineseChess] Returning room list:`, JSON.stringify(roomList));
+        return roomList;
     }
 }
 
