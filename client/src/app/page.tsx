@@ -25,6 +25,7 @@ export default function Home() {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    console.log('Auto-login checking:', apiUrl);
                     const res = await fetch(`${apiUrl}/api/users/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -62,6 +63,7 @@ export default function Home() {
 
             // 2. Send Pi User info to our backend to create session/account
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            console.log('Attempting login to:', apiUrl); // Debug log
             const res = await fetch(`${apiUrl}/api/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
