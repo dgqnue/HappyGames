@@ -16,16 +16,17 @@ export default function Home() {
 
     useEffect(() => {
         // Check if user is already logged in (Mock persistence)
-        const checkLogin = async () => {
+        const checkLogin = async (retryCount = 0) => {
             try {
                 const storedUser = localStorage.getItem('mock_pi_user');
                 if (storedUser) {
                     const piUser = JSON.parse(storedUser);
-                    // Fetch full profile from our backend to get _id and avatar
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-                    console.log('Auto-login checking:', apiUrl);
+                    console.log(`Auto-login attempt ${retryCount + 1}:`, apiUrl);
+
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 增加到10秒
+
                     const res = await fetch(`${apiUrl}/api/users/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -33,24 +34,44 @@ export default function Home() {
                         signal: controller.signal
                     });
                     clearTimeout(timeoutId);
+
                     if (res.ok) {
                         const data = await res.json();
                         if (data.token) {
                             localStorage.setItem('token', data.token);
                         }
                         setUser(data.user);
+                        console.log('Auto-login successful');
+                    } else {
+                        console.error('Auto-login failed with status:', res.status);
+                        // 如果失败且重试次数少于3次，则重试
+                        if (retryCount < 3) {
+                            console.log(`Retrying in ${(retryCount + 1) * 2} seconds...`);
+                            setTimeout(() => checkLogin(retryCount + 1), (retryCount + 1) * 2000);
+                            return; // 不要设置 isCheckingAuth 为 false
+                        }
                     }
                 }
-            } catch (error) {
-                console.error('Auto-login check failed', error);
+            } catch (error: any) {
+                console.error('Auto-login error:', error.message);
+                // 如果是超时或网络错误，且重试次数少于3次，则重试
+                if (retryCount < 3 && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+                    console.log(`Retrying in ${(retryCount + 1) * 2} seconds...`);
+                    setTimeout(() => checkLogin(retryCount + 1), (retryCount + 1) * 2000);
+                    return;
+                }
             } finally {
-                setIsCheckingAuth(false);
+                // 只有在不需要重试时才设置为 false
+                if (retryCount >= 3) {
+                    setIsCheckingAuth(false);
+                }
             }
+            setIsCheckingAuth(false);
         };
         checkLogin();
     }, []);
 
-    const handlePiLogin = async () => {
+    const handlePiLogin = async (retryCount = 0) => {
         setLoading(true);
 
         // Get referral code from URL if present
@@ -63,17 +84,23 @@ export default function Home() {
 
             // 2. Send Pi User info to our backend to create session/account
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            console.log('Attempting login to:', apiUrl); // Debug log
+            console.log(`Login attempt ${retryCount + 1} to:`, apiUrl);
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+
             const res = await fetch(`${apiUrl}/api/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: piUser.username,
                     piId: piUser.uid,
-                    avatar: '', // Mock SDK doesn't return avatar yet
+                    avatar: '',
                     referralCode: refCode
-                })
+                }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             if (res.ok) {
                 const data = await res.json();
@@ -83,11 +110,21 @@ export default function Home() {
                 setUser(data.user);
             } else {
                 const errData = await res.json();
-                alert('Login failed: ' + (errData.message || res.statusText));
+                if (retryCount < 2) {
+                    console.log(`Login failed, retrying in ${(retryCount + 1) * 2} seconds...`);
+                    setTimeout(() => handlePiLogin(retryCount + 1), (retryCount + 1) * 2000);
+                    return;
+                }
+                alert('登录失败: ' + (errData.message || res.statusText) + '\n请刷新页面重试');
             }
         } catch (error: any) {
             console.error('Login error:', error);
-            alert('Connection error: ' + error.message);
+            if (retryCount < 2 && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+                console.log(`Connection error, retrying in ${(retryCount + 1) * 2} seconds...`);
+                setTimeout(() => handlePiLogin(retryCount + 1), (retryCount + 1) * 2000);
+                return;
+            }
+            alert('连接错误: ' + error.message + '\n服务器可能正在唤醒，请等待30秒后刷新页面重试');
         } finally {
             setLoading(false);
         }
@@ -136,7 +173,7 @@ export default function Home() {
                         </p>
 
                         <button
-                            onClick={handlePiLogin}
+                            onClick={() => handlePiLogin(0)}
                             disabled={loading}
                             className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg transform transition hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                         >
