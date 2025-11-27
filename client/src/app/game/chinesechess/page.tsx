@@ -25,7 +25,8 @@ export default function ChineseChessCenter() {
             return;
         }
 
-        const newSocket = io({
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const newSocket = io(apiUrl, {
             auth: { token }
         });
 

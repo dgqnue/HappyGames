@@ -15,6 +15,7 @@ export default function ChineseChessPlay() {
     const [gameClient, setGameClient] = useState<ChineseChessClient | null>(null);
     const [gameState, setGameState] = useState<any>(null);
     const [socket, setSocket] = useState<any>(null);
+    const [rooms, setRooms] = useState<any[]>([]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -23,14 +24,13 @@ export default function ChineseChessPlay() {
             return;
         }
 
-        // Use relative path (default) to leverage Next.js rewrites
-        // This connects to window.location.origin, which is proxied to backend
-        const newSocket = io({
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const newSocket = io(apiUrl, {
             auth: { token }
         });
 
         newSocket.on('connect', () => {
-            console.log('Connected to Game Server');
+            console.log('[Socket] Connected to Game Server');
             const client = new ChineseChessClient(newSocket);
             client.init((state) => {
                 setGameState(state);
@@ -39,46 +39,30 @@ export default function ChineseChessPlay() {
                 }
             });
 
-            // Notify server we are in this game mode, but don't join a room yet
             newSocket.emit('start_game', 'chinesechess');
 
             setGameClient(client);
+            setSocket(newSocket);
             setStatus('lobby');
         });
-
-        setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
     }, [router]);
 
-    const handleFindMatch = () => {
-        if (!gameClient) return;
-        setStatus('matching');
-        // Auto-match in the selected tier
-        gameClient.joinTier(tier);
-    };
-
-    const handleMove = (fromX: number, fromY: number, toX: number, toY: number) => {
-        if (gameClient) {
-            gameClient.makeMove(fromX, fromY, toX, toY);
-        }
-    };
-
-    const [rooms, setRooms] = useState<any[]>([]);
-
     useEffect(() => {
         if (status === 'lobby' && socket) {
-            // Fetch rooms initially and set up listener
+            console.log('[Room List] Fetching rooms for tier:', tier);
             socket.emit('get_rooms', { tier });
 
             socket.on('room_list', (roomList: any[]) => {
+                console.log('[Room List] Received room list:', roomList);
                 setRooms(roomList);
             });
 
-            // Poll for room updates every 5 seconds
             const interval = setInterval(() => {
+                console.log('[Room List] Polling for room updates');
                 socket.emit('get_rooms', { tier });
             }, 5000);
 
@@ -89,9 +73,21 @@ export default function ChineseChessPlay() {
         }
     }, [status, socket, tier]);
 
+    const handleFindMatch = () => {
+        if (!gameClient) return;
+        setStatus('matching');
+        gameClient.joinTier(tier);
+    };
+
+    const handleMove = (fromX: number, fromY: number, toX: number, toY: number) => {
+        if (gameClient) {
+            gameClient.makeMove(fromX, fromY, toX, toY);
+        }
+    };
+
     const handleJoinRoom = (roomId: string) => {
         if (!gameClient) return;
-        setStatus('matching'); // Use matching state for loading
+        setStatus('matching');
         gameClient.joinRoom(tier, roomId);
     };
 
@@ -155,7 +151,7 @@ export default function ChineseChessPlay() {
                         ))}
                         {rooms.length === 0 && (
                             <div className="col-span-full text-center py-10 text-gray-500">
-                                暂无房间，点击“快速开始”创建一个
+                                暂无房间，点击"快速开始"创建一个
                             </div>
                         )}
                     </div>
@@ -182,7 +178,6 @@ export default function ChineseChessPlay() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100 p-4">
             <div className="max-w-4xl mx-auto">
-                {/* Header */}
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 mb-4 flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-amber-900">🏮 中国象棋</h1>
                     <button
@@ -193,7 +188,6 @@ export default function ChineseChessPlay() {
                     </button>
                 </div>
 
-                {/* Game Board */}
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6">
                     {gameState && gameState.status === 'playing' && gameState.board && (
                         <ChessBoard
