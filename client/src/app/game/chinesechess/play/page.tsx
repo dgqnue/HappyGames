@@ -28,11 +28,15 @@ export default function ChineseChessPlay() {
         console.log('Connecting to game server:', apiUrl);
 
         const newSocket = io(apiUrl, {
-            auth: { token }
+            auth: { token },
+            transports: ['websocket'], // Force WebSocket to avoid polling CORS issues
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000
         });
 
         newSocket.on('connect', () => {
-            console.log('[Socket] Connected to Game Server');
+            console.log('[Socket] Connected to Game Server via WebSocket');
             const client = new ChineseChessClient(newSocket);
             client.init((state) => {
                 setGameState(state);
@@ -49,7 +53,7 @@ export default function ChineseChessPlay() {
         });
 
         newSocket.on('connect_error', (err) => {
-            console.error('Socket connection error:', err);
+            console.error('Socket connection error:', err.message);
         });
 
         return () => {
@@ -62,23 +66,32 @@ export default function ChineseChessPlay() {
             console.log('[Room List] Fetching rooms for tier:', tier);
 
             const fetchRooms = () => {
-                socket.emit('get_rooms', { tier });
+                if (socket.connected) {
+                    console.log('[Room List] Emitting get_rooms');
+                    socket.emit('get_rooms', { tier });
+                } else {
+                    console.log('[Room List] Socket not connected, skipping fetch');
+                }
             };
 
             // Initial fetch
             fetchRooms();
 
             // Listen for room list
-            socket.on('room_list', (roomList: any[]) => {
+            const handleRoomList = (roomList: any[]) => {
                 console.log('[Room List] Received room list:', roomList);
-                setRooms(roomList);
-            });
+                if (Array.isArray(roomList)) {
+                    setRooms(roomList);
+                }
+            };
+
+            socket.on('room_list', handleRoomList);
 
             // Poll every 5 seconds
             const interval = setInterval(fetchRooms, 5000);
 
             return () => {
-                socket.off('room_list');
+                socket.off('room_list', handleRoomList);
                 clearInterval(interval);
             };
         }
@@ -152,8 +165,8 @@ export default function ChineseChessPlay() {
                                     onClick={() => handleJoinRoom(room.id)}
                                     disabled={room.status !== 'waiting' || room.players >= 2}
                                     className={`w-full py-2 rounded-lg font-bold transition-all ${room.status === 'waiting' && room.players < 2
-                                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                         }`}
                                 >
                                     {room.status === 'waiting' && room.players < 2 ? '加入游戏' : '已满员'}
