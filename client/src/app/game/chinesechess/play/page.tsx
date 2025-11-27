@@ -29,7 +29,7 @@ export default function ChineseChessPlay() {
 
         const newSocket = io(apiUrl, {
             auth: { token },
-            transports: ['polling', 'websocket'], // 恢复默认，允许轮询作为后备
+            transports: ['polling', 'websocket'], // Allow polling as fallback
             reconnection: true,
             reconnectionAttempts: 20,
             reconnectionDelay: 2000,
@@ -56,7 +56,6 @@ export default function ChineseChessPlay() {
         newSocket.on('connect_error', (err) => {
             console.error('Socket connection error:', err.message);
             console.error('Socket error details:', err);
-            // 如果是认证错误，可能需要重新登录
             if (err.message.includes('Authentication error') || err.message.includes('jwt')) {
                 alert('登录已过期，请重新登录');
                 localStorage.removeItem('token');
@@ -70,36 +69,61 @@ export default function ChineseChessPlay() {
     }, [router]);
 
     useEffect(() => {
-        if (status === 'lobby' && socket) {
-            console.log('[Room List] Fetching rooms for tier:', tier);
+        if (status === 'lobby') {
+            console.log('[Room List] Starting room fetch loop for tier:', tier);
 
-            const fetchRooms = () => {
-                if (socket.connected) {
-                    console.log('[Room List] Emitting get_rooms');
+            const fetchRoomsViaSocket = () => {
+                if (socket && socket.connected) {
+                    console.log('[Room List] Emitting get_rooms via Socket');
                     socket.emit('get_rooms', { tier });
-                } else {
-                    console.log('[Room List] Socket not connected, skipping fetch');
+                }
+            };
+
+            const fetchRoomsViaHttp = async () => {
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    console.log('[Room List] Fetching via HTTP:', `${apiUrl}/api/games/chinesechess/rooms?tier=${tier}`);
+                    const res = await fetch(`${apiUrl}/api/games/chinesechess/rooms?tier=${tier}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        console.log('[Room List] Received via HTTP:', data);
+                        if (Array.isArray(data)) {
+                            setRooms(data);
+                        }
+                    } else {
+                        console.warn('[Room List] HTTP fetch failed:', res.status);
+                    }
+                } catch (err) {
+                    console.error('[Room List] HTTP fetch error:', err);
                 }
             };
 
             // Initial fetch
-            fetchRooms();
+            fetchRoomsViaHttp();
+            fetchRoomsViaSocket();
 
-            // Listen for room list
+            // Listen for room list from socket
             const handleRoomList = (roomList: any[]) => {
-                console.log('[Room List] Received room list:', roomList);
+                console.log('[Room List] Received via Socket:', roomList);
                 if (Array.isArray(roomList)) {
                     setRooms(roomList);
                 }
             };
 
-            socket.on('room_list', handleRoomList);
+            if (socket) {
+                socket.on('room_list', handleRoomList);
+            }
 
-            // Poll every 5 seconds
-            const interval = setInterval(fetchRooms, 5000);
+            // Poll every 5 seconds (using both methods for redundancy)
+            const interval = setInterval(() => {
+                fetchRoomsViaHttp();
+                fetchRoomsViaSocket();
+            }, 5000);
 
             return () => {
-                socket.off('room_list', handleRoomList);
+                if (socket) {
+                    socket.off('room_list', handleRoomList);
+                }
                 clearInterval(interval);
             };
         }
