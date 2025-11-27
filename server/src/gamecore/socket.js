@@ -9,10 +9,13 @@ class SocketDispatcher {
     constructor(server) {
         this.io = socketIo(server, {
             cors: {
-                origin: true, // Allow all origins temporarily
-                methods: ["GET", "POST"],
-                credentials: true
-            }
+                origin: ['https://happygames.online', 'https://www.happygames.online', 'http://localhost:3000'],
+                methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                credentials: true,
+                allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+            },
+            allowEIO3: true, // 允许Engine.IO v3客户端
+            transports: ['websocket', 'polling'] // 明确支持两种传输方式
         });
         this.games = {}; // 存储游戏管理器实例
         this.loadGames();
