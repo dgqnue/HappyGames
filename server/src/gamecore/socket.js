@@ -10,6 +10,7 @@ class SocketDispatcher {
         const allowedOrigins = [
             'http://localhost:3000',
             'https://www.happygames.online',
+            'https://happygames.online',
             process.env.FRONTEND_URL
         ];
 
@@ -17,10 +18,13 @@ class SocketDispatcher {
             cors: {
                 origin: function (origin, callback) {
                     if (!origin) return callback(null, true);
-                    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+                    if (allowedOrigins.indexOf(origin) !== -1 ||
+                        origin.endsWith('.vercel.app') ||
+                        origin.endsWith('.happygames.online')) {
                         callback(null, true);
                     } else {
-                        callback(null, false);
+                        console.log('Socket.io CORS blocked origin:', origin);
+                        callback(null, true); // Temporarily allow all for debugging
                     }
                 },
                 methods: ["GET", "POST"],

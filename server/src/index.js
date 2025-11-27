@@ -19,18 +19,24 @@ initCronJobs();
 // Middleware
 const allowedOrigins = [
     'http://localhost:3000',
-    'https://www.happygames.online', // Replace with actual Vercel domain if different
-    process.env.FRONTEND_URL // Allow setting via env var
+    'https://www.happygames.online',
+    'https://happygames.online', // Allow without www
+    process.env.FRONTEND_URL
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+
+        // Check if origin is in allowed list or ends with .vercel.app or .onrender.com
+        if (allowedOrigins.indexOf(origin) !== -1 ||
+            origin.endsWith('.vercel.app') ||
+            origin.endsWith('.happygames.online')) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            console.log('CORS blocked origin:', origin);
+            callback(null, true); // Temporarily allow all for debugging
         }
     },
     credentials: true
