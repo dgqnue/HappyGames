@@ -24,7 +24,8 @@ export default function Home() {
                     // Fetch full profile from our backend to get _id and avatar
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
+                    // Use relative path for auto-login
+                    const res = await fetch('/api/users/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: piUser.username, piId: piUser.uid }),
@@ -60,7 +61,8 @@ export default function Home() {
             console.log('Pi Auth Success:', piUser);
 
             // 2. Send Pi User info to our backend to create session/account
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/login`, {
+            // Use relative path to leverage Next.js rewrites (proxies to backend)
+            const res = await fetch('/api/users/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

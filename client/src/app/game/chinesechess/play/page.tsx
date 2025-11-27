@@ -23,7 +23,9 @@ export default function ChineseChessPlay() {
             return;
         }
 
-        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+        // Use relative path (default) to leverage Next.js rewrites
+        // This connects to window.location.origin, which is proxied to backend
+        const newSocket = io({
             auth: { token }
         });
 

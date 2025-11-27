@@ -27,7 +27,7 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
     const [successData, setSuccessData] = useState<{ amount: number; orderId?: string } | null>(null);
 
     useEffect(() => {
-        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
+        const newSocket = io();
         setSocket(newSocket);
         return () => {
             newSocket.disconnect();
