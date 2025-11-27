@@ -29,14 +29,15 @@ export default function ChineseChessPlay() {
 
         const newSocket = io(apiUrl, {
             auth: { token },
-            transports: ['websocket'], // Force WebSocket to avoid polling CORS issues
+            transports: ['polling', 'websocket'], // 恢复默认，允许轮询作为后备
             reconnection: true,
-            reconnectionAttempts: 10,
-            reconnectionDelay: 1000
+            reconnectionAttempts: 20,
+            reconnectionDelay: 2000,
+            timeout: 20000
         });
 
         newSocket.on('connect', () => {
-            console.log('[Socket] Connected to Game Server via WebSocket');
+            console.log('[Socket] Connected to Game Server (ID:', newSocket.id, ')');
             const client = new ChineseChessClient(newSocket);
             client.init((state) => {
                 setGameState(state);
@@ -54,6 +55,13 @@ export default function ChineseChessPlay() {
 
         newSocket.on('connect_error', (err) => {
             console.error('Socket connection error:', err.message);
+            console.error('Socket error details:', err);
+            // 如果是认证错误，可能需要重新登录
+            if (err.message.includes('Authentication error') || err.message.includes('jwt')) {
+                alert('登录已过期，请重新登录');
+                localStorage.removeItem('token');
+                router.push('/');
+            }
         });
 
         return () => {
