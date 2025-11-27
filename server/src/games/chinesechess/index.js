@@ -89,14 +89,20 @@ class ChineseChessManager {
             this.rooms[tier].push(room);
         }
 
-        // Setup listeners
+        // 设置事件监听
         socket.on('chess_move', (move) => room.handleMove(socket, move));
 
-        // Remove listener on disconnect to prevent memory leaks if re-connecting
+        // 监听主动离开房间
+        socket.on('chess_leave', () => {
+            console.log(`[ChineseChess] Player ${socket.user.username} leaving room voluntarily`);
+            room.leave(socket);
+        });
+
+        // 断线处理
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', () => this.handleDisconnect(socket, room));
 
-        // Join room
+        // 加入房间
         await room.join(socket);
     }
 
@@ -116,9 +122,12 @@ class ChineseChessManager {
     }
 
     handleDisconnect(socket, room) {
-        // Handle player disconnect
-        // For now, just remove from room
-        // In production, might want to implement reconnect logic
+        console.log(`[ChineseChess] Player ${socket.user.username} disconnected`);
+
+        // 调用房间的断线处理方法
+        if (room) {
+            room.handlePlayerDisconnect(socket);
+        }
     }
 
     getRoomList(tier) {

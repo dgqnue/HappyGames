@@ -184,6 +184,84 @@ class ChineseChessRoom extends BaseGameRoom {
             players: this.players
         });
     }
+
+    /**
+     * 玩家主动离开房间
+     */
+    leave(socket) {
+        const userId = socket.user._id;
+        console.log(`[ChineseChess] Player ${socket.user.username} leaving room ${this.roomId}`);
+
+        // 从房间中移除 socket
+        socket.leave(this.roomId);
+
+        // 从玩家列表中移除
+        let wasPlayer = false;
+        if (this.players.r === userId) {
+            this.players.r = null;
+            wasPlayer = true;
+            console.log(`[ChineseChess] Removed player from Red position`);
+        } else if (this.players.b === userId) {
+            this.players.b = null;
+            wasPlayer = true;
+            console.log(`[ChineseChess] Removed player from Black position`);
+        }
+
+        // 从观众列表中移除
+        const spectatorIndex = this.spectators.indexOf(userId);
+        if (spectatorIndex > -1) {
+            this.spectators.splice(spectatorIndex, 1);
+            console.log(`[ChineseChess] Removed player from spectators`);
+        }
+
+        // 如果是游戏中的玩家离开，重置游戏
+        if (wasPlayer && this.status === 'playing') {
+            console.log(`[ChineseChess] Player left during game, resetting room`);
+            this.resetGame();
+        }
+
+        // 如果房间空了，重置状态
+        if (!this.players.r && !this.players.b && this.spectators.length === 0) {
+            console.log(`[ChineseChess] Room is empty, resetting`);
+            this.resetGame();
+        }
+
+        // 广播更新后的房间状态
+        this.broadcastState();
+    }
+
+    /**
+     * 处理玩家断线
+     */
+    handlePlayerDisconnect(socket) {
+        const userId = socket.user._id;
+        console.log(`[ChineseChess] Player ${socket.user.username} disconnected from room ${this.roomId}`);
+
+        // 检查是否是游戏中的玩家
+        let wasPlayer = false;
+        let playerSide = null;
+
+        if (this.players.r === userId) {
+            wasPlayer = true;
+            playerSide = 'r';
+        } else if (this.players.b === userId) {
+            wasPlayer = true;
+            playerSide = 'b';
+        }
+
+        // 如果是游戏中的玩家断线
+        if (wasPlayer && this.status === 'playing') {
+            console.log(`[ChineseChess] Player disconnected during game, opponent wins`);
+
+            // 对手获胜
+            const winner = playerSide === 'r' ? 'b' : 'r';
+            this.endGame(winner);
+        } else {
+            // 非游戏中断线，直接清理
+            this.leave(socket);
+        }
+    }
 }
 
 module.exports = ChineseChessRoom;
+
