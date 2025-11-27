@@ -16,7 +16,6 @@ export default function ChineseChessPlay() {
     const [gameState, setGameState] = useState<any>(null);
     const [socket, setSocket] = useState<any>(null);
     const [rooms, setRooms] = useState<any[]>([]);
-    const [connectionError, setConnectionError] = useState<string | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -26,25 +25,14 @@ export default function ChineseChessPlay() {
         }
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        const newSocket = io(apiUrl, {
-            auth: { token },
-            reconnection: true,
-            reconnectionAttempts: 5,
-            timeout: 10000
-        });
+        console.log('Connecting to game server:', apiUrl);
 
-        // Connection timeout handler
-        const timeoutId = setTimeout(() => {
-            if (newSocket.connected === false) {
-                setConnectionError('连接服务器超时，请检查网络或刷新页面');
-            }
-        }, 15000);
+        const newSocket = io(apiUrl, {
+            auth: { token }
+        });
 
         newSocket.on('connect', () => {
             console.log('[Socket] Connected to Game Server');
-            clearTimeout(timeoutId);
-            setConnectionError(null);
-
             const client = new ChineseChessClient(newSocket);
             client.init((state) => {
                 setGameState(state);
@@ -62,44 +50,36 @@ export default function ChineseChessPlay() {
 
         newSocket.on('connect_error', (err) => {
             console.error('Socket connection error:', err);
-            // Don't show error immediately, let retry logic handle it first
         });
 
         return () => {
-            clearTimeout(timeoutId);
             newSocket.disconnect();
         };
     }, [router]);
 
     useEffect(() => {
         if (status === 'lobby' && socket) {
-            console.log('[Room List] Starting room fetch for tier:', tier);
+            console.log('[Room List] Fetching rooms for tier:', tier);
 
             const fetchRooms = () => {
-                if (socket.connected) {
-                    console.log('[Room List] Emitting get_rooms');
-                    socket.emit('get_rooms', { tier });
-                }
+                socket.emit('get_rooms', { tier });
             };
 
-            // Initial fetch with a slight delay to ensure server listeners are ready
-            const initialTimeout = setTimeout(fetchRooms, 500);
+            // Initial fetch
+            fetchRooms();
 
             // Listen for room list
-            const handleRoomList = (roomList: any[]) => {
+            socket.on('room_list', (roomList: any[]) => {
                 console.log('[Room List] Received room list:', roomList);
                 setRooms(roomList);
-            };
+            });
 
-            socket.on('room_list', handleRoomList);
-
-            // Poll every 3 seconds
-            const interval = setInterval(fetchRooms, 3000);
+            // Poll every 5 seconds
+            const interval = setInterval(fetchRooms, 5000);
 
             return () => {
-                clearTimeout(initialTimeout);
+                socket.off('room_list');
                 clearInterval(interval);
-                socket.off('room_list', handleRoomList);
             };
         }
     }, [status, socket, tier]);
@@ -122,28 +102,10 @@ export default function ChineseChessPlay() {
         gameClient.joinRoom(tier, roomId);
     };
 
-    if (connectionError) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100 p-4">
-                <div className="text-xl font-bold text-red-600 mb-4">⚠️ {connectionError}</div>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-                >
-                    刷新页面
-                </button>
-            </div>
-        );
-    }
-
     if (status === 'connecting') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
-                <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <div className="text-xl font-bold text-amber-900">连接服务器中...</div>
-                    <div className="text-sm text-gray-500 mt-2">首次连接可能需要几十秒唤醒服务器</div>
-                </div>
+                <div className="text-2xl font-bold text-amber-900 animate-pulse">连接服务器中...</div>
             </div>
         );
     }
