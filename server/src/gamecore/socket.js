@@ -7,26 +7,9 @@ const UserGameStats = require('../models/UserGameStats');
 
 class SocketDispatcher {
     constructor(server) {
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'https://www.happygames.online',
-            'https://happygames.online',
-            process.env.FRONTEND_URL
-        ];
-
         this.io = socketIo(server, {
             cors: {
-                origin: function (origin, callback) {
-                    if (!origin) return callback(null, true);
-                    if (allowedOrigins.indexOf(origin) !== -1 ||
-                        origin.endsWith('.vercel.app') ||
-                        origin.endsWith('.happygames.online')) {
-                        callback(null, true);
-                    } else {
-                        console.log('Socket.io CORS blocked origin:', origin);
-                        callback(null, true); // Temporarily allow all for debugging
-                    }
-                },
+                origin: true, // Allow all origins temporarily
                 methods: ["GET", "POST"],
                 credentials: true
             }
@@ -63,10 +46,6 @@ class SocketDispatcher {
         // 鉴权中间件
         this.io.use(async (socket, next) => {
             const token = socket.handshake.auth.token;
-            // For development/demo, if no token, maybe allow guest or fail?
-            // The user's spec says: if (!user) return next(new Error("S001: Unauthorized"));
-            // But existing client might not send token yet. 
-            // I will implement strict check as requested, but might need to update client.
 
             // Allow skipping auth if explicitly requested for testing (optional, but good for dev)
             if (process.env.SKIP_AUTH === 'true') {
@@ -76,8 +55,6 @@ class SocketDispatcher {
 
             const user = await verifyToken(token);
             if (!user) {
-                // For backward compatibility during migration, maybe allow if no token?
-                // No, "faithfully implement".
                 return next(new Error("S001: Unauthorized"));
             }
             socket.user = user;

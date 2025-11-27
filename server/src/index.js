@@ -25,22 +25,14 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        // Check if origin is in allowed list or ends with .vercel.app or .onrender.com
-        if (allowedOrigins.indexOf(origin) !== -1 ||
-            origin.endsWith('.vercel.app') ||
-            origin.endsWith('.happygames.online')) {
-            callback(null, true);
-        } else {
-            console.log('CORS blocked origin:', origin);
-            callback(null, true); // Temporarily allow all for debugging
-        }
-    },
-    credentials: true
+    origin: true, // Allow all origins temporarily
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Handle preflight requests for all routes
+app.options('*', cors());
 app.use(express.json());
 
 // Connect Database
