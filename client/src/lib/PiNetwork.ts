@@ -19,17 +19,18 @@ export const Pi = {
                     return;
                 }
 
-                // 2. Generate a FIXED mock user for development stability
-                // Using a fixed ID ensures we don't keep creating new users and hitting DB limits or conflicts
+                // 2. Generate a RANDOM mock user for development testing
+                // This allows multiple devices/browsers to simulate different users
+                const randomId = Math.floor(Math.random() * 10000);
                 const mockUser = {
-                    uid: 'pi_user_dev_001',
-                    username: 'Pi_Dev_User',
-                    accessToken: 'mock_access_token_dev'
+                    uid: `pi_user_dev_${randomId}`,
+                    username: `Dev_User_${randomId}`,
+                    accessToken: `mock_access_token_${randomId}`
                 };
 
                 // Save to localStorage
                 localStorage.setItem('mock_pi_user', JSON.stringify(mockUser));
-                console.log('Created Fixed Mock User');
+                console.log('Created Random Mock User:', mockUser.username);
 
                 resolve(mockUser);
             }, 800);

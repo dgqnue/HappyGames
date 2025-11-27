@@ -63,39 +63,6 @@ export default function ChineseChessPlay() {
 
     if (status === 'connecting') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
-                <div className="text-2xl font-bold text-amber-900 animate-pulse">连接服务器中...</div>
-            </div>
-        );
-    }
-
-    if (status === 'lobby') {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100 p-4">
-                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-                    <h1 className="text-3xl font-bold text-amber-900 mb-2">🏮 准备开始</h1>
-                    <p className="text-gray-600 mb-8">当前房间: {tier === 'free' ? '免费室' : tier === 'beginner' ? '初级室' : '高级室'}</p>
-
-                    <button
-                        onClick={handleFindMatch}
-                        className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xl font-bold rounded-xl shadow-lg transform transition hover:scale-105 mb-4"
-                    >
-                        开始匹配
-                    </button>
-
-                    <button
-                        onClick={() => router.push('/game/chinesechess')}
-                        className="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition-all"
-                    >
-                        返回房间列表
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    if (status === 'matching') {
-        return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
                 <div className="text-3xl font-bold text-amber-900 mb-4 animate-bounce">🔍 寻找对手中...</div>
                 <p className="text-gray-600">请稍候，正在为您匹配旗鼓相当的对手</p>
