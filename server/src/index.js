@@ -9,35 +9,34 @@ const initCronJobs = require('./cron/eloCron');
 const app = express();
 const server = http.createServer(app);
 
+console.log('[Server] Starting HappyGames server...');
+
+// CORS配置必须在所有中间件之前
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    console.log(`[CORS] Request from origin: ${origin}`);
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+app.use(express.json());
+
+console.log('[Server] Initializing Socket Dispatcher...');
 // Initialize Socket Dispatcher (handles IO and game logic)
 new SocketDispatcher(server);
 
+console.log('[Server] Initializing Cron Jobs...');
 // Initialize Cron Jobs
 initCronJobs();
 
-// Middleware
-// Middleware
-const allowedOrigins = [
-    'http://localhost:3000',
-    'https://www.happygames.online',
-    'https://happygames.online', // Allow without www
-    process.env.FRONTEND_URL
-];
-
-app.use(cors({
-    origin: (origin, callback) => {
-        // 允许所有来源（用于调试）
-        callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-// Handle preflight requests for all routes
-app.options('*', cors());
-app.use(express.json());
-
+console.log('[Server] Connecting to database...');
 // Connect Database
 connectDB();
 
@@ -51,5 +50,6 @@ app.use('/api', require('./routes/settle')); // Register settlement route
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`[Server] ✓ Server running on port ${PORT}`);
+    console.log(`[Server] ✓ Ready to accept connections`);
 });
