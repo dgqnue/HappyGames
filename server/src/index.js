@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const cors = require('cors');
+// const cors = require('cors'); // Remove cors package usage to avoid conflicts
 const connectDB = require('./config/db');
 const SocketDispatcher = require('./gamecore/socket');
 const initCronJobs = require('./cron/eloCron');
@@ -11,42 +11,69 @@ const server = http.createServer(app);
 
 console.log('[Server] Starting HappyGames server...');
 
-// CORS配置必须在所有中间件之前
+// Global Middleware for CORS and Logging
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    // console.log(`[CORS] Request from origin: ${origin}`);
-    res.header('Access-Control-Allow-Origin', origin || '*');
+
+    // List of allowed origins
+    const allowedOrigins = [
+        'https://www.happygames.online',
+        'https://happygames.online',
+        'http://localhost:3000',
+        'http://localhost:3001'
+    ];
+
+    // Allow if origin is in the list, or allow all for development
+    if (allowedOrigins.includes(origin) || !origin || process.env.NODE_ENV === 'development') {
+        res.header('Access-Control-Allow-Origin', origin || '*');
+    } else {
+        res.header('Access-Control-Allow-Origin', 'https://www.happygames.online');
+    }
+
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
 
+    // Handle preflight requests
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
+
+    // Simple request logging
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
 app.use(express.json());
 
+// Initialize Socket Dispatcher
 console.log('[Server] Initializing Socket Dispatcher...');
-// Initialize Socket Dispatcher (handles IO and game logic)
 const socketDispatcher = new SocketDispatcher(server);
 
-console.log('[Server] Initializing Cron Jobs...');
 // Initialize Cron Jobs
-initCronJobs();
+console.log('[Server] Initializing Cron Jobs...');
+try {
+    initCronJobs();
+} catch (err) {
+    console.error('[Server] Failed to init cron jobs:', err);
+}
 
-console.log('[Server] Connecting to database...');
 // Connect Database
-connectDB();
+console.log('[Server] Connecting to database...');
+connectDB().catch(err => {
+    console.error('[Server] Database connection failed:', err);
+    // Don't exit process, let it retry or run without DB for static parts
+});
 
 // Routes
 app.get('/', (req, res) => {
     res.send('HappyGames API is running');
 });
+
+// API Routes
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/wallet', require('./routes/walletRoutes'));
-app.use('/api', require('./routes/settle')); // Register settlement route
+app.use('/api', require('./routes/settle'));
 
 // [NEW] HTTP Endpoint to get rooms (Fallback for Socket.io)
 app.get('/api/games/:gameId/rooms', (req, res) => {
@@ -56,18 +83,22 @@ app.get('/api/games/:gameId/rooms', (req, res) => {
     try {
         const game = socketDispatcher.games[gameId];
         if (!game) {
+            console.warn(`[API] Game not found: ${gameId}`);
             return res.status(404).json({ message: 'Game not found' });
         }
 
-        // Assuming getRoomList returns the list of rooms
-        // We need to make sure getRoomList is synchronous or handle promise if async
-        // Based on previous code, it seems synchronous but let's check
         const rooms = game.getRoomList(tier || 'free');
         res.json(rooms);
     } catch (error) {
         console.error('[API] Error fetching rooms:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
+});
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error('[Server] Unhandled Error:', err);
+    res.status(500).json({ message: 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;

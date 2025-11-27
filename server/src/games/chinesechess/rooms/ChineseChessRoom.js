@@ -5,7 +5,7 @@ const EloService = require('../../../gamecore/EloService');
 
 class ChineseChessRoom extends BaseGameRoom {
     constructor(roomId, io, tier) {
-        super(roomId, io);
+        super(io, roomId);
         this.tier = tier; // 'free', 'beginner', 'intermediate', 'advanced'
         this.gameType = 'chinesechess';
         this.resetGame();

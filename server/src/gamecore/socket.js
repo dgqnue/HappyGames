@@ -10,8 +10,20 @@ class SocketDispatcher {
         this.io = socketIo(server, {
             cors: {
                 origin: (origin, callback) => {
-                    // 允许所有来源（用于调试）
-                    callback(null, true);
+                    const allowedOrigins = [
+                        'https://www.happygames.online',
+                        'https://happygames.online',
+                        'http://localhost:3000',
+                        'http://localhost:3001'
+                    ];
+
+                    // Allow if origin is in whitelist or if no origin (mobile apps, etc.)
+                    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+                        callback(null, true);
+                    } else {
+                        callback(null, true); // Still allow but log it
+                        console.warn(`[Socket.IO] Connection from non-whitelisted origin: ${origin}`);
+                    }
                 },
                 methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 credentials: true,

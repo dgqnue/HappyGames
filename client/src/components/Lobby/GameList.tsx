@@ -306,7 +306,7 @@ export default function GameList() {
             </div>
             {/* Grid 结束 (End of Grid) */}
 
+            {/* Page Container 结束 (End of Page Container) */}
         </div>
-        /* Page Container 结束 (End of Page Container) */
     );
 }
