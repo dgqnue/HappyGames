@@ -7,10 +7,24 @@ const UserGameStats = require('../models/UserGameStats');
 
 class SocketDispatcher {
     constructor(server) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'https://www.happygames.online',
+            process.env.FRONTEND_URL
+        ];
+
         this.io = socketIo(server, {
             cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
+                origin: function (origin, callback) {
+                    if (!origin) return callback(null, true);
+                    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+                        callback(null, true);
+                    } else {
+                        callback(null, false);
+                    }
+                },
+                methods: ["GET", "POST"],
+                credentials: true
             }
         });
         this.games = {}; // 存储游戏管理器实例

@@ -4,11 +4,11 @@ const nextConfig = {
         return [
             {
                 source: '/api/:path*',
-                destination: 'http://localhost:5000/api/:path*',
+                destination: `${process.env.API_URL || 'http://localhost:5000'}/api/:path*`,
             },
             {
                 source: '/socket.io/:path*',
-                destination: 'http://localhost:5000/socket.io/:path*', // Proxy socket.io
+                destination: `${process.env.API_URL || 'http://localhost:5000'}/socket.io/:path*`,
             }
         ];
     },
