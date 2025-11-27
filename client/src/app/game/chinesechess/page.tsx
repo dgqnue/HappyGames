@@ -42,35 +42,33 @@ export default function ChineseChessCenter() {
 
         setSocket(newSocket);
 
+        // Set a fallback timeout to stop loading if server is slow
+        const timer = setTimeout(() => setLoading(false), 2000);
+
         return () => {
             newSocket.disconnect();
+            clearTimeout(timer);
         };
     }, [router]);
 
     const handleEnterRoom = (tier: string) => {
         if (!socket) return;
-
-        socket.emit('start_game', 'chinesechess');
-        socket.emit('chess_join', { tier });
-
-        // Navigate to game board
+        // Don't emit start_game here, let the play page handle it
         router.push(`/game/chinesechess/play?tier=${tier}`);
     };
 
     const canAccessTier = (tier: any) => {
-        if (!userStats) return false;
-        if (tier.id === 'free') return true;
+        // If stats not loaded yet, default to allowing free room
+        if (!userStats) return tier.id === 'free';
 
+        if (tier.id === 'free') return true;
         const rating = userStats.rating || 1200;
         return rating >= tier.minRating && rating <= tier.maxRating;
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
-                <div className="text-2xl font-bold text-amber-900">加载中...</div>
-            </div>
-        );
+        // Show a lighter loading state or just render with defaults
+        // For now, let's keep it but make it faster/timeout
     }
 
     return (

@@ -27,12 +27,25 @@ class ChineseChessManager {
         });
     }
 
+    // Called by SocketDispatcher when user emits 'start_game'
+    onPlayerJoin(socket, user) {
+        // Just register event listeners for this game type
+        // Don't auto-join a room yet. Wait for user to request room list or join specific room.
+
+        socket.on('get_rooms', ({ tier }) => {
+            const roomList = this.getRoomList(tier);
+            socket.emit('room_list', roomList);
+        });
+
+        socket.on('chess_join', (data) => this.handleJoin(socket, data));
+    }
+
     async handleJoin(socket, data) {
-        const { tier } = data;
+        const { tier, roomId } = data;
 
         // Get user's rating
         const stats = await UserGameStats.findOne({
-            userId: socket.user.id,
+            userId: socket.user._id,
             gameType: this.gameType
         });
         const rating = stats ? stats.rating : 1200;
@@ -46,18 +59,30 @@ class ChineseChessManager {
             return;
         }
 
-        // Find available room
-        let room = this.rooms[tier].find(r => r.status === 'waiting' && (!r.players.r || !r.players.b));
+        let room;
+        if (roomId) {
+            // Join specific room
+            room = this.rooms[tier].find(r => r.roomId === roomId);
+        } else {
+            // Auto-match (find first available)
+            room = this.rooms[tier].find(r => r.status === 'waiting' && (!r.players.r || !r.players.b));
+        }
 
         if (!room) {
-            // Create new room if all are full
-            const roomId = `${this.gameType}_${tier}_${this.rooms[tier].length}`;
-            room = new ChineseChessRoom(roomId, this.io, tier);
+            if (roomId) {
+                return socket.emit('error', { message: 'Room not found' });
+            }
+            // Create new room if all are full (for auto-match)
+            const newRoomId = `${this.gameType}_${tier}_${this.rooms[tier].length}`;
+            room = new ChineseChessRoom(newRoomId, this.io, tier);
             this.rooms[tier].push(room);
         }
 
         // Setup listeners
         socket.on('chess_move', (move) => room.handleMove(socket, move));
+
+        // Remove listener on disconnect to prevent memory leaks if re-connecting
+        socket.removeAllListeners('disconnect');
         socket.on('disconnect', () => this.handleDisconnect(socket, room));
 
         // Join room

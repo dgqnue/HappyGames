@@ -11,6 +11,7 @@ export default function ChineseChessPlay() {
     const searchParams = useSearchParams();
     const tier = searchParams.get('tier') || 'free';
 
+    const [status, setStatus] = useState<'connecting' | 'lobby' | 'matching' | 'playing'>('connecting');
     const [gameClient, setGameClient] = useState<ChineseChessClient | null>(null);
     const [gameState, setGameState] = useState<any>(null);
 
@@ -21,23 +22,38 @@ export default function ChineseChessPlay() {
             return;
         }
 
-        const socket = io('http://localhost:5000', {
+        const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
             auth: { token }
         });
 
         socket.on('connect', () => {
+            console.log('Connected to Game Server');
             const client = new ChineseChessClient(socket);
             client.init((state) => {
                 setGameState(state);
+                if (state.status === 'playing') {
+                    setStatus('playing');
+                }
             });
-            client.joinTier(tier);
+
+            // Notify server we are in this game mode, but don't join a room yet
+            socket.emit('start_game', 'chinesechess');
+
             setGameClient(client);
+            setStatus('lobby');
         });
 
         return () => {
             socket.disconnect();
         };
-    }, [tier, router]);
+    }, [router]);
+
+    const handleFindMatch = () => {
+        if (!gameClient) return;
+        setStatus('matching');
+        // Auto-match in the selected tier
+        gameClient.joinTier(tier);
+    };
 
     const handleMove = (fromX: number, fromY: number, toX: number, toY: number) => {
         if (gameClient) {
@@ -45,10 +61,50 @@ export default function ChineseChessPlay() {
         }
     };
 
-    if (!gameState) {
+    if (status === 'connecting') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
-                <div className="text-2xl font-bold text-amber-900">等待对手...</div>
+                <div className="text-2xl font-bold text-amber-900 animate-pulse">连接服务器中...</div>
+            </div>
+        );
+    }
+
+    if (status === 'lobby') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100 p-4">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+                    <h1 className="text-3xl font-bold text-amber-900 mb-2">🏮 准备开始</h1>
+                    <p className="text-gray-600 mb-8">当前房间: {tier === 'free' ? '免费室' : tier === 'beginner' ? '初级室' : '高级室'}</p>
+
+                    <button
+                        onClick={handleFindMatch}
+                        className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xl font-bold rounded-xl shadow-lg transform transition hover:scale-105 mb-4"
+                    >
+                        开始匹配
+                    </button>
+
+                    <button
+                        onClick={() => router.push('/game/chinesechess')}
+                        className="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                        返回房间列表
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === 'matching') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
+                <div className="text-3xl font-bold text-amber-900 mb-4 animate-bounce">🔍 寻找对手中...</div>
+                <p className="text-gray-600">请稍候，正在为您匹配旗鼓相当的对手</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="mt-8 px-6 py-2 text-gray-500 hover:text-gray-700 underline"
+                >
+                    取消
+                </button>
             </div>
         );
     }
@@ -69,13 +125,7 @@ export default function ChineseChessPlay() {
 
                 {/* Game Board */}
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                    {gameState.status === 'waiting' && (
-                        <div className="text-center text-xl font-bold text-amber-900 mb-4">
-                            等待对手加入...
-                        </div>
-                    )}
-
-                    {gameState.status === 'playing' && gameState.board && (
+                    {gameState && gameState.status === 'playing' && gameState.board && (
                         <ChessBoard
                             board={gameState.board}
                             turn={gameState.turn}
@@ -84,16 +134,24 @@ export default function ChineseChessPlay() {
                         />
                     )}
 
-                    {gameState.status === 'ended' && (
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-amber-900 mb-4">
-                                {gameState.winner === gameState.mySide ? '🎉 你赢了!' : '😢 你输了'}
+                    {gameState && gameState.status === 'ended' && (
+                        <div className="text-center py-10">
+                            <div className="text-4xl font-bold text-amber-900 mb-6">
+                                {gameState.winner === gameState.mySide ? '🎉 恭喜获胜!' : '😢 遗憾落败'}
                             </div>
                             {gameState.elo && (
-                                <div className="text-lg text-gray-700">
-                                    等级分变化: {gameState.elo.playerA?.delta > 0 ? '+' : ''}{gameState.elo.playerA?.delta}
+                                <div className="text-xl text-gray-700 mb-8">
+                                    等级分变化: <span className={gameState.elo.playerA?.delta > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                        {gameState.elo.playerA?.delta > 0 ? '+' : ''}{gameState.elo.playerA?.delta}
+                                    </span>
                                 </div>
                             )}
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-transform hover:scale-105"
+                            >
+                                再来一局
+                            </button>
                         </div>
                     )}
                 </div>
