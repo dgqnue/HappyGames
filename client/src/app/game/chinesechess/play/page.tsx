@@ -64,6 +64,10 @@ export default function ChineseChessPlay() {
         });
 
         return () => {
+            // 主动离开房间
+            if (gameClient) {
+                gameClient.leave();
+            }
             newSocket.disconnect();
         };
     }, [router]);
@@ -147,6 +151,13 @@ export default function ChineseChessPlay() {
         gameClient.joinRoom(tier, roomId);
     };
 
+    const handleLeaveRoom = () => {
+        if (gameClient) {
+            gameClient.leave();
+        }
+        router.push('/game/chinesechess');
+    };
+
     if (status === 'connecting') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
@@ -172,7 +183,7 @@ export default function ChineseChessPlay() {
                                 ⚡ 快速开始
                             </button>
                             <button
-                                onClick={() => router.push('/game/chinesechess')}
+                                onClick={handleLeaveRoom}
                                 className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition-all"
                             >
                                 退出房间
@@ -237,7 +248,7 @@ export default function ChineseChessPlay() {
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 mb-4 flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-amber-900">🏮 中国象棋</h1>
                     <button
-                        onClick={() => router.push('/game/chinesechess')}
+                        onClick={handleLeaveRoom}
                         className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all"
                     >
                         退出

@@ -45,18 +45,20 @@ class ChineseChessRoom extends BaseGameRoom {
     }
 
     async join(socket) {
+        const userId = socket.user._id.toString();
+
         // Check if player is already in
-        if (this.players.r === socket.user.id || this.players.b === socket.user.id) {
+        if (this.players.r === userId || this.players.b === userId) {
             return this.sendState(socket);
         }
 
         // Try to seat player
         if (!this.players.r) {
-            this.players.r = socket.user.id;
+            this.players.r = userId;
         } else if (!this.players.b) {
-            this.players.b = socket.user.id;
+            this.players.b = userId;
         } else {
-            this.spectators.push(socket.user.id);
+            this.spectators.push(userId);
         }
 
         socket.join(this.roomId);
@@ -80,7 +82,7 @@ class ChineseChessRoom extends BaseGameRoom {
         if (this.status !== 'playing') return;
 
         const { fromX, fromY, toX, toY } = move;
-        const userId = socket.user.id;
+        const userId = socket.user._id.toString();
 
         // Validate Turn
         const side = this.players.r === userId ? 'r' : (this.players.b === userId ? 'b' : null);
@@ -189,7 +191,7 @@ class ChineseChessRoom extends BaseGameRoom {
      * 玩家主动离开房间
      */
     leave(socket) {
-        const userId = socket.user._id;
+        const userId = socket.user._id.toString();
         console.log(`[ChineseChess] Player ${socket.user.username} leaving room ${this.roomId}`);
 
         // 从房间中移除 socket
@@ -234,7 +236,7 @@ class ChineseChessRoom extends BaseGameRoom {
      * 处理玩家断线
      */
     handlePlayerDisconnect(socket) {
-        const userId = socket.user._id;
+        const userId = socket.user._id.toString();
         console.log(`[ChineseChess] Player ${socket.user.username} disconnected from room ${this.roomId}`);
 
         // 检查是否是游戏中的玩家

@@ -70,4 +70,9 @@ export class ChineseChessClient extends BaseGameClient {
     public joinRoom(tier: string, roomId: string) {
         this.socket.emit('chess_join', { tier, roomId });
     }
+
+    public leave() {
+        console.log('[ChineseChessClient] Leaving room');
+        this.socket.emit('chess_leave');
+    }
 }
