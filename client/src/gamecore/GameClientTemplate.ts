@@ -111,10 +111,24 @@ export abstract class GameClientTemplate {
      * 加入指定房间
      */
     public joinRoom(tier: string, roomId: string): void {
-        console.log(`[${this.gameType}Client] Joining room:`, roomId);
+        console.log(`[${this.gameType}Client] joinRoom called`);
+        console.log(`[${this.gameType}Client] - tier:`, tier);
+        console.log(`[${this.gameType}Client] - roomId:`, roomId);
+        console.log(`[${this.gameType}Client] - socket connected:`, this.socket.connected);
+        console.log(`[${this.gameType}Client] - socket id:`, this.socket.id);
+
         this.currentTier = tier;
         this.currentRoomId = roomId;
-        this.socket.emit(`${this.gameType}_join`, { tier, roomId });
+
+        const eventName = `${this.gameType}_join`;
+        const data = { tier, roomId };
+
+        console.log(`[${this.gameType}Client] Emitting event:`, eventName);
+        console.log(`[${this.gameType}Client] Event data:`, data);
+
+        this.socket.emit(eventName, data);
+
+        console.log(`[${this.gameType}Client] Event emitted successfully`);
     }
 
     /**

@@ -112,40 +112,64 @@ class BaseGameManager {
      * 处理玩家加入游戏桌请求
      */
     async handleJoin(socket, data) {
+        console.log(`[${this.gameType}] handleJoin called`);
+        console.log(`[${this.gameType}] - socket.user:`, socket.user);
+        console.log(`[${this.gameType}] - data:`, data);
+
         const { tier, roomId } = data;
 
+        console.log(`[${this.gameType}] - tier:`, tier);
+        console.log(`[${this.gameType}] - roomId:`, roomId);
+
         // 获取用户等级分
+        console.log(`[${this.gameType}] Fetching user stats...`);
         const stats = await UserGameStats.findOne({
             userId: socket.user._id,
             gameType: this.gameType
         });
         const rating = stats ? stats.rating : 1200;
+        console.log(`[${this.gameType}] User rating:`, rating);
 
         // 验证等级分权限
+        console.log(`[${this.gameType}] Checking tier access...`);
         if (!this.canAccessTier(tier, rating)) {
+            console.log(`[${this.gameType}] Access denied for tier:`, tier);
             socket.emit('error', {
                 code: 'TIER_RESTRICTED',
                 message: 'Your rating does not allow access to this game room tier.'
             });
             return;
         }
+        console.log(`[${this.gameType}] Tier access granted`);
 
         // 查找或创建游戏桌
+        console.log(`[${this.gameType}] Finding room...`);
         let room = this.findRoom(tier, roomId);
+        console.log(`[${this.gameType}] Room found:`, room ? room.roomId : 'null');
 
         if (!room) {
             if (roomId) {
+                console.error(`[${this.gameType}] Room not found:`, roomId);
                 return socket.emit('error', { message: 'Game table not found' });
             }
             // 创建新游戏桌（自动匹配时）
+            console.log(`[${this.gameType}] Creating new room...`);
             room = this.createRoom(tier);
         }
 
         // 设置事件监听
+        console.log(`[${this.gameType}] Setting up room listeners...`);
         this.setupRoomListeners(socket, room);
 
         // 加入游戏桌
-        await room.join(socket);
+        console.log(`[${this.gameType}] Calling room.join()...`);
+        try {
+            await room.join(socket);
+            console.log(`[${this.gameType}] Player joined successfully`);
+        } catch (error) {
+            console.error(`[${this.gameType}] Error joining room:`, error);
+            socket.emit('error', { message: 'Failed to join game table' });
+        }
     }
 
     /**

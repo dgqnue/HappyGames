@@ -36,29 +36,42 @@ class MatchableGameRoom {
      * 玩家尝试入座
      */
     async playerJoin(socket, matchSettings = null) {
+        console.log(`[MatchableGameRoom] playerJoin() called`);
+        console.log(`[MatchableGameRoom] - roomId:`, this.roomId);
+        console.log(`[MatchableGameRoom] - gameType:`, this.gameType);
+        console.log(`[MatchableGameRoom] - socket.user:`, socket.user);
+        console.log(`[MatchableGameRoom] - matchSettings:`, matchSettings);
+
         const userId = socket.user._id.toString();
+        console.log(`[MatchableGameRoom] - userId:`, userId);
 
         // 获取玩家统计数据
+        console.log(`[MatchableGameRoom] Fetching player stats...`);
         const UserGameStats = require('../models/UserGameStats');
         const stats = await UserGameStats.findOne({
             userId: socket.user._id,
             gameType: this.gameType
         });
+        console.log(`[MatchableGameRoom] Stats found:`, stats);
 
         const playerStats = {
             gamesPlayed: stats?.gamesPlayed || 0,
             wins: stats?.wins || 0,
             disconnects: stats?.disconnects || 0
         };
+        console.log(`[MatchableGameRoom] Player stats:`, playerStats);
 
         // 检查是否符合匹配条件
+        console.log(`[MatchableGameRoom] Checking match criteria...`);
         if (!this.matchState.canPlayerJoin(playerStats)) {
+            console.log(`[MatchableGameRoom] Match criteria not met`);
             socket.emit('join_failed', {
                 code: 'MATCH_CRITERIA_NOT_MET',
                 message: '不符合游戏桌匹配条件'
             });
             return false;
         }
+        console.log(`[MatchableGameRoom] Match criteria passed`);
 
         // 计算胜率和掉线率
         const winRate = playerStats.gamesPlayed > 0
@@ -67,6 +80,7 @@ class MatchableGameRoom {
         const disconnectRate = playerStats.gamesPlayed > 0
             ? (playerStats.disconnects / playerStats.gamesPlayed) * 100
             : 0;
+        console.log(`[MatchableGameRoom] Win rate: ${winRate}%, Disconnect rate: ${disconnectRate}%`);
 
         // 准备玩家数据
         const playerData = {
@@ -79,10 +93,15 @@ class MatchableGameRoom {
             disconnectRate: Math.round(disconnectRate),
             matchSettings: matchSettings
         };
+        console.log(`[MatchableGameRoom] Player data prepared:`, playerData);
 
         // 尝试入座
+        console.log(`[MatchableGameRoom] Attempting to add player to matchState...`);
         const result = this.matchState.addPlayer(playerData);
+        console.log(`[MatchableGameRoom] addPlayer result:`, result);
+
         if (!result.success) {
+            console.log(`[MatchableGameRoom] Failed to add player:`, result.error);
             socket.emit('join_failed', {
                 code: 'ROOM_FULL',
                 message: result.error
@@ -91,16 +110,20 @@ class MatchableGameRoom {
         }
 
         // 加入 Socket.IO 房间
+        console.log(`[MatchableGameRoom] Joining Socket.IO room...`);
         socket.join(this.roomId);
 
         // 广播游戏桌状态更新
+        console.log(`[MatchableGameRoom] Broadcasting room state...`);
         this.broadcastRoomState();
 
         // 如果满座，自动开始准备检查
         if (this.matchState.players.length === this.maxPlayers) {
+            console.log(`[MatchableGameRoom] Room is full, starting ready check...`);
             this.startReadyCheck();
         }
 
+        console.log(`[MatchableGameRoom] Player joined successfully`);
         return true;
     }
 
@@ -131,6 +154,10 @@ class MatchableGameRoom {
      * 玩家加入游戏桌（兼容 BaseGameManager）
      */
     async join(socket) {
+        console.log(`[MatchableGameRoom] join() called for room ${this.roomId}`);
+        console.log(`[MatchableGameRoom] - socket.user:`, socket.user);
+        console.log(`[MatchableGameRoom] - gameType:`, this.gameType);
+
         // 使用默认匹配设置
         const defaultSettings = {
             baseBet: 1000,
@@ -138,7 +165,11 @@ class MatchableGameRoom {
             winRateRange: [0, 100],
             maxDisconnectRate: 100
         };
-        return await this.playerJoin(socket, defaultSettings);
+
+        console.log(`[MatchableGameRoom] Calling playerJoin with default settings...`);
+        const result = await this.playerJoin(socket, defaultSettings);
+        console.log(`[MatchableGameRoom] playerJoin result:`, result);
+        return result;
     }
 
     /**

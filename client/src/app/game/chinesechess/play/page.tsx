@@ -138,9 +138,19 @@ export default function ChineseChessPlay() {
     }, [readyTimer]);
 
     const handleJoinRoom = (roomId: string) => {
-        if (!gameClient) return;
+        console.log('[ChineseChess] handleJoinRoom called with roomId:', roomId);
+        console.log('[ChineseChess] gameClient:', gameClient);
+        console.log('[ChineseChess] tier:', tier);
+
+        if (!gameClient) {
+            console.error('[ChineseChess] gameClient is null!');
+            return;
+        }
+
         // 手动入座，不需要匹配设置
+        console.log('[ChineseChess] Calling gameClient.joinRoom...');
         gameClient.joinRoom(tier, roomId);
+        console.log('[ChineseChess] joinRoom called, waiting for server response');
         // 状态更新将由 socket 事件触发
     };
 
@@ -253,8 +263,8 @@ export default function ChineseChessPlay() {
                             onClick={handleReady}
                             disabled={isReady}
                             className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                    ? 'bg-green-500 text-white cursor-default'
-                                    : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
+                                ? 'bg-green-500 text-white cursor-default'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
                                 }`}
                         >
                             {isReady ? '已准备 (等待对手)' : '开始游戏'}
