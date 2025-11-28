@@ -62,7 +62,7 @@ export default function ChineseChessPlay() {
                 setGameState(state);
 
                 // 同步准备状态
-                if (state.players) {
+                if (state && Array.isArray(state.players)) {
                     const myPlayer = state.players.find((p: any) => p.socketId === newSocket.id);
                     if (myPlayer) {
                         setIsReady(myPlayer.ready);
@@ -86,7 +86,7 @@ export default function ChineseChessPlay() {
                     }
                 } else if (state.status === 'waiting' || state.status === 'idle') {
                     // 检查自己是否在玩家列表中
-                    const amIInRoom = state.players && state.players.some((p: any) => p.socketId === newSocket.id);
+                    const amIInRoom = state && Array.isArray(state.players) && state.players.some((p: any) => p.socketId === newSocket.id);
 
                     if (amIInRoom) {
                         // 保持在 lobby，显示 Modal
@@ -234,7 +234,7 @@ export default function ChineseChessPlay() {
     };
 
     // 计算是否在房间中
-    const amIInRoom = gameState?.players?.some((p: any) => p.socketId === socket?.id);
+    const amIInRoom = gameState && Array.isArray(gameState.players) && gameState.players.some((p: any) => p.socketId === socket?.id);
     const currentRoomId = amIInRoom ? gameState.roomId : null;
 
     if (status === 'connecting') {
