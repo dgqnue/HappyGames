@@ -184,15 +184,19 @@ class MatchableGameRoom {
      */
     playerLeave(socket) {
         const userId = socket.user._id.toString();
+        console.log(`[MatchableGameRoom] playerLeave called for room ${this.roomId}, userId: ${userId}`);
 
         // 从玩家列表移除
         const wasPlayer = this.matchState.removePlayer(userId);
+        console.log(`[MatchableGameRoom] wasPlayer: ${wasPlayer}`);
 
         // 从观众列表移除
         const wasSpectator = this.matchState.removeSpectator(userId);
+        console.log(`[MatchableGameRoom] wasSpectator: ${wasSpectator}`);
 
         if (wasPlayer || wasSpectator) {
             socket.leave(this.roomId);
+            console.log(`[MatchableGameRoom] Broadcasting room state after player left...`);
             this.broadcastRoomState();
         }
 
@@ -441,7 +445,10 @@ class MatchableGameRoom {
      * 广播房间状态
      */
     broadcastRoomState() {
+        console.log(`[MatchableGameRoom] broadcastRoomState called for room ${this.roomId}`);
         const roomInfo = this.matchState.getRoomInfo();
+        console.log(`[MatchableGameRoom] roomInfo:`, JSON.stringify(roomInfo));
+
         // 发送 'room_state' 给大厅列表（保持轻量）
         this.broadcast('room_state', roomInfo);
 
@@ -462,8 +469,12 @@ class MatchableGameRoom {
         this.broadcast('state', state);
 
         // 通知游戏管理器广播房间列表更新
+        console.log(`[MatchableGameRoom] Checking gameManager:`, !!this.gameManager);
         if (this.gameManager && this.gameManager.broadcastRoomList) {
+            console.log(`[MatchableGameRoom] Calling gameManager.broadcastRoomList for tier: ${this.tier}`);
             this.gameManager.broadcastRoomList(this.tier);
+        } else {
+            console.warn(`[MatchableGameRoom] gameManager or broadcastRoomList not available!`);
         }
     }
 
