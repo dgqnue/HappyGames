@@ -20,7 +20,6 @@ export class ChineseChessClient extends GameClientTemplate {
 
     protected setupGameListeners(): void {
         // 监听移动事件
-        // 服务端 BaseGameManager 会广播 'move' 事件（不是 'chinesechess_move'，那是客户端发的）
         this.socket.on('move', (data: any) => {
             console.log('[ChineseChess] Move received:', data);
             this.handleStateUpdate({
@@ -28,18 +27,62 @@ export class ChineseChessClient extends GameClientTemplate {
                 turn: data.turn
             });
         });
+
+        // 监听匹配队列加入
+        this.socket.on('match_queue_joined', (data: any) => {
+            console.log('[ChineseChess] Joined match queue:', data);
+            // 可以在这里触发回调通知UI
+        });
+
+        // 监听匹配成功
+        this.socket.on('match_found', (data: any) => {
+            console.log('[ChineseChess] Match found:', data);
+            // 可以在这里触发回调通知UI
+        });
+
+        // 监听准备检查
+        this.socket.on('ready_check_start', (data: any) => {
+            console.log('[ChineseChess] Ready check started:', data);
+            // 这里应该通过某种方式通知UI显示倒计时
+            // 由于 GameClientTemplate 目前主要是状态管理，UI逻辑通常在组件中监听
+            // 但我们可以通过 updateState 传递一些临时状态，或者让组件直接监听 socket
+        });
     }
 
     protected removeGameListeners(): void {
         this.socket.off('move');
+        this.socket.off('match_queue_joined');
+        this.socket.off('match_found');
+        this.socket.off('ready_check_start');
     }
 
     // 自定义移动方法
     public sendMove(fromX: number, fromY: number, toX: number, toY: number) {
-        // 发送 'chinesechess_move' 事件（BaseGameManager 监听这个）
         super.makeMove({ fromX, fromY, toX, toY });
     }
 
-    // 覆盖父类方法以支持旧的调用方式（如果需要）
-    // 或者直接使用父类的 joinTier, joinRoom, leave
+    // 自动匹配
+    public autoMatch(settings: any) {
+        this.socket.emit('auto_match', settings);
+    }
+
+    // 取消匹配
+    public cancelMatch() {
+        this.socket.emit('cancel_match');
+    }
+
+    // 玩家准备
+    public playerReady() {
+        this.socket.emit('player_ready');
+    }
+
+    // 取消准备
+    public playerUnready() {
+        this.socket.emit('player_unready');
+    }
+
+    // 旁观
+    public spectate(roomId: string) {
+        this.socket.emit('spectate', { roomId });
+    }
 }

@@ -1,21 +1,112 @@
 // server/src/games/chinesechess/index.js
 const BaseGameManager = require('../../gamecore/BaseGameManager');
 const ChineseChessRoom = require('./rooms/ChineseChessRoom');
+const AutoMatchManager = require('../../gamecore/AutoMatchManager');
 
 class ChineseChessManager extends BaseGameManager {
     constructor(io) {
         // 调用父类构造函数：io, 游戏类型, 房间类
-        // 注意：游戏类型必须是 'chinesechess'，与事件前缀匹配
         super(io, 'chinesechess', ChineseChessRoom);
+
+        // 创建自动匹配管理器
+        this.autoMatcher = new AutoMatchManager();
+
+        // 设置匹配成功回调
+        this.autoMatcher.setMatchFoundHandler((gameType, players) => {
+            this.handleMatchFound(players);
+        });
     }
 
-    // BaseGameManager 已经实现了所有通用逻辑：
-    // - initRooms: 自动创建房间
-    // - onPlayerJoin: 处理玩家加入
-    // - handleJoin: 处理加入房间（包含等级分验证）
-    // - handleDisconnect: 处理断线
-    // - getRoomList: 获取房间列表
-    // - setupRoomListeners: 设置事件监听（move, leave等）
+    /**
+     * 处理自动匹配请求
+     */
+    handleAutoMatch(socket, matchSettings) {
+        const result = this.autoMatcher.joinQueue(
+            this.gameType,
+            socket,
+            matchSettings
+        );
+
+        if (result.success) {
+            socket.emit('match_queue_joined', {
+                message: '已加入匹配队列',
+                queueInfo: this.autoMatcher.getQueueInfo(this.gameType)
+            });
+        } else {
+            socket.emit('match_failed', { message: result.error });
+        }
+    }
+
+    /**
+     * 匹配成功处理
+     */
+    async handleMatchFound(players) {
+        try {
+            // 创建新房间
+            // 使用第一个玩家的底豆设置来决定房间等级，或者默认为 'free'
+            // 这里简单起见，我们创建一个动态房间，等级设为 'free' (或者根据底豆动态判断)
+            const tier = 'free';
+            const roomId = `${this.gameType}_match_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+            // 创建房间实例
+            const room = new ChineseChessRoom(this.io, roomId, tier);
+
+            // 将房间添加到管理器
+            if (!this.rooms[tier]) {
+                this.rooms[tier] = [];
+            }
+            this.rooms[tier].push(room);
+
+            console.log(`[ChineseChess] Match found, created room ${roomId} for ${players.length} players`);
+
+            // 将玩家加入房间
+            for (const player of players) {
+                const success = await room.playerJoin(player.socket, player.matchSettings);
+                if (success) {
+                    player.socket.emit('match_found', {
+                        roomId: room.roomId,
+                        message: '匹配成功！'
+                    });
+                } else {
+                    console.error(`[ChineseChess] Failed to add matched player ${player.userId} to room ${roomId}`);
+                }
+            }
+        } catch (error) {
+            console.error(`[ChineseChess] Error handling match found:`, error);
+        }
+    }
+
+    /**
+     * 玩家加入游戏管理器
+     */
+    onPlayerJoin(socket, user) {
+        super.onPlayerJoin(socket, user);
+
+        // 监听自动匹配请求
+        socket.on('auto_match', (matchSettings) => {
+            this.handleAutoMatch(socket, matchSettings);
+        });
+
+        // 监听取消匹配
+        socket.on('cancel_match', () => {
+            const userId = socket.user._id.toString();
+            this.autoMatcher.leaveQueue(this.gameType, userId);
+            socket.emit('match_cancelled');
+        });
+    }
+
+    /**
+     * 处理玩家断线
+     */
+    handleDisconnect(socket) {
+        // 从匹配队列移除
+        if (socket.user && socket.user._id) {
+            this.autoMatcher.leaveQueue(this.gameType, socket.user._id.toString());
+        }
+
+        // 调用父类处理（处理房间内断线）
+        super.handleDisconnect(socket);
+    }
 }
 
 module.exports = ChineseChessManager;
