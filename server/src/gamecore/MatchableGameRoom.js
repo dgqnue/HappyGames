@@ -441,7 +441,11 @@ class MatchableGameRoom {
      * 广播房间状态
      */
     broadcastRoomState() {
-        this.broadcast('room_state', this.matchState.getRoomInfo());
+        const roomInfo = this.matchState.getRoomInfo();
+        // 发送 'state' 事件以匹配客户端 GameClientTemplate
+        this.broadcast('state', roomInfo);
+        // 保持 'room_state' 以防有其他依赖
+        this.broadcast('room_state', roomInfo);
     }
 
     /**

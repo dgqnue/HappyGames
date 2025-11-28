@@ -72,10 +72,17 @@ export default function ChineseChessPlay() {
                     // 准备检查阶段，保持在 playing 视图（显示棋盘和准备按钮）
                     setStatus('playing');
                 } else if (state.status === 'waiting') {
-                    // 如果已经在房间里（有分配的阵营），显示等待界面
-                    // 只有当不在房间时才显示 lobby
-                    if (state.mySide) {
+                    // 检查自己是否在玩家列表中
+                    const amIInRoom = state.players && state.players.some((p: any) => p.socketId === newSocket.id);
+
+                    if (amIInRoom) {
                         setStatus('playing');
+                    } else {
+                        // 如果不在房间里，保持在 lobby
+                        // 注意：不要强制设为 lobby，因为可能正在 matching
+                        if (status !== 'matching') {
+                            setStatus('lobby');
+                        }
                     }
                 }
             });

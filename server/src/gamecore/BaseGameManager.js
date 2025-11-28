@@ -142,6 +142,21 @@ class BaseGameManager {
         }
         console.log(`[${this.gameType}] Tier access granted`);
 
+        // 检查是否已经在房间中
+        if (socket.currentRoomId) {
+            console.log(`[${this.gameType}] Player already in room: ${socket.currentRoomId}`);
+            // 如果已经在当前房间，可能只是重连，允许继续
+            if (socket.currentRoomId === roomId) {
+                // 允许重连逻辑（如果需要）
+            } else {
+                socket.emit('error', {
+                    code: 'ALREADY_IN_ROOM',
+                    message: '您已在其他游戏桌中，请先退出。'
+                });
+                return;
+            }
+        }
+
         // 查找或创建游戏桌
         console.log(`[${this.gameType}] Finding room...`);
         let room = this.findRoom(tier, roomId);
@@ -164,8 +179,14 @@ class BaseGameManager {
         // 加入游戏桌
         console.log(`[${this.gameType}] Calling room.join()...`);
         try {
-            await room.join(socket);
-            console.log(`[${this.gameType}] Player joined successfully`);
+            const success = await room.join(socket);
+            if (success) {
+                console.log(`[${this.gameType}] Player joined successfully`);
+                socket.currentRoomId = room.roomId;
+                socket.currentGameId = this.gameType;
+            } else {
+                console.log(`[${this.gameType}] Player join failed (logic)`);
+            }
         } catch (error) {
             console.error(`[${this.gameType}] Error joining room:`, error);
             socket.emit('error', { message: 'Failed to join game table' });
@@ -210,9 +231,12 @@ class BaseGameManager {
         socket.on(`${this.gameType}_leave`, () => {
             console.log(`[${this.gameType}] Player ${socket.user.username} leaving table voluntarily`);
             room.leave(socket);
+            socket.currentRoomId = null;
+            socket.currentGameId = null;
         });
 
         // 监听断线
+        // 注意：这会移除 SocketDispatcher 的 disconnect 监听器
         socket.removeAllListeners('disconnect');
         socket.on('disconnect', () => {
             this.handleDisconnect(socket, room);
@@ -228,6 +252,8 @@ class BaseGameManager {
         if (room) {
             room.handlePlayerDisconnect(socket);
         }
+        socket.currentRoomId = null;
+        socket.currentGameId = null;
     }
 
     /**
