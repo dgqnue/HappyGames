@@ -358,6 +358,135 @@ class BaseGameManager {
         this.io.to(broadcastRoom).emit('room_list', roomList);
         console.log(`[${this.gameType}] Broadcast complete`);
     }
+
+    /**
+     * 【匹配系统模板方法】
+     * 处理匹配成功 - 通用逻辑
+     * 子类可以重写此方法来自定义匹配行为
+     * 
+     * @param {Array} players - 匹配成功的玩家列表
+     * @param {String} tier - 游戏室等级，默认 'free'
+     */
+    async handleMatchFound(players, tier = 'free') {
+        try {
+            console.log(`[${this.gameType}] Match found for ${players.length} players in ${tier} tier`);
+
+            // 1. 先查找现有的空闲游戏桌（idle 状态且无玩家）
+            let room = this.findAvailableRoom(tier);
+
+            if (room) {
+                console.log(`[${this.gameType}] Reusing existing idle table ${room.roomId}`);
+            } else {
+                // 2. 如果没有空闲桌，创建新游戏桌
+                const nextNumber = this.findNextAvailableNumber(tier);
+                const roomId = `${this.gameType}_${tier}_${nextNumber}`;
+
+                // 创建游戏桌实例
+                room = new this.RoomClass(this.io, roomId, tier);
+                room.gameManager = this; // 设置游戏管理器引用
+
+                // 将游戏桌添加到对应游戏室
+                if (!this.rooms[tier]) {
+                    this.rooms[tier] = [];
+                }
+                this.rooms[tier].push(room);
+
+                console.log(`[${this.gameType}] Created new game table ${roomId} for matched players`);
+            }
+
+            // 3. 将玩家加入游戏桌
+            for (const player of players) {
+                const success = await room.playerJoin(player.socket, player.matchSettings);
+                if (success) {
+                    player.socket.emit('match_found', {
+                        roomId: room.roomId,
+                        message: '匹配成功！'
+                    });
+                } else {
+                    console.error(`[${this.gameType}] Failed to add matched player ${player.userId} to game table ${room.roomId}`);
+                }
+            }
+
+            // 4. 匹配成功后直接开始游戏
+            this.autoStartGame(room);
+
+        } catch (error) {
+            console.error(`[${this.gameType}] Error handling match found:`, error);
+        }
+    }
+
+    /**
+     * 【匹配系统模板方法】
+     * 查找可用的空闲游戏桌
+     * 
+     * @param {String} tier - 游戏室等级
+     * @returns {Object|null} - 可用的游戏桌或 null
+     */
+    findAvailableRoom(tier) {
+        const existingRooms = this.rooms[tier] || [];
+
+        for (const existingRoom of existingRooms) {
+            if (existingRoom.matchState.status === 'idle' && existingRoom.matchState.players.length === 0) {
+                // 子类可以重写此方法添加更多匹配条件检查
+                return existingRoom;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 【匹配系统模板方法】
+     * 查找最小的可用编号（填补删除游戏桌留下的空缺）
+     * 
+     * @param {String} tier - 游戏室等级
+     * @returns {Number} - 下一个可用编号
+     */
+    findNextAvailableNumber(tier) {
+        const existingRooms = this.rooms[tier] || [];
+
+        // 提取所有现有编号并排序
+        const existingNumbers = existingRooms.map(r => {
+            const parts = r.roomId.split('_');
+            return parseInt(parts[parts.length - 1]);
+        }).sort((a, b) => a - b);
+
+        // 查找第一个不连续的编号
+        let nextNumber = 0;
+        for (let i = 0; i < existingNumbers.length; i++) {
+            if (existingNumbers[i] !== i) {
+                nextNumber = i;
+                break;
+            }
+        }
+
+        // 如果所有编号都连续，使用下一个编号
+        if (nextNumber === 0 && existingNumbers.length > 0 && existingNumbers[0] === 0) {
+            nextNumber = existingNumbers.length;
+        }
+
+        return nextNumber;
+    }
+
+    /**
+     * 【匹配系统模板方法】
+     * 自动开始游戏（跳过准备检查）
+     * 子类可以重写此方法来自定义自动开始行为
+     * 
+     * @param {Object} room - 游戏桌实例
+     */
+    autoStartGame(room) {
+        // 设置所有玩家为已准备
+        room.matchState.players.forEach(p => p.ready = true);
+
+        // 延迟1秒后自动开始游戏，让客户端有时间准备
+        setTimeout(() => {
+            if (room.matchState.players.length === room.maxPlayers) {
+                console.log(`[${this.gameType}] Auto-starting game for matched players in room ${room.roomId}`);
+                room.startGame();
+            }
+        }, 1000);
+    }
 }
 
 module.exports = BaseGameManager;
