@@ -241,6 +241,27 @@ class BaseGameManager {
             socket.currentGameId = null;
         });
 
+        // 监听玩家准备
+        socket.on('player_ready', () => {
+            if (room.playerReady) {
+                room.playerReady(socket);
+            }
+        });
+
+        // 监听玩家取消准备
+        socket.on('player_unready', () => {
+            if (room.playerUnready) {
+                room.playerUnready(socket);
+            }
+        });
+
+        // 监听旁观请求
+        socket.on('spectate', (data) => {
+            if (room.spectatorJoin) {
+                room.spectatorJoin(socket);
+            }
+        });
+
         // 监听断线
         // 注意：这会移除 SocketDispatcher 的 disconnect 监听器
         socket.removeAllListeners('disconnect');

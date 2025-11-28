@@ -135,6 +135,7 @@ export default function ChineseChessPlay() {
                 setStatus('lobby');
                 setReadyTimer(null);
                 setIsReady(false);
+                setGameState(null); // 清空游戏状态，确保UI重置
             });
 
             setGameClient(client);
