@@ -289,6 +289,9 @@ class MatchableGameRoom {
         this.matchState.readyTimer = setTimeout(() => {
             this.onReadyTimeout();
         }, this.matchState.readyTimeout);
+
+        // 广播最新的房间状态（matching）给大厅
+        this.broadcastRoomState();
     }
 
     /**
@@ -356,6 +359,9 @@ class MatchableGameRoom {
                 title: p.title
             }))
         });
+
+        // 广播最新的房间状态（playing）给大厅
+        this.broadcastRoomState();
     }
 
     /**
@@ -376,6 +382,9 @@ class MatchableGameRoom {
 
         // 广播游戏结束
         this.broadcast('game_over', result);
+
+        // 广播最新的房间状态（ended）给大厅
+        this.broadcastRoomState();
 
         // 开始新一轮准备检查
         setTimeout(() => {
