@@ -104,7 +104,7 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                                     : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
                                                     }`}
                                             >
-                                                {isReady ? '已准备' : '准备'}
+                                                {isReady ? '就绪' : '开始'}
                                             </button>
                                         </div>
                                         {readyTimer !== null && readyTimer !== undefined && readyTimer > 0 && (
