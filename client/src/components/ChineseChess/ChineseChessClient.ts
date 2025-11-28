@@ -35,7 +35,7 @@ export class ChineseChessClient extends GameClientTemplate {
     }
 
     // 自定义移动方法
-    public makeMove(fromX: number, fromY: number, toX: number, toY: number) {
+    public sendMove(fromX: number, fromY: number, toX: number, toY: number) {
         // 发送 'chinesechess_move' 事件（BaseGameManager 监听这个）
         super.makeMove({ fromX, fromY, toX, toY });
     }

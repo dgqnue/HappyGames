@@ -102,7 +102,7 @@ export default function ChineseChessPlay() {
 
     const handleMove = (fromX: number, fromY: number, toX: number, toY: number) => {
         if (gameClient) {
-            gameClient.makeMove(fromX, fromY, toX, toY);
+            gameClient.sendMove(fromX, fromY, toX, toY);
         }
     };
 
