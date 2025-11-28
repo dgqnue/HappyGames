@@ -228,8 +228,15 @@ export default function ChineseChessPlay() {
 
     const handleReady = () => {
         if (gameClient) {
-            gameClient.playerReady();
-            setIsReady(true);
+            if (isReady) {
+                // 取消准备
+                gameClient.playerUnready();
+                setIsReady(false);
+            } else {
+                // 准备
+                gameClient.playerReady();
+                setIsReady(true);
+            }
         }
     };
 
@@ -332,13 +339,12 @@ export default function ChineseChessPlay() {
                         <p className="text-gray-600 mb-6">请确认您已准备好开始游戏</p>
                         <button
                             onClick={handleReady}
-                            disabled={isReady}
                             className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                ? 'bg-green-500 text-white cursor-default'
+                                ? 'bg-green-500 text-white shadow-lg hover:shadow-xl hover:bg-green-600'
                                 : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
                                 }`}
                         >
-                            {isReady ? '已准备 (等待对手)' : '开始游戏'}
+                            {isReady ? '已准备 (点击取消)' : '开始游戏'}
                         </button>
                     </div>
                 </div>

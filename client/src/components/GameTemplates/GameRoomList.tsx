@@ -107,9 +107,8 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                             </button>
                                             <button
                                                 onClick={onReady}
-                                                disabled={isReady}
                                                 className={`flex-1 py-2 font-bold rounded-lg transition-all ${isReady
-                                                    ? 'bg-green-500 text-white cursor-default'
+                                                    ? 'bg-green-500 text-white hover:bg-green-600'
                                                     : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
                                                     }`}
                                             >
