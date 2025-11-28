@@ -482,7 +482,9 @@ class MatchableGameRoom {
 
         // 清空房间
         this.matchState.players = [];
+        this.matchState.spectators = [];
         this.matchState.firstPlayerJoinedAt = null;
+        this.matchState.status = 'idle'; // 重置为空闲状态
 
         this.broadcastRoomState();
     }
