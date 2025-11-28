@@ -53,7 +53,7 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                             onClick={onLeave}
                             className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition-all"
                         >
-                            退出房间
+                            返回游戏中心
                         </button>
                     </div>
                 </div>
@@ -62,7 +62,7 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                     {rooms.map((room) => (
                         <div key={room.id} className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-amber-100 shadow-md hover:shadow-lg transition-all">
                             <div className="flex justify-between items-center mb-3">
-                                <span className="font-bold text-amber-900">桌号: {room.id.split('_').pop()}</span>
+                                <span className="font-bold text-amber-900">游戏桌: {room.id.split('_').pop()}</span>
                                 <span className={`px-2 py-1 rounded text-xs font-bold ${room.status === 'waiting' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                     {room.status === 'waiting' ? '等待中' : '游戏中'}
                                 </span>
@@ -79,13 +79,13 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     }`}
                             >
-                                {room.status === 'waiting' && room.players < 2 ? '加入游戏' : '已满员'}
+                                {room.status === 'waiting' && room.players < 2 ? '入座' : '已满员'}
                             </button>
                         </div>
                     ))}
                     {rooms.length === 0 && (
                         <div className="col-span-full text-center py-10 text-gray-500">
-                            暂无房间，点击"快速开始"创建一个
+                            暂无游戏桌，点击"快速开始"创建一个
                         </div>
                     )}
                 </div>

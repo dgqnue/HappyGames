@@ -66,9 +66,9 @@ export default function ChineseChessPlay() {
                     // 准备检查阶段，保持在 playing 视图（显示棋盘和准备按钮）
                     setStatus('playing');
                 } else if (state.status === 'waiting') {
-                    // 如果已经在房间里，显示等待界面（也是 playing 视图的一种）
+                    // 如果已经在房间里（有分配的阵营），显示等待界面
                     // 只有当不在房间时才显示 lobby
-                    if (state.players && Object.values(state.players).some(id => id === newSocket.user?._id)) {
+                    if (state.mySide) {
                         setStatus('playing');
                     }
                 }
