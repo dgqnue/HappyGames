@@ -49,7 +49,8 @@ class BaseGameManager {
             const initialRoomCount = this.getInitialRoomCount(tier);
             for (let i = 0; i < initialRoomCount; i++) {
                 const roomId = `${this.gameType}_${tier}_${i}`;
-                const room = new this.RoomClass(roomId, this.io, tier);
+                // 注意：参数顺序为 (io, roomId, tier)
+                const room = new this.RoomClass(this.io, roomId, tier);
                 this.rooms[tier].push(room);
                 console.log(`[${this.gameType}] Created room: ${roomId}`);
             }
@@ -158,7 +159,8 @@ class BaseGameManager {
      */
     createRoom(tier) {
         const newRoomId = `${this.gameType}_${tier}_${this.rooms[tier].length}`;
-        const room = new this.RoomClass(newRoomId, this.io, tier);
+        // 注意：参数顺序为 (io, roomId, tier)
+        const room = new this.RoomClass(this.io, newRoomId, tier);
         this.rooms[tier].push(room);
         console.log(`[${this.gameType}] Created new room: ${newRoomId}`);
         return room;

@@ -104,6 +104,50 @@ class MatchableGameRoom {
     }
 
     /**
+     * 获取当前玩家数量
+     * 用于房间列表显示
+     */
+    getPlayerCount() {
+        return this.matchState.players.length;
+    }
+
+    /**
+     * 获取房间状态
+     * 用于房间列表显示
+     */
+    get status() {
+        return this.matchState.status;
+    }
+
+    /**
+     * 检查房间是否可以加入
+     */
+    canJoin() {
+        return this.matchState.players.length < this.maxPlayers;
+    }
+
+    /**
+     * 玩家加入房间（兼容 BaseGameManager）
+     */
+    async join(socket) {
+        // 使用默认匹配设置
+        const defaultSettings = {
+            baseBet: 1000,
+            betRange: [500, 5000],
+            winRateRange: [0, 100],
+            maxDisconnectRate: 100
+        };
+        return await this.playerJoin(socket, defaultSettings);
+    }
+
+    /**
+     * 离开房间（兼容 BaseGameManager）
+     */
+    leave(socket) {
+        return this.playerLeave(socket);
+    }
+
+    /**
      * 玩家离座
      */
     playerLeave(socket) {
