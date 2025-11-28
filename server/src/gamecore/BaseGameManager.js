@@ -54,7 +54,8 @@ class BaseGameManager {
             const initialRoomCount = this.getInitialRoomCount(tier);
             for (let i = 0; i < initialRoomCount; i++) {
                 const roomId = `${this.gameType}_${tier}_${i}`;
-                // 注意：参数顺序为 (io, roomId, tier)
+                // ChineseChessRoom 的构造函数是 (io, roomId, tier)
+                // 它会在内部调用 super(io, roomId, 'chinesechess', 2, tier)
                 const room = new this.RoomClass(this.io, roomId, tier);
                 this.rooms[tier].push(room);
                 console.log(`[${this.gameType}] Created game table: ${roomId} in ${tier} room`);
@@ -79,7 +80,7 @@ class BaseGameManager {
     onPlayerJoin(socket, user) {
         console.log(`[${this.gameType}] Player ${user.username} joined game manager`);
 
-        // 监听获取游戏桌列表请求
+        // 监听获取游戏桌列表请求（指定游戏室）
         socket.on('get_rooms', ({ tier }) => {
             this.handleGetRooms(socket, user, tier);
         });
@@ -92,16 +93,17 @@ class BaseGameManager {
 
     /**
      * 处理获取游戏桌列表请求
+     * @param {String} tier - 游戏室等级 (free/beginner/intermediate/advanced)
      */
     handleGetRooms(socket, user, tier) {
-        console.log(`[${this.gameType}] Player ${user.username} requested tables for tier: ${tier}`);
+        console.log(`[${this.gameType}] Player ${user.username} requested tables for game room: ${tier}`);
 
         if (this.rooms[tier]) {
             const roomList = this.getRoomList(tier);
-            console.log(`[${this.gameType}] Sending ${roomList.length} tables to player`);
+            console.log(`[${this.gameType}] Sending ${roomList.length} tables from ${tier} room to player`);
             socket.emit('room_list', roomList);
         } else {
-            console.error(`[${this.gameType}] Invalid tier requested: ${tier}`);
+            console.error(`[${this.gameType}] Invalid game room tier requested: ${tier}`);
             socket.emit('room_list', []);
         }
     }
@@ -164,7 +166,7 @@ class BaseGameManager {
      */
     createRoom(tier) {
         const newRoomId = `${this.gameType}_${tier}_${this.rooms[tier].length}`;
-        // 注意：参数顺序为 (io, roomId, tier)
+        // ChineseChessRoom 的构造函数是 (io, roomId, tier)
         const room = new this.RoomClass(this.io, newRoomId, tier);
         this.rooms[tier].push(room);
         console.log(`[${this.gameType}] Created new game table: ${newRoomId}`);
@@ -205,7 +207,9 @@ class BaseGameManager {
     }
 
     /**
-     * 验证等级分权限
+     * 验证玩家是否有权限进入指定游戏室
+     * @param {String} tier - 游戏室等级
+     * @param {Number} rating - 玩家等级分
      * 子类可以重写此方法自定义权限规则
      */
     canAccessTier(tier, rating) {
@@ -224,12 +228,13 @@ class BaseGameManager {
     }
 
     /**
-     * 获取游戏桌列表
+     * 获取指定游戏室的游戏桌列表
+     * @param {String} tier - 游戏室等级
      * 用于 HTTP API 和 Socket.IO
      */
     getRoomList(tier) {
-        console.log(`[${this.gameType}] getRoomList called for tier: ${tier}`);
-        console.log(`[${this.gameType}] Tables in tier ${tier}:`, this.rooms[tier].length);
+        console.log(`[${this.gameType}] getRoomList called for game room: ${tier}`);
+        console.log(`[${this.gameType}] Tables in ${tier} room:`, this.rooms[tier].length);
 
         const roomList = this.rooms[tier].map(room => ({
             id: room.roomId,
@@ -238,7 +243,7 @@ class BaseGameManager {
             spectators: room.spectators ? room.spectators.length : 0
         }));
 
-        console.log(`[${this.gameType}] Returning table list:`, JSON.stringify(roomList));
+        console.log(`[${this.gameType}] Returning ${roomList.length} tables from ${tier} room:`, JSON.stringify(roomList));
         return roomList;
     }
 

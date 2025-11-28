@@ -5,9 +5,8 @@ const EloService = require('../../../gamecore/EloService');
 
 class ChineseChessRoom extends MatchableGameRoom {
     constructor(io, roomId, tier) {
-        // 2人游戏
-        super(io, roomId, 2, tier);
-        this.gameType = 'chinesechess';
+        // 调用父类构造函数：io, roomId, gameType, maxPlayers, tier
+        super(io, roomId, 'chinesechess', 2, tier);
 
         // 游戏特定状态
         this.board = null;

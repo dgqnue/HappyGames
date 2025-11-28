@@ -5,7 +5,7 @@ const AutoMatchManager = require('../../gamecore/AutoMatchManager');
 
 class ChineseChessManager extends BaseGameManager {
     constructor(io) {
-        // 调用父类构造函数：io, 游戏类型, 房间类
+        // 调用父类构造函数：io, 游戏类型, 游戏桌类
         super(io, 'chinesechess', ChineseChessRoom);
 
         // 创建自动匹配管理器
@@ -47,7 +47,7 @@ class ChineseChessManager extends BaseGameManager {
             const tier = 'free';
             const roomId = `${this.gameType}_match_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-            // 创建游戏桌实例
+            // 创建游戏桌实例 - ChineseChessRoom(io, roomId, tier)
             const room = new ChineseChessRoom(this.io, roomId, tier);
 
             // 将游戏桌添加到对应游戏室
@@ -103,7 +103,7 @@ class ChineseChessManager extends BaseGameManager {
             this.autoMatcher.leaveQueue(this.gameType, socket.user._id.toString());
         }
 
-        // 调用父类处理（处理房间内断线）
+        // 调用父类处理（处理游戏桌内断线）
         super.handleDisconnect(socket);
     }
 }

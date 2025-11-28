@@ -6,6 +6,7 @@
 
 ### 主要文档
 - **[开发文档](./development_docs.md)** - 完整的项目架构、功能说明和开发指南
+- **[术语规范](./TERMINOLOGY_GUIDE.md)** - 平台命名规范（游戏中心、游戏室、游戏桌） ⭐
 - **[游戏开发模板指南](./GAME_TEMPLATE_GUIDE.md)** - 快速创建新游戏的完整模板系统
 - **[通信模板使用指南](./COMMUNICATION_TEMPLATE_GUIDE.md)** - Socket.IO + HTTP 双通道通信模板 ⭐
 - **[UI 模板使用指南](./UI_TEMPLATE_GUIDE.md)** - 游戏 UI 组件模板系统 ⭐
@@ -14,6 +15,7 @@
 ### 快速链接
 - [项目概览](./development_docs.md#1-项目概览-project-overview)
 - [技术栈](./development_docs.md#技术栈-tech-stack)
+- [术语规范](./development_docs.md#94-术语规范-terminology-standard-)
 - [游戏开发模板](./development_docs.md#14-游戏开发模板系统-game-development-template-system)
 - [CORS 问题修复](./development_docs.md#131-cors-跨域问题修复-2025-11-27)
 
@@ -77,7 +79,7 @@ npm run dev
 标准化的 UI 组件模板：
 - 📄 [UI 模板使用指南](./UI_TEMPLATE_GUIDE.md)
 - 🎨 统一的视觉风格和交互体验
-- 🧩 包含等级选择、房间列表、对局布局
+- 🧩 包含等级选择、游戏室列表、对局布局
 
 ### 4. 匹配系统（10 分钟）⭐
 完整的玩家匹配系统：
@@ -100,7 +102,7 @@ npm run dev
 6. 用户资料系统
 7. 游戏逻辑与经济模型
 8. 游戏大厅设计
-9. 平台核心架构
+9. 平台核心架构（含术语规范 ⭐）
 10. ELO 等级分系统
 11. 称号系统
 12. 中国象棋游戏
@@ -129,8 +131,8 @@ HappyGames/
 │   └── src/
 │       ├── gamecore/          # 核心模板系统 ⭐
 │       │   ├── BaseGameManager.js       # 游戏管理器基类
-│       │   ├── MatchableGameRoom.js     # 可匹配游戏房间基类
-│       │   ├── MatchRoomState.js        # 匹配房间状态管理
+│       │   ├── MatchableGameRoom.js     # 可匹配游戏桌基类
+│       │   ├── MatchRoomState.js        # 匹配状态管理
 │       │   ├── AutoMatchManager.js      # 自动匹配管理器
 │       │   ├── EloService.js            # ELO 等级分服务
 │       │   └── socket.js                # Socket.IO 配置
@@ -140,12 +142,12 @@ HappyGames/
     └── src/
         ├── gamecore/          # 客户端模板系统 ⭐
         │   ├── GameClientTemplate.ts  # 游戏客户端模板
-        │   ├── useRoomList.ts         # 双通道房间列表 Hook
+        │   ├── useRoomList.ts         # 双通道游戏桌列表 Hook
         │   └── BaseGameClient.ts      # 游戏客户端基类
         └── components/
             ├── GameTemplates/ # UI 模板系统 ⭐
-            │   ├── GameTierSelector.tsx      # 等级选择组件
-            │   ├── GameRoomList.tsx          # 房间列表组件
+            │   ├── GameTierSelector.tsx      # 游戏室选择组件
+            │   ├── GameRoomList.tsx          # 游戏桌列表组件
             │   ├── GamePlayLayout.tsx        # 对局布局组件
             │   └── MatchSettingsPanel.tsx    # 匹配设置面板
             └── ChineseChess/  # 中国象棋（参考实现）

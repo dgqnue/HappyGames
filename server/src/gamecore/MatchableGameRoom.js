@@ -15,9 +15,10 @@ const crypto = require('crypto');
 const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';
 
 class MatchableGameRoom {
-    constructor(io, roomId, maxPlayers = 2, tier = 'free') {
+    constructor(io, roomId, gameType, maxPlayers = 2, tier = 'free') {
         this.io = io;
         this.roomId = roomId;
+        this.gameType = gameType;  // 游戏类型（如 'chinesechess'）
         this.tier = tier;
         this.maxPlayers = maxPlayers;
 

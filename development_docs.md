@@ -302,6 +302,215 @@ HappyGames 是一个基于 Pi Network 生态的游戏平台，允许用户通过
     -   客户端接收到的所有用户数据（如 `players` 列表），必须包含 `userId`。
     -   判断"我是谁"或"轮到谁"时，比较 `currentUserId === player.userId`。
 
+### 9.4 术语规范 (Terminology Standard) ⭐
+
+为了确保代码的可读性和一致性，平台制定了严格的术语规范。
+
+#### 核心概念层级
+
+```
+平台大厅 (Platform Lobby)
+    └── 游戏中心 (Game Center)
+            └── 游戏室 (Game Room / Tier)
+                    └── 游戏桌 (Game Table)
+```
+
+#### 详细定义
+
+**1. 平台大厅 (Platform Lobby)**
+- **定义**: 用户登录后看到的主界面
+- **功能**: 显示所有可用游戏的入口
+- **代码对应**: `/lobby` 路由
+- **UI文本**: "返回大厅"
+
+**2. 游戏中心 (Game Center)**
+- **定义**: 特定游戏的主界面
+- **示例**: "中国象棋游戏中心"
+- **功能**: 显示该游戏的所有游戏室选项和玩家统计
+- **代码对应**: `/game/chinesechess` 路由
+- **UI文本**: "中国象棋游戏中心"、"返回游戏中心"
+
+**3. 游戏室 (Game Room / Tier)** ⭐ 重点
+- **定义**: 按等级分类的游戏区域，玩家点击后进入的界面
+- **示例**: 
+  - 免豆室 (free) - 无需游戏豆
+  - 初级室 (beginner) - 等级分 < 1500
+  - 中级室 (intermediate) - 等级分 1500-1800
+  - 高级室 (advanced) - 等级分 > 1800
+- **功能**: 
+  - 显示该游戏室内的所有游戏桌
+  - 提供快速开始功能
+  - 限制玩家等级分访问
+- **代码对应**: 
+  - 变量名: `tier` (free/beginner/intermediate/advanced)
+  - 路由: `/game/chinesechess/play?tier=beginner`
+  - 数据结构: `BaseGameManager.rooms[tier]` 是该游戏室的游戏桌列表
+- **UI文本**: "初级室"、"中级室"、"进入游戏室"
+
+**4. 游戏桌 (Game Table)** ⭐ 重点
+- **定义**: 具体的对局实例，玩家坐在桌上进行游戏
+- **示例**: `chinesechess_beginner_0`
+- **功能**:
+  - 玩家入座
+  - 等待对手
+  - 进行游戏
+  - 旁观
+- **代码对应**:
+  - 变量名: `room`, `roomId`
+  - 类: `MatchableGameRoom` 的实例
+  - 示例ID: `chinesechess_beginner_0`
+- **UI文本**: "游戏桌 1"、"桌号: 1"、"入座"
+
+#### 代码规范
+
+**变量命名**
+```javascript
+// ✅ 正确
+const tier = 'beginner';           // 游戏室等级
+const roomId = 'chess_beginner_0'; // 游戏桌ID
+const room = new ChineseChessRoom(); // 游戏桌实例
+
+// ❌ 错误 - 避免混淆
+const room = 'beginner';  // 不要用 room 指代 tier
+const tier = 'chess_beginner_0';  // 不要用 tier 指代游戏桌
+```
+
+**注释规范**
+```javascript
+// ✅ 正确
+// 创建游戏桌
+const room = new ChineseChessRoom(io, roomId, tier);
+
+// 将游戏桌添加到对应游戏室
+this.rooms[tier].push(room);
+
+// 玩家进入游戏室
+router.push(`/game/chinesechess/play?tier=beginner`);
+
+// 玩家加入游戏桌
+room.playerJoin(socket);
+
+// ❌ 错误 - 不明确
+// 创建房间
+const room = new ChineseChessRoom();
+```
+
+**日志输出规范**
+```javascript
+// ✅ 正确
+console.log(`Created game table: ${roomId} in ${tier} room`);
+console.log(`Player entered ${tier} game room`);
+console.log(`Sending ${count} tables from ${tier} room to player`);
+
+// ❌ 错误 - 不明确
+console.log(`Created room: ${roomId}`);
+console.log(`Player joined room`);
+```
+
+**方法命名规范**
+```javascript
+// BaseGameManager 中的方法
+handleGetRooms(socket, user, tier)  // 获取指定游戏室的游戏桌列表
+canAccessTier(tier, rating)         // 验证玩家是否有权限进入游戏室
+getRoomList(tier)                   // 获取游戏室的游戏桌列表
+
+// MatchableGameRoom 中的方法
+playerJoin(socket)    // 玩家加入游戏桌
+playerLeave(socket)   // 玩家离开游戏桌
+```
+
+#### UI文本规范
+
+**中文界面**
+- 游戏中心: "中国象棋游戏中心"
+- 游戏室: "初级室"、"中级室"、"高级室"、"免豆室"
+- 游戏桌: "游戏桌 1"、"游戏桌 2" 或 "桌号: 1"
+- 按钮文本:
+  - "进入游戏室" (点击游戏室图标)
+  - "入座" (加入游戏桌)
+  - "返回游戏中心" (从游戏室返回)
+  - "返回大厅" (从游戏中心返回)
+
+**英文界面**
+- Game Center: "Chinese Chess Game Center"
+- Game Room: "Beginner Room", "Intermediate Room", "Advanced Room", "Free Room"
+- Game Table: "Table 1", "Table 2"
+- Button Text:
+  - "Enter Room" (进入游戏室)
+  - "Sit Down" (入座)
+  - "Back to Game Center" (返回游戏中心)
+  - "Back to Lobby" (返回大厅)
+
+#### 数据结构示例
+
+**BaseGameManager.rooms**
+```javascript
+{
+  free: [table1, table2, table3],      // 免豆室的游戏桌列表
+  beginner: [table1, table2, table3],  // 初级室的游戏桌列表
+  intermediate: [table1, table2],      // 中级室的游戏桌列表
+  advanced: [table1]                   // 高级室的游戏桌列表
+}
+```
+
+**游戏桌对象**
+```javascript
+{
+  roomId: 'chinesechess_beginner_0',  // 游戏桌ID
+  tier: 'beginner',                   // 所属游戏室
+  status: 'waiting',                  // 游戏桌状态
+  players: [...],                     // 玩家列表
+  spectators: [...]                   // 观众列表
+}
+```
+
+#### 常见错误与正确示例
+
+**❌ 错误**
+```javascript
+// 混淆游戏室和游戏桌
+console.log('Player joined room beginner');
+
+// 使用 room 指代游戏室
+const room = 'beginner';
+
+// 注释不准确
+// 创建房间
+const table = new ChineseChessRoom();
+```
+
+**✅ 正确**
+```javascript
+// 明确区分
+console.log('Player entered beginner game room');
+console.log('Player joined game table: chess_beginner_0');
+
+// 正确命名
+const tier = 'beginner';
+const roomId = 'chess_beginner_0';
+
+// 准确注释
+// 创建游戏桌并添加到对应游戏室
+const table = new ChineseChessRoom(io, roomId, tier);
+this.rooms[tier].push(table);
+```
+
+#### 核心原则
+
+**记住这个层级关系**:
+1. 玩家从**平台大厅**选择游戏
+2. 进入**游戏中心**
+3. 选择**游戏室**等级
+4. 看到该游戏室内的所有**游戏桌**
+5. 选择一个**游戏桌**入座或快速开始自动匹配
+
+**关键点**: 
+- `tier` = 游戏室等级
+- `room`/`roomId` = 游戏桌
+- 始终明确区分这两个概念
+- 所有代码、注释、日志和UI文本都必须遵循此规范
+
+
 ---
 
 ## 10. ELO 等级分系统 (ELO Rating System)
