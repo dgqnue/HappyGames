@@ -57,6 +57,7 @@ class BaseGameManager {
                 // ChineseChessRoom 的构造函数是 (io, roomId, tier)
                 // 它会在内部调用 super(io, roomId, 'chinesechess', 2, tier)
                 const room = new this.RoomClass(this.io, roomId, tier);
+                room.gameManager = this; // 设置游戏管理器引用
                 this.rooms[tier].push(room);
                 console.log(`[${this.gameType}] Created game table: ${roomId} in ${tier} room`);
             }
@@ -97,6 +98,11 @@ class BaseGameManager {
      */
     handleGetRooms(socket, user, tier) {
         console.log(`[${this.gameType}] Player ${user.username} requested tables for game room: ${tier}`);
+
+        // 让客户端加入广播房间，以便接收房间列表更新
+        const broadcastRoom = `${this.gameType}_${tier}`;
+        socket.join(broadcastRoom);
+        console.log(`[${this.gameType}] Socket ${socket.id} joined broadcast room: ${broadcastRoom}`);
 
         if (this.rooms[tier]) {
             const roomList = this.getRoomList(tier);
@@ -306,6 +312,21 @@ class BaseGameManager {
             return Object.keys(room.players).filter(k => room.players[k]).length;
         }
         return 0;
+    }
+
+    /**
+     * 广播房间列表更新到所有在该 tier 的客户端
+     * @param {String} tier - 游戏室等级
+     */
+    broadcastRoomList(tier) {
+        if (!this.rooms[tier]) return;
+
+        const roomList = this.getRoomList(tier);
+        console.log(`[${this.gameType}] Broadcasting room_list update for ${tier}:`, roomList.length, 'rooms');
+
+        // 向所有连接到该游戏的客户端广播
+        // 使用游戏类型作为房间名，所有玩该游戏的客户端都会加入这个房间
+        this.io.to(`${this.gameType}_${tier}`).emit('room_list', roomList);
     }
 }
 

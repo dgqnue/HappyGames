@@ -460,6 +460,11 @@ class MatchableGameRoom {
             }))
         };
         this.broadcast('state', state);
+
+        // 通知游戏管理器广播房间列表更新
+        if (this.gameManager && this.gameManager.broadcastRoomList) {
+            this.gameManager.broadcastRoomList(this.tier);
+        }
     }
 
     /**
