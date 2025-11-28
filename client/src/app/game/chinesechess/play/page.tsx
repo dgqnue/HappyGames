@@ -9,7 +9,6 @@ import { useRoomList } from '@/gamecore/useRoomList';
 import { GameRoomList } from '@/components/GameTemplates/GameRoomList';
 import { GamePlayLayout } from '@/components/GameTemplates/GamePlayLayout';
 import { MatchSettingsPanel } from '@/components/GameTemplates/MatchSettingsPanel';
-import { RoomLobbyModal } from '@/components/GameTemplates/RoomLobbyModal';
 
 export default function ChineseChessPlay() {
     const router = useRouter();
@@ -211,6 +210,7 @@ export default function ChineseChessPlay() {
 
     // 计算是否在房间中
     const amIInRoom = gameState?.players?.some((p: any) => p.socketId === socket?.id);
+    const currentRoomId = amIInRoom ? gameState.roomId : null;
 
     if (status === 'connecting') {
         return (
@@ -230,24 +230,15 @@ export default function ChineseChessPlay() {
                     onJoinRoom={handleJoinRoom}
                     onQuickStart={handleQuickStart}
                     onLeave={() => router.push('/game/chinesechess')}
+                    currentRoomId={currentRoomId}
+                    isReady={isReady}
+                    readyTimer={readyTimer}
+                    onReady={handleReady}
+                    onLeaveRoom={() => {
+                        handleLeave();
+                        setGameState(null);
+                    }}
                 />
-
-                {/* 房间等待模态框 */}
-                {amIInRoom && (gameState?.status === 'waiting' || gameState?.status === 'ready_check') && (
-                    <RoomLobbyModal
-                        roomId={gameState.roomId}
-                        players={gameState.players || []}
-                        maxPlayers={gameState.maxPlayers || 2}
-                        isReady={isReady}
-                        readyTimer={readyTimer} // 传递倒计时
-                        onReady={handleReady}
-                        onLeave={() => {
-                            handleLeave();
-                            setGameState(null);
-                        }}
-                        currentUserId={socket?.id}
-                    />
-                )}
 
                 {showMatchSettings && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -318,8 +309,8 @@ export default function ChineseChessPlay() {
                             onClick={handleReady}
                             disabled={isReady}
                             className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                ? 'bg-green-500 text-white cursor-default'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
+                                    ? 'bg-green-500 text-white cursor-default'
+                                    : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
                                 }`}
                         >
                             {isReady ? '已准备 (等待对手)' : '开始游戏'}
