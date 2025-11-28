@@ -317,6 +317,7 @@ class MatchableGameRoom {
         console.log(`[MatchableGameRoom] Ready players: ${readyPlayers.length}, Unready players: ${unreadyPlayers.length}`);
 
         // 踢出未准备的玩家
+        // 踢出未准备的玩家
         unreadyPlayers.forEach(player => {
             console.log(`[MatchableGameRoom] Kicking unready player: ${player.nickname}`);
             const socket = this.io.sockets.sockets.get(player.socketId);
@@ -326,6 +327,14 @@ class MatchableGameRoom {
                     code: 'READY_TIMEOUT'
                 });
                 this.playerLeave(socket);
+            } else {
+                // Socket 不存在（可能已断开），强制移除
+                console.log(`[MatchableGameRoom] Socket not found for player ${player.nickname}, force removing...`);
+                // 模拟 socket 对象以复用 playerLeave 逻辑，或者直接调用 removePlayer
+                // 这里直接调用 removePlayer 更安全
+                this.matchState.removePlayer(player.userId);
+                // 确保广播更新
+                this.broadcastRoomState();
             }
         });
 

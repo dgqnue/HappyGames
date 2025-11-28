@@ -116,7 +116,7 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                                 {isReady ? '就绪' : '开始'}
                                             </button>
                                         </div>
-                                        {readyTimer !== null && readyTimer !== undefined && readyTimer > 0 && (
+                                        {readyTimer !== null && readyTimer !== undefined && !isNaN(readyTimer) && readyTimer > 0 && (
                                             <div className="text-center text-orange-600 font-mono font-bold animate-pulse text-sm">
                                                 ⏱️ {readyTimer}s 后开始
                                             </div>

@@ -121,7 +121,12 @@ export default function ChineseChessPlay() {
             // 监听准备检查
             newSocket.on('ready_check_start', (data: any) => {
                 console.log('准备检查开始:', data);
-                setReadyTimer(data.timeout / 1000);
+                if (data && typeof data.timeout === 'number') {
+                    setReadyTimer(data.timeout / 1000);
+                } else {
+                    console.warn('Invalid ready_check_start data:', data);
+                    setReadyTimer(30);
+                }
             });
 
             // 监听准备检查取消
