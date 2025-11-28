@@ -50,6 +50,12 @@ export default function ChineseChessPlay() {
 
         newSocket.on('connect', () => {
             console.log('[Socket] Connected');
+            console.log('[Socket] Socket ID:', newSocket.id);
+
+            // ⭐ 发送 start_game 事件，告诉服务端要玩中国象棋
+            console.log('[Socket] Sending start_game event for chinesechess...');
+            newSocket.emit('start_game', 'chinesechess');
+
             const client = new ChineseChessClient(newSocket);
 
             client.init((state) => {
@@ -263,8 +269,8 @@ export default function ChineseChessPlay() {
                             onClick={handleReady}
                             disabled={isReady}
                             className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                ? 'bg-green-500 text-white cursor-default'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
+                                    ? 'bg-green-500 text-white cursor-default'
+                                    : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
                                 }`}
                         >
                             {isReady ? '已准备 (等待对手)' : '开始游戏'}

@@ -111,12 +111,16 @@ class SocketDispatcher {
 
             // 监听玩家请求开始游戏事件
             socket.on('start_game', (gameId) => {
+                console.log(`[SocketDispatcher] start_game event received for game: ${gameId}`);
                 const manager = this.games[gameId];
                 if (!manager) {
+                    console.error(`[SocketDispatcher] Game not found: ${gameId}`);
                     return socket.emit('system_error', { code: 404, message: 'S002: Game not found' });
                 }
+                console.log(`[SocketDispatcher] Calling onPlayerJoin for ${gameId}...`);
                 // 交由游戏管理器处理玩家加入/匹配逻辑
                 manager.onPlayerJoin(socket, socket.user);
+                console.log(`[SocketDispatcher] onPlayerJoin called successfully`);
             });
 
             socket.on('disconnect', () => {
