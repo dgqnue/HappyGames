@@ -131,7 +131,7 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >
-                                        {isOtherRoom ? '已在其他房间' : ((room.status === 'waiting' || room.status === 'idle') && room.players < 2 ? '入座' : '已满员')}
+                                        {(room.status === 'waiting' || room.status === 'idle') && room.players < 2 ? '入座' : '已满员'}
                                     </button>
                                 )}
                             </div>
