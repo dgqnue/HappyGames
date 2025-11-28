@@ -1250,3 +1250,67 @@ setInterval(() => {
 
 ---
 
+
+---
+
+## 17. 游戏匹配流程模板 (Game Match Flow Template)
+
+**最新更新**: 2025-11-28
+
+为了确保所有游戏的匹配流程一致性和可维护性，我们创建了标准化的游戏匹配流程模板。
+
+详细指南请参考：
+?? **[GAME_MATCH_FLOW_TEMPLATE.md](./GAME_MATCH_FLOW_TEMPLATE.md)**
+
+### 17.1 核心设计原则
+
+1. **状态驱动**: 所有 UI 变化由状态驱动
+2. **实时同步**: 使用 Socket.IO 实时广播状态
+3. **用户友好**: 在游戏桌卡片上直接操作，无需弹窗
+4. **容错性**: 处理断线重连、超时等异常情况
+
+### 17.2 标准流程
+
+waiting (等待中)  ready_check (准备检查)  playing (游戏中)  ended (已结束)
+
+### 17.3 中国象棋实现
+
+中国象棋完全遵循此模板实现，是标准的参考实现。
+
+---
+
+## 18. 更新日志 (Update Log)
+
+### 2025-11-28: 游戏匹配流程重大优化
+
+#### 问题修复
+
+1. **房间状态卡在 ready_check 的问题**
+   - 从 MatchRoomState.addPlayer() 中移除 startReadyCheck() 调用
+   - 由 MatchableGameRoom 统一控制准备检查流程
+   - 在 removePlayer() 中强制重置状态为 waiting
+
+2. **房间列表实时更新问题**
+   - 在 BaseGameManager 中添加 broadcastRoomList(tier) 方法
+   - 在 broadcastRoomState() 中调用 gameManager.broadcastRoomList()
+   - 客户端自动加入广播房间以接收实时更新
+
+#### UI/UX 改进
+
+1. **移除弹窗，改为卡片内操作**
+   - 玩家入座后直接在游戏桌卡片上显示"开始"和"离开"按钮
+   - 当前房间卡片高亮显示
+   - 其他房间的入座按钮变为"已在其他房间"（禁用）
+
+2. **按钮文案优化**
+   - "准备"  "开始"
+   - "已准备"  "就绪"
+
+#### 文档更新
+
+- 新增 GAME_MATCH_FLOW_TEMPLATE.md - 游戏匹配流程模板
+- 更新 development_docs.md - 添加本次更新的详细记录
+
+---
+
+**文档最后更新**: 2025-11-28

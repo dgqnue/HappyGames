@@ -117,11 +117,24 @@ export default function ChineseChessPlay() {
                 setIsReady(false);
             });
 
+            // 监听准备检查取消
+            newSocket.on('ready_check_cancelled', (data: any) => {
+                console.log('准备检查已取消:', data);
+                setReadyTimer(null);
+                setIsReady(false);
+                // 可以选择显示一个提示消息
+                if (data.reason) {
+                    // 使用 toast 或者其他方式提示用户
+                    console.log(`准备检查取消原因: ${data.reason}`);
+                }
+            });
+
             // 监听被踢出
             newSocket.on('kicked', (data: any) => {
                 alert(`您已被踢出房间: ${data.reason}`);
                 setStatus('lobby');
                 setReadyTimer(null);
+                setIsReady(false);
             });
 
             setGameClient(client);
@@ -309,8 +322,8 @@ export default function ChineseChessPlay() {
                             onClick={handleReady}
                             disabled={isReady}
                             className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                    ? 'bg-green-500 text-white cursor-default'
-                                    : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
+                                ? 'bg-green-500 text-white cursor-default'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
                                 }`}
                         >
                             {isReady ? '已准备 (等待对手)' : '开始游戏'}

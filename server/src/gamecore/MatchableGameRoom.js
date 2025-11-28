@@ -295,10 +295,16 @@ class MatchableGameRoom {
      * 准备超时处理
      */
     onReadyTimeout() {
+        console.log(`[MatchableGameRoom] onReadyTimeout called for room ${this.roomId}`);
+
         const unreadyPlayers = this.matchState.getUnreadyPlayers();
+        const readyPlayers = this.matchState.players.filter(p => p.ready);
+
+        console.log(`[MatchableGameRoom] Ready players: ${readyPlayers.length}, Unready players: ${unreadyPlayers.length}`);
 
         // 踢出未准备的玩家
         unreadyPlayers.forEach(player => {
+            console.log(`[MatchableGameRoom] Kicking unready player: ${player.nickname}`);
             const socket = this.io.sockets.sockets.get(player.socketId);
             if (socket) {
                 socket.emit('kicked', {
@@ -309,11 +315,25 @@ class MatchableGameRoom {
             }
         });
 
-        // 重置准备状态
+        // 取消准备检查定时器
+        this.matchState.cancelReadyCheck();
+
+        // 重置所有剩余玩家的准备状态
         this.matchState.resetReadyStatus();
+
+        // 恢复为等待状态
         this.matchState.status = 'waiting';
 
+        console.log(`[MatchableGameRoom] Room reset to waiting state. Remaining players: ${this.matchState.players.length}`);
+
+        // 广播房间状态更新
         this.broadcastRoomState();
+
+        // 通知剩余玩家倒计时已取消
+        this.broadcast('ready_check_cancelled', {
+            reason: '部分玩家未在规定时间内准备',
+            remainingPlayers: this.matchState.players.length
+        });
     }
 
     /**
