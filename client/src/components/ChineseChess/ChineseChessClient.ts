@@ -1,5 +1,5 @@
 // client/src/components/ChineseChess/ChineseChessClient.ts
-import { BaseGameClient } from '../../gamecore/BaseGameClient';
+import { GameClientTemplate } from '../../gamecore/GameClientTemplate';
 import { Socket } from 'socket.io-client';
 
 interface ChessState {
@@ -8,71 +8,38 @@ interface ChessState {
     turn: 'r' | 'b';
     players: { r: string | null; b: string | null };
     mySide?: 'r' | 'b';
+    winner?: string | null;
+    elo?: any;
 }
 
-export class ChineseChessClient extends BaseGameClient {
-    protected state: ChessState = {
-        status: 'waiting',
-        board: [],
-        turn: 'r',
-        players: { r: null, b: null }
-    };
-
+export class ChineseChessClient extends GameClientTemplate {
     constructor(socket: Socket) {
+        // 游戏类型必须是 'chinesechess'，与服务端匹配
         super(socket, 'chinesechess');
     }
 
-    protected setupListeners(): void {
-        this.socket.on('state', (data: any) => {
-            this.updateState(data);
-        });
-
-        this.socket.on('game_start', (data: any) => {
-            this.updateState({ status: 'playing', ...data });
-        });
-
+    protected setupGameListeners(): void {
+        // 监听移动事件
+        // 服务端 BaseGameManager 会广播 'move' 事件（不是 'chinesechess_move'，那是客户端发的）
         this.socket.on('move', (data: any) => {
-            this.updateState({
+            console.log('[ChineseChess] Move received:', data);
+            this.handleStateUpdate({
                 board: data.board,
                 turn: data.turn
             });
         });
-
-        this.socket.on('game_over', (data: any) => {
-            this.updateState({
-                status: 'ended',
-                winner: data.winner,
-                elo: data.elo
-            });
-        });
-
-        this.socket.on('error', (data: any) => {
-            console.error('Chess Error:', data);
-        });
     }
 
-    protected removeListeners(): void {
-        this.socket.off('state');
-        this.socket.off('game_start');
+    protected removeGameListeners(): void {
         this.socket.off('move');
-        this.socket.off('game_over');
-        this.socket.off('error');
     }
 
+    // 自定义移动方法
     public makeMove(fromX: number, fromY: number, toX: number, toY: number) {
-        this.socket.emit('chess_move', { fromX, fromY, toX, toY });
+        // 发送 'chinesechess_move' 事件（BaseGameManager 监听这个）
+        super.makeMove({ fromX, fromY, toX, toY });
     }
 
-    public joinTier(tier: string) {
-        this.socket.emit('chess_join', { tier });
-    }
-
-    public joinRoom(tier: string, roomId: string) {
-        this.socket.emit('chess_join', { tier, roomId });
-    }
-
-    public leave() {
-        console.log('[ChineseChessClient] Leaving room');
-        this.socket.emit('chess_leave');
-    }
+    // 覆盖父类方法以支持旧的调用方式（如果需要）
+    // 或者直接使用父类的 joinTier, joinRoom, leave
 }
