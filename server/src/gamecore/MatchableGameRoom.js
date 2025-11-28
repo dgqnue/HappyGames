@@ -442,10 +442,24 @@ class MatchableGameRoom {
      */
     broadcastRoomState() {
         const roomInfo = this.matchState.getRoomInfo();
-        // 发送 'state' 事件以匹配客户端 GameClientTemplate
-        this.broadcast('state', roomInfo);
-        // 保持 'room_state' 以防有其他依赖
+        // 发送 'room_state' 给大厅列表（保持轻量）
         this.broadcast('room_state', roomInfo);
+
+        // 发送 'state' 给房间内客户端（包含详细玩家信息）
+        const state = {
+            ...roomInfo,
+            players: this.matchState.players.map(p => ({
+                userId: p.userId,
+                socketId: p.socketId,
+                nickname: p.nickname,
+                avatar: p.avatar,
+                ready: p.ready,
+                title: p.title,
+                winRate: p.winRate,
+                disconnectRate: p.disconnectRate
+            }))
+        };
+        this.broadcast('state', state);
     }
 
     /**

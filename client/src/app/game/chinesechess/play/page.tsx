@@ -250,6 +250,20 @@ export default function ChineseChessPlay() {
         );
     }
 
+    // 初始棋盘状态
+    const initialBoard = [
+        ['r', 'n', 'b', 'a', 'k', 'a', 'b', 'n', 'r'],
+        [null, null, null, null, null, null, null, null, null],
+        [null, 'c', null, null, null, null, null, 'c', null],
+        ['p', null, 'p', null, 'p', null, 'p', null, 'p'],
+        [null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null],
+        ['P', null, 'P', null, 'P', null, 'P', null, 'P'],
+        [null, 'C', null, null, null, null, null, 'C', null],
+        [null, null, null, null, null, null, null, null, null],
+        ['R', 'N', 'B', 'A', 'K', 'A', 'B', 'N', 'R']
+    ];
+
     return (
         <GamePlayLayout
             gameName="中国象棋"
@@ -286,14 +300,21 @@ export default function ChineseChessPlay() {
                 </div>
             )}
 
-            {gameState && gameState.board && (
-                <ChessBoard
-                    board={gameState.board}
-                    turn={gameState.turn}
-                    mySide={gameState.mySide}
-                    onMove={handleMove}
-                />
+            {/* 等待对手遮罩 */}
+            {gameState?.status === 'waiting' && !readyTimer && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none">
+                    <div className="bg-white/80 px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-pulse">
+                        <span className="text-amber-800 font-medium">⏳ 等待对手入座...</span>
+                    </div>
+                </div>
             )}
+
+            <ChessBoard
+                board={gameState?.board || initialBoard}
+                turn={gameState?.turn || 'r'}
+                mySide={gameState?.mySide}
+                onMove={handleMove}
+            />
         </GamePlayLayout>
     );
 }
