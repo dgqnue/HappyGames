@@ -186,6 +186,9 @@ class MatchableGameRoom {
         const userId = socket.user._id.toString();
         console.log(`[MatchableGameRoom] playerLeave called for room ${this.roomId}, userId: ${userId}`);
 
+        // 记录之前的状态
+        const wasMatching = this.matchState.status === 'matching';
+
         // 从玩家列表移除
         const wasPlayer = this.matchState.removePlayer(userId);
         console.log(`[MatchableGameRoom] wasPlayer: ${wasPlayer}`);
@@ -198,6 +201,14 @@ class MatchableGameRoom {
             socket.leave(this.roomId);
             console.log(`[MatchableGameRoom] Broadcasting room state after player left...`);
             this.broadcastRoomState();
+
+            // 如果之前是匹配中，现在取消了，通知客户端取消倒计时
+            if (wasMatching && this.matchState.status !== 'matching') {
+                this.broadcast('ready_check_cancelled', {
+                    reason: '玩家离开，匹配中断',
+                    remainingPlayers: this.matchState.players.length
+                });
+            }
         }
 
         return wasPlayer || wasSpectator;
