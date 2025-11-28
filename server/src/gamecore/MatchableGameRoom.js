@@ -1,5 +1,5 @@
 /**
- * 增强的游戏房间基类 - 集成匹配系统
+ * 增强的游戏桌基类 - 集成匹配系统
  * 
  * 在原有 BaseGameRoom 基础上增加：
  * - 匹配条件管理
@@ -54,7 +54,7 @@ class MatchableGameRoom {
         if (!this.matchState.canPlayerJoin(playerStats)) {
             socket.emit('join_failed', {
                 code: 'MATCH_CRITERIA_NOT_MET',
-                message: '不符合房间匹配条件'
+                message: '不符合游戏桌匹配条件'
             });
             return false;
         }
@@ -92,7 +92,7 @@ class MatchableGameRoom {
         // 加入 Socket.IO 房间
         socket.join(this.roomId);
 
-        // 广播房间状态更新
+        // 广播游戏桌状态更新
         this.broadcastRoomState();
 
         // 如果满座，自动开始准备检查
@@ -105,29 +105,29 @@ class MatchableGameRoom {
 
     /**
      * 获取当前玩家数量
-     * 用于房间列表显示
+     * 用于游戏桌列表显示
      */
     getPlayerCount() {
         return this.matchState.players.length;
     }
 
     /**
-     * 获取房间状态
-     * 用于房间列表显示
+     * 获取游戏桌状态
+     * 用于游戏桌列表显示
      */
     get status() {
         return this.matchState.status;
     }
 
     /**
-     * 检查房间是否可以加入
+     * 检查游戏桌是否可以加入
      */
     canJoin() {
         return this.matchState.players.length < this.maxPlayers;
     }
 
     /**
-     * 玩家加入房间（兼容 BaseGameManager）
+     * 玩家加入游戏桌（兼容 BaseGameManager）
      */
     async join(socket) {
         // 使用默认匹配设置
@@ -141,7 +141,7 @@ class MatchableGameRoom {
     }
 
     /**
-     * 离开房间（兼容 BaseGameManager）
+     * 离开游戏桌（兼容 BaseGameManager）
      */
     leave(socket) {
         return this.playerLeave(socket);

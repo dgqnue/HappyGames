@@ -42,24 +42,23 @@ class ChineseChessManager extends BaseGameManager {
      */
     async handleMatchFound(players) {
         try {
-            // 创建新房间
-            // 使用第一个玩家的底豆设置来决定房间等级，或者默认为 'free'
-            // 这里简单起见，我们创建一个动态房间，等级设为 'free' (或者根据底豆动态判断)
+            // 创建新游戏桌
+            // 使用第一个玩家的底豆设置来决定游戏室等级，或者默认为 'free'
             const tier = 'free';
             const roomId = `${this.gameType}_match_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-            // 创建房间实例
+            // 创建游戏桌实例
             const room = new ChineseChessRoom(this.io, roomId, tier);
 
-            // 将房间添加到管理器
+            // 将游戏桌添加到对应游戏室
             if (!this.rooms[tier]) {
                 this.rooms[tier] = [];
             }
             this.rooms[tier].push(room);
 
-            console.log(`[ChineseChess] Match found, created room ${roomId} for ${players.length} players`);
+            console.log(`[ChineseChess] Match found, created game table ${roomId} for ${players.length} players`);
 
-            // 将玩家加入房间
+            // 将玩家加入游戏桌
             for (const player of players) {
                 const success = await room.playerJoin(player.socket, player.matchSettings);
                 if (success) {
@@ -68,7 +67,7 @@ class ChineseChessManager extends BaseGameManager {
                         message: '匹配成功！'
                     });
                 } else {
-                    console.error(`[ChineseChess] Failed to add matched player ${player.userId} to room ${roomId}`);
+                    console.error(`[ChineseChess] Failed to add matched player ${player.userId} to game table ${roomId}`);
                 }
             }
         } catch (error) {
