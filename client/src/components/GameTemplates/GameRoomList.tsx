@@ -100,14 +100,14 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                                 onClick={onReady}
                                                 disabled={isReady}
                                                 className={`flex-1 py-2 font-bold rounded-lg transition-all ${isReady
-                                                        ? 'bg-green-500 text-white cursor-default'
-                                                        : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
+                                                    ? 'bg-green-500 text-white cursor-default'
+                                                    : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
                                                     }`}
                                             >
                                                 {isReady ? '已准备' : '准备'}
                                             </button>
                                         </div>
-                                        {readyTimer !== null && readyTimer > 0 && (
+                                        {readyTimer !== null && readyTimer !== undefined && readyTimer > 0 && (
                                             <div className="text-center text-orange-600 font-mono font-bold animate-pulse text-sm">
                                                 ⏱️ {readyTimer}s 后开始
                                             </div>
@@ -118,8 +118,8 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                         onClick={() => onJoinRoom(room.id)}
                                         disabled={isOtherRoom || room.status !== 'waiting' || room.players >= 2}
                                         className={`w-full py-2 rounded-lg font-bold transition-all ${!isOtherRoom && room.status === 'waiting' && room.players < 2
-                                                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >
                                         {isOtherRoom ? '已在其他房间' : (room.status === 'waiting' && room.players < 2 ? '入座' : '已满员')}
