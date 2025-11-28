@@ -321,10 +321,7 @@ class MatchableGameRoom {
         // 重置所有剩余玩家的准备状态
         this.matchState.resetReadyStatus();
 
-        // 恢复为等待状态
-        this.matchState.status = 'waiting';
-
-        console.log(`[MatchableGameRoom] Room reset to waiting state. Remaining players: ${this.matchState.players.length}`);
+        console.log(`[MatchableGameRoom] Room reset. Remaining players: ${this.matchState.players.length}, Status: ${this.matchState.status}`);
 
         // 广播房间状态更新
         this.broadcastRoomState();

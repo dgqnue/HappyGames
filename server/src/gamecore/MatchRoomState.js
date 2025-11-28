@@ -16,7 +16,7 @@ class MatchRoomState {
         this.spectators = []; // [{ userId, socketId, nickname }]
 
         // 房间状态
-        this.status = 'waiting'; // waiting | ready_check | playing | ended
+        this.status = 'idle'; // idle | waiting | matching | playing | ended
 
         // 匹配条件（由第一个入座的玩家设置）
         this.matchSettings = {
@@ -118,21 +118,28 @@ class MatchRoomState {
             joinedAt: Date.now()
         });
 
-        // 第一个玩家入座时，设置匹配条件并启动僵尸桌计时器
+        // 状态更新逻辑
         if (this.players.length === 1) {
+            this.status = 'waiting'; // 1人：等待中
+
             this.firstPlayerJoinedAt = Date.now();
             if (playerData.matchSettings) {
                 // 使用第一个玩家的匹配条件
                 this.matchSettings = { ...this.matchSettings, ...playerData.matchSettings };
                 console.log(`[MatchRoom] Room match settings set by first player:`, this.matchSettings);
             }
+        } else if (this.players.length === this.maxPlayers) {
+            // 满座：匹配中（准备阶段）
+            // 注意：实际的倒计时启动由 MatchableGameRoom 处理
+            // 这里先不设为 matching，等 startReadyCheck 调用时再设，或者现在设也可以
+            // 但为了保持一致性，我们让 startReadyCheck 来设置 matching
+            // 不过根据用户需求"已满座但未进入游戏时，状态设置为匹配中"，这里应该设为 matching
+            // 可是如果 MatchableGameRoom 还没来得及 startReadyCheck 呢？
+            // 让我们保持 status = 'waiting' 直到 startReadyCheck 被调用，或者在这里就设为 matching？
+            // 既然 MatchableGameRoom 会在 addPlayer 后立即检查是否满座并调用 startReadyCheck
+            // 我们这里可以先不改，或者预设。
+            // 让我们在 startReadyCheck 里统一设置 matching
         }
-
-        // 满座后自动进入准备检查阶段
-        // 移交给 MatchableGameRoom 处理，因为它需要设置定时器和广播
-        // if (this.players.length === this.maxPlayers) {
-        //     this.startReadyCheck();
-        // }
 
         return { success: true };
     }
@@ -152,9 +159,13 @@ class MatchRoomState {
             this.readyTimer = null;
         }
 
-        // 如果处于准备检查阶段或人数不足，重置为等待状态
-        if (this.status === 'ready_check' || (this.status === 'waiting' && this.players.length < this.maxPlayers)) {
-            this.status = 'waiting';
+        // 状态更新逻辑
+        if (this.status === 'matching' || this.status === 'playing' || this.status === 'ended' || this.status === 'waiting') {
+            if (this.players.length === 0) {
+                this.status = 'idle'; // 0人：空闲
+            } else if (this.players.length < this.maxPlayers) {
+                this.status = 'waiting'; // 不满座：等待中
+            }
         }
 
         // 如果房间空了，重置匹配条件和计时器
@@ -232,9 +243,9 @@ class MatchRoomState {
      * 开始准备检查（30秒倒计时）
      */
     startReadyCheck() {
-        if (this.status === 'ready_check') return;
+        if (this.status === 'matching') return;
 
-        this.status = 'ready_check';
+        this.status = 'matching'; // 满座准备阶段：匹配中
         return {
             started: true,
             timeout: this.readyTimeout
@@ -249,7 +260,13 @@ class MatchRoomState {
             clearTimeout(this.readyTimer);
             this.readyTimer = null;
         }
-        this.status = 'waiting';
+
+        // 恢复状态
+        if (this.players.length === 0) {
+            this.status = 'idle';
+        } else {
+            this.status = 'waiting';
+        }
     }
 
     /**

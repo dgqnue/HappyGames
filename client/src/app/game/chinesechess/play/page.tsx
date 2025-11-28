@@ -68,15 +68,15 @@ export default function ChineseChessPlay() {
                 } else if (state.status === 'ended') {
                     // 保持在 playing 视图以显示结算
                     setReadyTimer(null);
-                } else if (state.status === 'ready_check') {
-                    // 准备检查阶段，如果已经在 playing 视图（例如重连），保持
+                } else if (state.status === 'matching') {
+                    // 准备检查阶段（匹配中），如果已经在 playing 视图（例如重连），保持
                     // 否则保持在 lobby 视图（显示 Modal）
                     if (status === 'playing') {
                         // 保持 playing
                     } else {
                         setStatus('lobby');
                     }
-                } else if (state.status === 'waiting') {
+                } else if (state.status === 'waiting' || state.status === 'idle') {
                     // 检查自己是否在玩家列表中
                     const amIInRoom = state.players && state.players.some((p: any) => p.socketId === newSocket.id);
 

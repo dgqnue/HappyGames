@@ -2,7 +2,7 @@ import React from 'react';
 
 interface Room {
     id: string;
-    status: 'waiting' | 'playing' | 'ended';
+    status: 'idle' | 'waiting' | 'matching' | 'playing' | 'ended';
     players: number;
     spectators: number;
 }
@@ -78,8 +78,17 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                             <div key={room.id} className={`bg-white/80 backdrop-blur-sm rounded-xl p-4 border shadow-md transition-all ${isCurrentRoom ? 'border-amber-500 ring-2 ring-amber-300 transform scale-105' : 'border-amber-100 hover:shadow-lg'}`}>
                                 <div className="flex justify-between items-center mb-3">
                                     <span className="font-bold text-amber-900">游戏桌: {room.id.split('_').pop()}</span>
-                                    <span className={`px-2 py-1 rounded text-xs font-bold ${room.status === 'waiting' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {room.status === 'waiting' ? '等待中' : '游戏中'}
+                                    <span className={`px-2 py-1 rounded text-xs font-bold ${room.status === 'idle' ? 'bg-gray-100 text-gray-600' :
+                                        room.status === 'waiting' ? 'bg-green-100 text-green-700' :
+                                            room.status === 'matching' ? 'bg-orange-100 text-orange-700' :
+                                                'bg-red-100 text-red-700'
+                                        }`}>
+                                        {
+                                            room.status === 'idle' ? '空闲' :
+                                                room.status === 'waiting' ? '等待中' :
+                                                    room.status === 'matching' ? '匹配中' :
+                                                        '游戏中'
+                                        }
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
@@ -116,13 +125,13 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                 ) : (
                                     <button
                                         onClick={() => onJoinRoom(room.id)}
-                                        disabled={isOtherRoom || room.status !== 'waiting' || room.players >= 2}
-                                        className={`w-full py-2 rounded-lg font-bold transition-all ${!isOtherRoom && room.status === 'waiting' && room.players < 2
+                                        disabled={isOtherRoom || (room.status !== 'waiting' && room.status !== 'idle') || room.players >= 2}
+                                        className={`w-full py-2 rounded-lg font-bold transition-all ${!isOtherRoom && (room.status === 'waiting' || room.status === 'idle') && room.players < 2
                                             ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >
-                                        {isOtherRoom ? '已在其他房间' : (room.status === 'waiting' && room.players < 2 ? '入座' : '已满员')}
+                                        {isOtherRoom ? '已在其他房间' : ((room.status === 'waiting' || room.status === 'idle') && room.players < 2 ? '入座' : '已满员')}
                                     </button>
                                 )}
                             </div>
