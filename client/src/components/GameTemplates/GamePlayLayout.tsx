@@ -11,7 +11,7 @@ interface EloResult {
 }
 
 interface GameState {
-    status: 'waiting' | 'playing' | 'ended';
+    status: 'waiting' | 'ready_check' | 'playing' | 'ended';
     winner?: string | null;
     mySide?: string;
     elo?: EloResult;
@@ -47,9 +47,9 @@ export const GamePlayLayout: React.FC<GamePlayLayoutProps> = ({
                 </div>
 
                 {/* Game Area */}
-                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                    {/* Game Board (Children) */}
-                    {gameState && gameState.status === 'playing' && children}
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 relative">
+                    {/* Game Board (Children) - 在 waiting, ready_check, playing 状态下都显示 */}
+                    {gameState && (gameState.status === 'waiting' || gameState.status === 'ready_check' || gameState.status === 'playing') && children}
 
                     {/* Game Over Screen */}
                     {gameState && gameState.status === 'ended' && (
