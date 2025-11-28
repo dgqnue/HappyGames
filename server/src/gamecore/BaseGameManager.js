@@ -319,14 +319,23 @@ class BaseGameManager {
      * @param {String} tier - 游戏室等级
      */
     broadcastRoomList(tier) {
-        if (!this.rooms[tier]) return;
+        console.log(`[${this.gameType}] broadcastRoomList called for tier: ${tier}`);
+
+        if (!this.rooms[tier]) {
+            console.warn(`[${this.gameType}] No rooms found for tier: ${tier}`);
+            return;
+        }
 
         const roomList = this.getRoomList(tier);
         console.log(`[${this.gameType}] Broadcasting room_list update for ${tier}:`, roomList.length, 'rooms');
+        console.log(`[${this.gameType}] Room list content:`, JSON.stringify(roomList));
 
         // 向所有连接到该游戏的客户端广播
         // 使用游戏类型作为房间名，所有玩该游戏的客户端都会加入这个房间
-        this.io.to(`${this.gameType}_${tier}`).emit('room_list', roomList);
+        const broadcastRoom = `${this.gameType}_${tier}`;
+        console.log(`[${this.gameType}] Broadcasting to room: ${broadcastRoom}`);
+        this.io.to(broadcastRoom).emit('room_list', roomList);
+        console.log(`[${this.gameType}] Broadcast complete`);
     }
 }
 
