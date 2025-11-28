@@ -9,6 +9,7 @@
 - **[游戏开发模板指南](./GAME_TEMPLATE_GUIDE.md)** - 快速创建新游戏的完整模板系统
 - **[通信模板使用指南](./COMMUNICATION_TEMPLATE_GUIDE.md)** - Socket.IO + HTTP 双通道通信模板 ⭐
 - **[UI 模板使用指南](./UI_TEMPLATE_GUIDE.md)** - 游戏 UI 组件模板系统 ⭐
+- **[匹配系统使用指南](./MATCH_SYSTEM_GUIDE.md)** - 完整的玩家匹配系统模板 ⭐
 
 ### 快速链接
 - [项目概览](./development_docs.md#1-项目概览-project-overview)
@@ -49,6 +50,7 @@ npm run dev
 
 - ✅ **多游戏支持**: 中国象棋、五子棋等（可快速扩展）
 - ✅ **ELO 等级分系统**: 公平的技能评估与匹配
+- ✅ **智能匹配系统**: 自动匹配 + 手动入座，支持底豆、胜率、掉线率筛选
 - ✅ **游戏豆经济**: Pi 币兑换游戏豆，赢取奖励
 - ✅ **推广佣金系统**: 5 级推广员体系
 - ✅ **国际化**: 支持 14 种语言
@@ -76,6 +78,15 @@ npm run dev
 - 📄 [UI 模板使用指南](./UI_TEMPLATE_GUIDE.md)
 - 🎨 统一的视觉风格和交互体验
 - 🧩 包含等级选择、房间列表、对局布局
+
+### 4. 匹配系统（10 分钟）⭐
+完整的玩家匹配系统：
+- 📄 [匹配系统使用指南](./MATCH_SYSTEM_GUIDE.md)
+- 🎯 自动匹配 + 手动入座
+- ⚙️ 底豆、胜率、掉线率筛选
+- ⏱️ 准备/开始机制（30秒倒计时）
+- 🧹 僵尸桌清理（5分钟无匹配）
+- 👁️ 旁观功能（防作弊）
 
 ## 📖 技术文档
 
@@ -117,10 +128,12 @@ HappyGames/
 ├── server/
 │   └── src/
 │       ├── gamecore/          # 核心模板系统 ⭐
-│       │   ├── BaseGameManager.js    # 游戏管理器基类
-│       │   ├── BaseGameRoom.js       # 游戏房间基类
-│       │   ├── EloService.js         # ELO 等级分服务
-│       │   └── socket.js             # Socket.IO 配置
+│       │   ├── BaseGameManager.js       # 游戏管理器基类
+│       │   ├── MatchableGameRoom.js     # 可匹配游戏房间基类
+│       │   ├── MatchRoomState.js        # 匹配房间状态管理
+│       │   ├── AutoMatchManager.js      # 自动匹配管理器
+│       │   ├── EloService.js            # ELO 等级分服务
+│       │   └── socket.js                # Socket.IO 配置
 │       └── games/             # 具体游戏实现
 │           └── chinesechess/  # 中国象棋（参考实现）
 └── client/
@@ -131,9 +144,10 @@ HappyGames/
         │   └── BaseGameClient.ts      # 游戏客户端基类
         └── components/
             ├── GameTemplates/ # UI 模板系统 ⭐
-            │   ├── GameTierSelector.tsx
-            │   ├── GameRoomList.tsx
-            │   └── GamePlayLayout.tsx
+            │   ├── GameTierSelector.tsx      # 等级选择组件
+            │   ├── GameRoomList.tsx          # 房间列表组件
+            │   ├── GamePlayLayout.tsx        # 对局布局组件
+            │   └── MatchSettingsPanel.tsx    # 匹配设置面板
             └── ChineseChess/  # 中国象棋（参考实现）
 ```
 

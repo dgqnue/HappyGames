@@ -30,6 +30,10 @@ const UserGameStatsSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    disconnects: {
+        type: Number,
+        default: 0
+    },
     lastPlayedAt: {
         type: Date,
         default: Date.now
@@ -41,6 +45,10 @@ const UserGameStatsSchema = new mongoose.Schema({
     titleRank: {
         type: Number,
         default: 1 // 1-10
+    },
+    titleColor: {
+        type: String,
+        default: '#000000'
     }
 });
 

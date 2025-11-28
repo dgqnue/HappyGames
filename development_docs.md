@@ -271,6 +271,37 @@ HappyGames 是一个基于 Pi Network 生态的游戏平台，允许用户通过
 - **文件**: `client/src/gamecore/GameClientManager.ts`
 - **功能**: 单例模式，管理当前激活的游戏客户端实例，负责不同游戏之间的切换与资源释放。
 
+### 9.3 用户身份标识规范 (User Identity Standard) ⭐
+
+为了防止程序产生混乱，平台制定了严格的用户身份标识规范。
+
+**核心原则**: 
+> **游戏内所有对用户的操作，均以用户的 ID (`_id`) 作为用户身份的唯一辨识依据。**
+
+#### 规范详情
+
+1.  **唯一标识符**:
+    -   必须使用 MongoDB 生成的 `_id` (String 格式)。
+    -   **禁止** 使用 `socket.id` 作为用户标识（因重连会改变）。
+    -   **禁止** 使用 `username` 或 `nickname` 作为用户标识（可能不唯一或可变）。
+
+2.  **服务端实现**:
+    -   Socket 连接鉴权后，`socket.user._id` 即为可信的用户 ID。
+    -   在房间逻辑、匹配队列、结算记录中，统一使用 `userId` 字段存储。
+    -   **代码示例**:
+        ```javascript
+        // ✅ 正确：使用 userId
+        const userId = socket.user._id.toString();
+        this.players.find(p => p.userId === userId);
+
+        // ❌ 错误：使用 socket.id
+        this.players.find(p => p.socketId === socket.id);
+        ```
+
+3.  **客户端实现**:
+    -   客户端接收到的所有用户数据（如 `players` 列表），必须包含 `userId`。
+    -   判断"我是谁"或"轮到谁"时，比较 `currentUserId === player.userId`。
+
 ---
 
 ## 10. ELO 等级分系统 (ELO Rating System)
@@ -864,9 +895,10 @@ cp -r client/src/app/game/_template client/src/app/game/gomoku
 - `makeMove(move)`: 发送移动指令
 - `dispose()`: 清理资源
 
-### 14.6 双通道冗余机制
+### 14.6 双通道冗余机制 (Communication Template)
 
-所有游戏自动实现双通道数据获取：
+所有游戏自动实现双通道数据获取，详细指南请参考：
+📄 **[COMMUNICATION_TEMPLATE_GUIDE.md](./COMMUNICATION_TEMPLATE_GUIDE.md)**
 
 ```typescript
 // Socket.IO 通道（主）
@@ -953,6 +985,58 @@ setInterval(() => {
 | 需要手动集成 ELO | 自动集成 | **功能完整性 ⬆️** |
 
 **结论**: 使用模板系统可以将新游戏开发时间从 **8-10 小时** 缩短到 **1-2 小时**，同时保证代码质量和架构一致性。
+
+---
+
+## 15. UI 模板系统 (UI Template System)
+
+为了统一游戏视觉风格并减少重复开发，我们提供了一套标准化的 UI 组件模板。
+
+详细指南请参考：
+📄 **[UI_TEMPLATE_GUIDE.md](./UI_TEMPLATE_GUIDE.md)**
+
+### 15.1 核心组件
+
+1.  **GameTierSelector (等级选择器)**
+    -   **功能**: 展示游戏等级房间（免费/初级/中级/高级），包含入场费、底豆说明。
+    -   **特性**: 自动集成用户余额检查、等级分权限验证。
+    -   **使用**: `client/src/app/game/{game}/page.tsx`
+
+2.  **GameRoomList (房间列表)**
+    -   **功能**: 展示当前等级下的所有房间，支持快速开始、房间筛选。
+    -   **特性**: 自动集成双通道数据获取 (`useRoomList` Hook)。
+    -   **使用**: `client/src/app/game/{game}/play/page.tsx` (大厅模式)
+
+3.  **GamePlayLayout (对局布局)**
+    -   **功能**: 标准化的游戏对局界面布局。
+    -   **包含**: 顶部状态栏（玩家信息、倒计时）、中央游戏区、底部操作栏。
+    -   **使用**: `client/src/app/game/{game}/play/page.tsx` (游戏模式)
+
+4.  **MatchSettingsPanel (匹配设置面板)**
+    -   **功能**: 自动匹配的条件设置界面。
+    -   **包含**: 底豆范围、胜率筛选、掉线率限制、等级分筛选。
+
+---
+
+## 16. 游戏匹配系统 (Game Matching System)
+
+完整的玩家匹配解决方案，支持自动匹配和手动入座。
+
+详细指南请参考：
+📄 **[MATCH_SYSTEM_GUIDE.md](./MATCH_SYSTEM_GUIDE.md)**
+
+### 16.1 核心特性
+
+-   ✅ **自动匹配**: 基于队列的智能匹配
+-   ✅ **手动入座**: 传统的大厅房间模式
+-   ✅ **条件筛选**: 底豆、胜率、掉线率、等级分
+-   ✅ **防作弊**: 僵尸桌清理、旁观限制
+-   ✅ **掉线统计**: 自动记录和计算玩家掉线率
+
+### 16.2 架构集成
+
+-   **服务端**: `MatchableGameRoom` (基类), `AutoMatchManager` (服务)
+-   **客户端**: `MatchSettingsPanel` (UI), `socket` 事件处理
 
 ---
 
