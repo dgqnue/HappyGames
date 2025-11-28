@@ -129,9 +129,10 @@ class MatchRoomState {
         }
 
         // 满座后自动进入准备检查阶段
-        if (this.players.length === this.maxPlayers) {
-            this.startReadyCheck();
-        }
+        // 移交给 MatchableGameRoom 处理，因为它需要设置定时器和广播
+        // if (this.players.length === this.maxPlayers) {
+        //     this.startReadyCheck();
+        // }
 
         return { success: true };
     }
