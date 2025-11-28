@@ -9,6 +9,7 @@ import { useRoomList } from '@/gamecore/useRoomList';
 import { GameRoomList } from '@/components/GameTemplates/GameRoomList';
 import { GamePlayLayout } from '@/components/GameTemplates/GamePlayLayout';
 import { MatchSettingsPanel } from '@/components/GameTemplates/MatchSettingsPanel';
+import { RoomLobbyModal } from '@/components/GameTemplates/RoomLobbyModal';
 
 export default function ChineseChessPlay() {
     const router = useRouter();
@@ -69,14 +70,20 @@ export default function ChineseChessPlay() {
                     // 保持在 playing 视图以显示结算
                     setReadyTimer(null);
                 } else if (state.status === 'ready_check') {
-                    // 准备检查阶段，保持在 playing 视图（显示棋盘和准备按钮）
-                    setStatus('playing');
+                    // 准备检查阶段，如果已经在 playing 视图（例如重连），保持
+                    // 否则保持在 lobby 视图（显示 Modal）
+                    if (status === 'playing') {
+                        // 保持 playing
+                    } else {
+                        setStatus('lobby');
+                    }
                 } else if (state.status === 'waiting') {
                     // 检查自己是否在玩家列表中
                     const amIInRoom = state.players && state.players.some((p: any) => p.socketId === newSocket.id);
 
                     if (amIInRoom) {
-                        setStatus('playing');
+                        // 保持在 lobby，显示 Modal
+                        if (status !== 'lobby') setStatus('lobby');
                     } else {
                         // 如果不在房间里，保持在 lobby
                         // 注意：不要强制设为 lobby，因为可能正在 matching
@@ -202,6 +209,9 @@ export default function ChineseChessPlay() {
         }
     };
 
+    // 计算是否在房间中
+    const amIInRoom = gameState?.players?.some((p: any) => p.socketId === socket?.id);
+
     if (status === 'connecting') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
@@ -221,6 +231,24 @@ export default function ChineseChessPlay() {
                     onQuickStart={handleQuickStart}
                     onLeave={() => router.push('/game/chinesechess')}
                 />
+
+                {/* 房间等待模态框 */}
+                {amIInRoom && (gameState?.status === 'waiting' || gameState?.status === 'ready_check') && (
+                    <RoomLobbyModal
+                        roomId={gameState.roomId}
+                        players={gameState.players || []}
+                        maxPlayers={gameState.maxPlayers || 2}
+                        isReady={isReady}
+                        readyTimer={readyTimer} // 传递倒计时
+                        onReady={handleReady}
+                        onLeave={() => {
+                            handleLeave();
+                            setGameState(null);
+                        }}
+                        currentUserId={socket?.id}
+                    />
+                )}
+
                 {showMatchSettings && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-2xl p-6 max-w-md w-full m-4">
@@ -290,21 +318,12 @@ export default function ChineseChessPlay() {
                             onClick={handleReady}
                             disabled={isReady}
                             className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                    ? 'bg-green-500 text-white cursor-default'
-                                    : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
+                                ? 'bg-green-500 text-white cursor-default'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
                                 }`}
                         >
                             {isReady ? '已准备 (等待对手)' : '开始游戏'}
                         </button>
-                    </div>
-                </div>
-            )}
-
-            {/* 等待对手遮罩 */}
-            {gameState?.status === 'waiting' && !readyTimer && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none">
-                    <div className="bg-white/80 px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-pulse">
-                        <span className="text-amber-800 font-medium">⏳ 等待对手入座...</span>
                     </div>
                 </div>
             )}
