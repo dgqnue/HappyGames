@@ -406,12 +406,38 @@ class MatchableGameRoom {
         // 广播最新的房间状态（ended）给大厅
         this.broadcastRoomState();
 
-        // 开始新一轮准备检查
+        // 游戏结束后延迟删除游戏桌
         setTimeout(() => {
-            if (this.matchState.players.length === this.maxPlayers) {
-                this.startReadyCheck();
+            console.log(`[MatchableGameRoom] Game ended in room ${this.roomId}, removing table...`);
+
+            // 踢出所有玩家
+            this.matchState.players.forEach(player => {
+                const socket = this.io.sockets.sockets.get(player.socketId);
+                if (socket) {
+                    socket.leave(this.roomId);
+                }
+            });
+
+            // 清空房间
+            this.matchState.players = [];
+            this.matchState.spectators = [];
+            this.matchState.status = 'idle';
+
+            // 从游戏管理器中删除此游戏桌
+            if (this.gameManager && this.gameManager.rooms && this.gameManager.rooms[this.tier]) {
+                const index = this.gameManager.rooms[this.tier].findIndex(r => r.roomId === this.roomId);
+                if (index !== -1) {
+                    this.gameManager.rooms[this.tier].splice(index, 1);
+                    console.log(`[MatchableGameRoom] Removed table ${this.roomId} from ${this.tier} room`);
+
+                    // 广播房间列表更新
+                    this.gameManager.broadcastRoomList(this.tier);
+                }
             }
-        }, 3000); // 3秒后开始准备检查
+
+            // 清理资源
+            this.cleanup();
+        }, 5000); // 5秒后删除，给玩家时间查看结果
     }
 
     /**
