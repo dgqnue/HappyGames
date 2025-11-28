@@ -17,6 +17,7 @@ class MatchRoomState {
 
         // 房间状态
         this.status = 'idle'; // idle | waiting | matching | playing | ended
+        console.log(`[MatchRoomState] Room ${roomId} initialized with status: ${this.status}`);
 
         // 匹配条件（由第一个入座的玩家设置）
         this.matchSettings = {
