@@ -61,6 +61,14 @@ export default function ChineseChessPlay() {
             client.init((state) => {
                 setGameState(state);
 
+                // 同步准备状态
+                if (state.players) {
+                    const myPlayer = state.players.find((p: any) => p.socketId === newSocket.id);
+                    if (myPlayer) {
+                        setIsReady(myPlayer.ready);
+                    }
+                }
+
                 // 根据房间状态更新UI
                 if (state.status === 'playing') {
                     setStatus('playing');
@@ -114,14 +122,12 @@ export default function ChineseChessPlay() {
             newSocket.on('ready_check_start', (data: any) => {
                 console.log('准备检查开始:', data);
                 setReadyTimer(data.timeout / 1000);
-                setIsReady(false);
             });
 
             // 监听准备检查取消
             newSocket.on('ready_check_cancelled', (data: any) => {
                 console.log('准备检查已取消:', data);
                 setReadyTimer(null);
-                setIsReady(false);
                 // 可以选择显示一个提示消息
                 if (data.reason) {
                     // 使用 toast 或者其他方式提示用户
