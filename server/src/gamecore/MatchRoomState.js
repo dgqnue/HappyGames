@@ -149,6 +149,10 @@ class MatchRoomState {
         if (this.readyTimer) {
             clearTimeout(this.readyTimer);
             this.readyTimer = null;
+        }
+
+        // 如果处于准备检查阶段或人数不足，重置为等待状态
+        if (this.status === 'ready_check' || (this.status === 'waiting' && this.players.length < this.maxPlayers)) {
             this.status = 'waiting';
         }
 
