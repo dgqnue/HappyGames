@@ -4,16 +4,32 @@ const User = require('../models/User');
 const { piAuth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Base64 编码的默认头像 SVG（金色渐变）
-const DEFAULT_AVATAR_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNmY2QzNGQ7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I2Y1OWUwYjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTAwIiBmaWxsPSJ1cmwoI2dyYWQpIiAvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9Ijg1IiByPSIzNSIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8cGF0aCBkPSJNMTAwIDEzNSBjLTMwIDAgLTU1IDE1IC02NSAzNSBhIDgwIDgwIDAgMCAwIDEzMCAwIGMtMTAgLTIwIC0zNSAtMzUgLTY1IC0zNSB6IiBmaWxsPSIjZmZmZmZmIiAvPgo8L3N2Zz4=';
+// 读取默认头像并转换为 Base64
+let DEFAULT_AVATAR_BASE64 = '';
+try {
+    const avatarPath = path.join(__dirname, '../../public/images/default-avatar.png');
+    if (fs.existsSync(avatarPath)) {
+        const imageBuffer = fs.readFileSync(avatarPath);
+        DEFAULT_AVATAR_BASE64 = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+        console.log('默认头像加载成功');
+    } else {
+        console.warn('默认头像文件不存在:', avatarPath);
+        // 降级使用 SVG
+        DEFAULT_AVATAR_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZC1ncmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRDcwMDtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNGREI5MzE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I0I4ODYwQjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1vcGFjaXR5PSIwLjMiLz4KICAgIDwvZmlsdGVyPgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0idXJsKCNnb2xkLWdyYWQpIiAvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIiBzdHJva2Utd2lkdGg9IjQiIC8+CiAgPGcgZmlsdGVyPSJ1cmwoI3NoYWRvdykiPgogICAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iODUiIHI9IjM1IiBmaWxsPSIjZmZmZmZmIiAvPgogICAgPHBhdGggZD0iTTEwMCAxMzUgYy0zNSAwIC02MCAyMCAtNzAgNDUgYSA4NSA4NSAwIDAgMCAxNDAgMCBjLTEwIC0yNSAtMzUgLTQ1IC03MCAtNDUgeiIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8L2c+Cjwvc3ZnPg==';
+    }
+} catch (error) {
+    console.error('默认头像加载失败:', error);
+    DEFAULT_AVATAR_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZC1ncmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRDcwMDtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNGREI5MzE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I0I4ODYwQjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1vcGFjaXR5PSIwLjMiLz4KICAgIDwvZmlsdGVyPgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0idXJsKCNnb2xkLWdyYWQpIiAvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIiBzdHJva2Utd2lkdGg9IjQiIC8+CiAgPGcgZmlsdGVyPSJ1cmwoI3NoYWRvdykiPgogICAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iODUiIHI9IjM1IiBmaWxsPSIjZmZmZmZmIiAvPgogICAgPHBhdGggZD0iTTEwMCAxMzUgYy0zNSAwIC02MCAyMCAtNzAgNDUgYSA4NSA4NSAwIDAgMCAxNDAgMCBjLTEwIC0yNSAtMzUgLTQ1IC03MCAtNDUgeiIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8L2c+Cjwvc3ZnPg==';
+}
 
 // 辅助函数：将相对路径的头像转换为完整 URL
 const getFullAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return DEFAULT_AVATAR_BASE64;
+    if (!avatarPath || avatarPath.includes('default-avatar')) return DEFAULT_AVATAR_BASE64;
     if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
     return `https://happygames-tfdz.onrender.com${avatarPath}`;
 };
@@ -178,7 +194,7 @@ const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
         const uploadDir = path.join(__dirname, '../../public/uploads/avatars');
         try {
-            await fs.mkdir(uploadDir, { recursive: true });
+            await fsPromises.mkdir(uploadDir, { recursive: true });
             cb(null, uploadDir);
         } catch (error) {
             cb(error);
@@ -300,10 +316,10 @@ router.put('/gender', async (req, res) => {
     try {
         const { gender } = req.body;
 
-        if (!gender || !['male', 'female'].includes(gender)) {
+        if (!['male', 'female'].includes(gender)) {
             return res.status(400).json({
                 success: false,
-                message: '性别参数无效'
+                message: '性别无效'
             });
         }
 
@@ -328,7 +344,7 @@ router.put('/gender', async (req, res) => {
 });
 
 /**
- * 上传头像
+ * 上传/更新头像
  * POST /api/user/avatar
  */
 router.post('/avatar', upload.single('avatar'), async (req, res) => {
@@ -340,147 +356,30 @@ router.post('/avatar', upload.single('avatar'), async (req, res) => {
             });
         }
 
-        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        // 获取相对路径
+        const avatarPath = `/uploads/avatars/${req.file.filename}`;
 
-        // 删除旧头像（如果不是默认头像）
-        const user = await User.findById(req.user._id);
-        if (user.avatar && !user.avatar.includes('default-avatar')) {
-            const oldAvatarPath = path.join(__dirname, '../../public', user.avatar);
-            try {
-                await fs.unlink(oldAvatarPath);
-            } catch (err) {
-                console.log('删除旧头像失败:', err.message);
-            }
-        }
+        // 更新用户头像
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { avatar: avatarPath },
+            { new: true }
+        ).select('-__v');
 
-        // 更新头像
-        user.avatar = avatarUrl;
-        await user.save();
+        // 转换头像为完整 URL
+        const userData = user.toObject();
+        userData.avatar = getFullAvatarUrl(userData.avatar);
 
         res.json({
             success: true,
             message: '头像上传成功',
-            data: {
-                avatar: avatarUrl
-            }
+            data: userData
         });
     } catch (error) {
         console.error('上传头像失败:', error);
         res.status(500).json({
             success: false,
             message: error.message || '服务器错误'
-        });
-    }
-});
-
-/**
- * 获取用户游戏统计
- * GET /api/user/game-stats/:gameType
- */
-router.get('/game-stats/:gameType', async (req, res) => {
-    try {
-        const { gameType } = req.params;
-        const user = await User.findById(req.user._id);
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: '用户不存在'
-            });
-        }
-
-        const gameStats = user.gameStats.find(s => s.gameType === gameType);
-
-        if (!gameStats) {
-            return res.json({
-                success: true,
-                data: null,
-                message: '该游戏暂无数据'
-            });
-        }
-
-        res.json({
-            success: true,
-            data: gameStats
-        });
-    } catch (error) {
-        console.error('获取游戏统计失败:', error);
-        res.status(500).json({
-            success: false,
-            message: '服务器错误'
-        });
-    }
-});
-
-/**
- * 获取所有游戏统计
- * GET /api/user/game-stats
- */
-router.get('/game-stats', async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id);
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: '用户不存在'
-            });
-        }
-
-        res.json({
-            success: true,
-            data: user.gameStats
-        });
-    } catch (error) {
-        console.error('获取游戏统计失败:', error);
-        res.status(500).json({
-            success: false,
-            message: '服务器错误'
-        });
-    }
-});
-
-/**
- * 检查昵称是否可用
- * GET /api/user/check-nickname/:nickname
- */
-router.get('/check-nickname/:nickname', async (req, res) => {
-    try {
-        const { nickname } = req.params;
-        const isAvailable = await User.isNicknameAvailable(nickname, req.user?.userId);
-
-        res.json({
-            success: true,
-            available: isAvailable
-        });
-    } catch (error) {
-        console.error('检查昵称失败:', error);
-        res.status(500).json({
-            success: false,
-            message: '服务器错误'
-        });
-    }
-});
-
-/**
- * 获取欢乐豆余额
- * GET /api/user/happy-beans
- */
-router.get('/happy-beans', async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id).select('happyBeans');
-
-        res.json({
-            success: true,
-            data: {
-                happyBeans: user.happyBeans
-            }
-        });
-    } catch (error) {
-        console.error('获取欢乐豆余额失败:', error);
-        res.status(500).json({
-            success: false,
-            message: '服务器错误'
         });
     }
 });
