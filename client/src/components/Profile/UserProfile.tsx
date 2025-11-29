@@ -26,7 +26,6 @@ export default function UserProfile() {
     const [showReferralDetails, setShowReferralDetails] = useState(false);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
-    const [isMockUser, setIsMockUser] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -34,54 +33,33 @@ export default function UserProfile() {
 
     /**
      * Fetch User Profile
-     * 优先尝试 API 获取，失败则回退到本地 Mock 数据
+     * 仅从 API 获取数据，不使用 Mock
      */
     const fetchProfile = async () => {
         try {
             const token = localStorage.getItem('token');
 
-            // 1. 尝试从 API 获取
-            if (token) {
-                try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-
-                    if (res.ok) {
-                        const { data } = await res.json();
-                        setProfile(data);
-                        setLoading(false);
-                        return;
-                    }
-                } catch (apiError) {
-                    console.warn('API fetch failed, falling back to mock data', apiError);
-                }
+            if (!token) {
+                router.push('/');
+                return;
             }
 
-            // 2. API 失败或无 Token，回退到本地 Mock 数据
-            const mockUserStr = localStorage.getItem('mock_pi_user');
-            if (mockUserStr) {
-                const mockUser = JSON.parse(mockUserStr);
-                setIsMockUser(true);
-                setProfile({
-                    _id: 'mock_id',
-                    userId: 'HG00000001',
-                    username: mockUser.username || 'Guest',
-                    nickname: mockUser.username || 'Guest',
-                    avatar: '/images/default-avatar.png',
-                    gender: 'male',
-                    happyBeans: 0,
-                    createdAt: new Date().toISOString(),
-                    gameStats: [],
-                    referralCode: 'MOCK1234',
-                    referralLevel: 1,
-                    referralStats: { inviteCount: 0, totalFlow: 0 }
-                });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                const { data } = await res.json();
+                setProfile(data);
             } else {
-                // 既无 Token 也无 Mock 数据，跳转登录
-                router.push('/');
+                // Token 失效或请求失败
+                console.error('Failed to fetch profile:', res.status);
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    router.push('/');
+                }
             }
         } catch (error) {
             console.error('Failed to fetch profile', error);
@@ -95,14 +73,6 @@ export default function UserProfile() {
      */
     const handleUpdateNickname = async () => {
         if (!editNickname.trim()) return;
-
-        // Mock 模式
-        if (isMockUser) {
-            setProfile({ ...profile, nickname: editNickname });
-            setIsEditing(false);
-            alert('昵称修改成功 (本地演示)');
-            return;
-        }
 
         try {
             const token = localStorage.getItem('token');
@@ -133,12 +103,6 @@ export default function UserProfile() {
      * Update Gender
      */
     const handleUpdateGender = async (gender: 'male' | 'female') => {
-        // Mock 模式
-        if (isMockUser) {
-            setProfile({ ...profile, gender });
-            return;
-        }
-
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/gender`, {
@@ -168,13 +132,6 @@ export default function UserProfile() {
      */
     const handleUploadAvatar = async () => {
         if (!avatarFile) return;
-
-        // Mock 模式
-        if (isMockUser) {
-            alert('演示模式下无法上传头像到服务器');
-            setAvatarFile(null);
-            return;
-        }
 
         setUploadingAvatar(true);
         try {
@@ -211,7 +168,7 @@ export default function UserProfile() {
      */
     const handleLogout = () => {
         localStorage.removeItem('token');
-        localStorage.removeItem('mock_pi_user');
+        // 移除 mock 数据清理，因为不再使用
         router.push('/');
     };
 
@@ -228,6 +185,7 @@ export default function UserProfile() {
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50">
                 <div className="text-center">
                     <h2 className="text-2xl font-bold mb-4 text-amber-900">未找到用户信息</h2>
+                    <p className="text-gray-600 mb-6">请尝试重新登录</p>
                     <button
                         onClick={() => router.push('/')}
                         className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600"
@@ -238,6 +196,13 @@ export default function UserProfile() {
             </div>
         );
     }
+
+    // 处理头像 URL
+    const getAvatarUrl = (avatarPath: string) => {
+        if (!avatarPath) return `${process.env.NEXT_PUBLIC_API_URL || ''}/images/default-avatar.svg`;
+        if (avatarPath.startsWith('http')) return avatarPath;
+        return `${process.env.NEXT_PUBLIC_API_URL || ''}${avatarPath}`;
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 p-4 md:p-8">
@@ -250,17 +215,14 @@ export default function UserProfile() {
                             <div className="relative group">
                                 <div className="w-24 h-24 bg-gradient-to-br from-amber-200 to-orange-200 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                                     <img
-                                        src={
-                                            profile.avatar
-                                                ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL || ''}${profile.avatar}`)
-                                                : `${process.env.NEXT_PUBLIC_API_URL || ''}/images/default-avatar.png`
-                                        }
+                                        src={getAvatarUrl(profile.avatar)}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
                                             const target = e.currentTarget;
-                                            if (target.src.includes('default-avatar.png')) return;
-                                            target.src = `${process.env.NEXT_PUBLIC_API_URL || ''}/images/default-avatar.png`;
+                                            // 防止死循环
+                                            if (target.src.includes('default-avatar.svg')) return;
+                                            target.src = `${process.env.NEXT_PUBLIC_API_URL || ''}/images/default-avatar.svg`;
                                         }}
                                     />
                                 </div>

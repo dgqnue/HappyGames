@@ -41,7 +41,7 @@ const UserSchema = new mongoose.Schema({
     // 头像 URL
     avatar: {
         type: String,
-        default: '/images/default-avatar.jpg' // 默认头像
+        default: '/images/default-avatar.svg' // 默认头像
     },
 
     // 性别（male/female，第一次登录随机生成，可更改）
