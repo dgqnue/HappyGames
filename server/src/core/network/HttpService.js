@@ -38,29 +38,49 @@ class HttpService {
     /**
      * 处理获取房间列表请求
      */
+    /**
+     * 处理获取房间列表请求
+     */
     handleGetRooms(req, res) {
         const { gameId } = req.params;
         const { tier } = req.query;
 
+        console.log(`[HttpService] 收到请求: 获取房间列表 gameId=${gameId}, tier=${tier}`);
+
         try {
+            if (!this.gameLoader) {
+                throw new Error('GameLoader not initialized');
+            }
+
             const manager = this.gameLoader.getManager(gameId);
 
             if (!manager) {
                 console.warn(`[HttpService] 游戏不存在: ${gameId}`);
-                return res.status(404).json({ message: '游戏不存在' });
+                const availableGames = this.gameLoader.getGameList();
+                console.warn(`[HttpService] 当前可用游戏: ${availableGames.join(', ')}`);
+                return res.status(404).json({ message: '游戏不存在', availableGames });
             }
 
-            const tierObj = manager.tiers.get(tier || 'free');
+            const targetTier = tier || 'free';
+            const tierObj = manager.tiers.get(targetTier);
+
             if (!tierObj) {
-                return res.status(400).json({ message: '无效的游戏室' });
+                console.warn(`[HttpService] 游戏室不存在: ${targetTier}`);
+                const availableTiers = Array.from(manager.tiers.keys());
+                return res.status(400).json({ message: '无效的游戏室', availableTiers });
             }
 
             const rooms = tierObj.getTableList();
+            console.log(`[HttpService] 成功获取房间列表: ${rooms.length} 个房间`);
             res.json(rooms);
 
         } catch (error) {
             console.error('[HttpService] 获取房间列表失败:', error);
-            res.status(500).json({ message: '服务器错误', error: error.message });
+            res.status(500).json({
+                message: '服务器错误',
+                error: error.message,
+                path: req.path
+            });
         }
     }
 

@@ -49,7 +49,11 @@ export const GameTierSelector: React.FC<GameTierSelectorProps> = ({
     };
 
     const canAccessTier = (tier: Tier) => {
-        if (!userStats) return tier.id === 'free';
+        // 如果没有获取到战绩（可能是Socket连接中），默认允许进入免费和初级场
+        if (!userStats) {
+            return tier.id === 'free' || tier.id === 'beginner';
+        }
+
         if (tier.id === 'free') return true;
         const rating = userStats.rating || 1200;
         return rating >= tier.minRating && rating <= tier.maxRating;
