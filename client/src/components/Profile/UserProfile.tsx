@@ -18,6 +18,9 @@ export default function UserProfile() {
     const router = useRouter();
     const { t } = useLanguage();
 
+    // 默认 API URL (Render 后端)
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -44,7 +47,7 @@ export default function UserProfile() {
                 return;
             }
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`, {
+            const res = await fetch(`${API_URL}/api/user/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -76,7 +79,7 @@ export default function UserProfile() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/nickname`, {
+            const res = await fetch(`${API_URL}/api/user/nickname`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -105,7 +108,7 @@ export default function UserProfile() {
     const handleUpdateGender = async (gender: 'male' | 'female') => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/gender`, {
+            const res = await fetch(`${API_URL}/api/user/gender`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -139,7 +142,7 @@ export default function UserProfile() {
             const formData = new FormData();
             formData.append('avatar', avatarFile);
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/avatar`, {
+            const res = await fetch(`${API_URL}/api/user/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -168,7 +171,6 @@ export default function UserProfile() {
      */
     const handleLogout = () => {
         localStorage.removeItem('token');
-        // 移除 mock 数据清理，因为不再使用
         router.push('/');
     };
 
@@ -199,9 +201,9 @@ export default function UserProfile() {
 
     // 处理头像 URL
     const getAvatarUrl = (avatarPath: string) => {
-        if (!avatarPath) return `${process.env.NEXT_PUBLIC_API_URL || ''}/images/default-avatar.svg`;
+        if (!avatarPath) return `${API_URL}/images/default-avatar.svg`;
         if (avatarPath.startsWith('http')) return avatarPath;
-        return `${process.env.NEXT_PUBLIC_API_URL || ''}${avatarPath}`;
+        return `${API_URL}${avatarPath}`;
     };
 
     return (
@@ -222,7 +224,7 @@ export default function UserProfile() {
                                             const target = e.currentTarget;
                                             // 防止死循环
                                             if (target.src.includes('default-avatar.svg')) return;
-                                            target.src = `${process.env.NEXT_PUBLIC_API_URL || ''}/images/default-avatar.svg`;
+                                            target.src = `${API_URL}/images/default-avatar.svg`;
                                         }}
                                     />
                                 </div>

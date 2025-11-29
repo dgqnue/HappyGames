@@ -17,14 +17,16 @@ export default function Home() {
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [user, setUser] = useState<any>(null);
 
+    // 默认 API URL
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+
     useEffect(() => {
         // Check if user is already logged in
         const checkLogin = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (token) {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-                    const res = await fetch(`${apiUrl}/api/user/profile`, {
+                    const res = await fetch(`${API_URL}/api/user/profile`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
 
@@ -55,9 +57,7 @@ export default function Home() {
             console.log('Pi Auth Success:', piUser);
 
             // 2. Send Pi User info to our backend
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-            const res = await fetch(`${apiUrl}/api/user/login`, {
+            const res = await fetch(`${API_URL}/api/user/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -93,11 +93,10 @@ export default function Home() {
         }
 
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         const endpoint = authMode === 'login' ? '/api/user/login' : '/api/user/register';
 
         try {
-            const res = await fetch(`${apiUrl}${endpoint}`, {
+            const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -138,7 +137,16 @@ export default function Home() {
                             <span className="font-bold text-amber-900 hidden md:block">{user.username}</span>
                             <div className="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center text-lg shadow-inner border-2 border-white overflow-hidden">
                                 {user.avatar ?
-                                    <img src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+                                    <img
+                                        src={user.avatar.startsWith('http') ? user.avatar : `${API_URL}${user.avatar}`}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            if (target.src.includes('default-avatar.svg')) return;
+                                            target.src = `${API_URL}/images/default-avatar.svg`;
+                                        }}
+                                    />
                                     : '👤'
                                 }
                             </div>
