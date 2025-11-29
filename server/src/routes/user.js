@@ -8,10 +8,13 @@ const fs = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Base64 编码的默认头像 SVG（金色渐变）
+const DEFAULT_AVATAR_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNmY2QzNGQ7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I2Y1OWUwYjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTAwIiBmaWxsPSJ1cmwoI2dyYWQpIiAvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9Ijg1IiByPSIzNSIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8cGF0aCBkPSJNMTAwIDEzNSBjLTMwIDAgLTU1IDE1IC02NSAzNSBhIDgwIDgwIDAgMCAwIDEzMCAwIGMtMTAgLTIwIC0zNSAtMzUgLTY1IC0zNSB6IiBmaWxsPSIjZmZmZmZmIiAvPgo8L3N2Zz4=';
+
 // 辅助函数：将相对路径的头像转换为完整 URL
 const getFullAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return 'https://happygames-tfdz.onrender.com/images/default-avatar.svg';
-    if (avatarPath.startsWith('http')) return avatarPath;
+    if (!avatarPath) return DEFAULT_AVATAR_BASE64;
+    if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
     return `https://happygames-tfdz.onrender.com${avatarPath}`;
 };
 
