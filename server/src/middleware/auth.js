@@ -80,7 +80,7 @@ async function createNewUser(piUserData) {
 
         return user;
     } catch (error) {
-        console.error('创建用户失败:', error);
+        console.error('创建用户失败:', error); jiang
         throw error;
     }
 }
