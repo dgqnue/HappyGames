@@ -109,7 +109,7 @@ export default function Home() {
                     localStorage.setItem('token', data.token);
                 }
                 setUser(data.user);
-                alert(authMode === 'login' ? '登录成功！' : '注册成功！');
+                // 移除 alert，直接更新状态
             } else {
                 alert(data.message || '操作失败');
             }
