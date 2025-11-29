@@ -23,21 +23,21 @@ export default function GameList() {
     const slides = [
         {
             id: 1,
-            image: '/artifacts/banner_referral_v3.png',
+            image: `${process.env.NEXT_PUBLIC_API_URL || ''}/images/banner_referral_v3.png`,
             title: 'Invite & Earn!',
             desc: 'Get 10% Commission!',
             color: 'from-amber-400 to-orange-500'
         },
         {
             id: 2,
-            image: '/artifacts/banner_gomoku_v2.png',
+            image: `${process.env.NEXT_PUBLIC_API_URL || ''}/images/banner_gomoku_v2.png`,
             title: 'Gomoku',
             desc: 'Coming Soon',
             color: 'from-blue-400 to-indigo-500'
         },
         {
             id: 3,
-            image: '/artifacts/banner_chinese_chess_v2.png',
+            image: `${process.env.NEXT_PUBLIC_API_URL || ''}/images/banner_chinese_chess_v2.png`,
             title: 'Xiangqi',
             desc: 'Coming Soon',
             color: 'from-red-400 to-rose-500'
