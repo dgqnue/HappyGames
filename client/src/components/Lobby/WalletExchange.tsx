@@ -243,15 +243,15 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
                             disabled={loading}
                             className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50"
                         >
-                            {loading ? 'Checking...' : t.wallet.btn_check_deposit}
+                            {loading ? 'Checking...' : t.wallet.check_deposit}
                         </button>
                     </div>
                 ) : (
                     <div>
-                        <h3 className="text-amber-900 font-bold mb-4">{t.wallet.withdraw_form}</h3>
+                        <h3 className="text-amber-900 font-bold mb-4">提现表单</h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.amount}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.amount_beans}</label>
                                 <input
                                     type="number"
                                     value={exchangeAmount}
@@ -261,7 +261,7 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.address}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.withdraw_addr}</label>
                                 <input
                                     type="text"
                                     value={withdrawAddress}
@@ -275,7 +275,7 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
                                 disabled={loading}
                                 className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 mt-2"
                             >
-                                {loading ? 'Processing...' : t.wallet.btn_withdraw}
+                                {loading ? 'Processing...' : t.wallet.withdraw_btn}
                             </button>
                         </div>
                     </div>
