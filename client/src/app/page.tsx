@@ -8,8 +8,14 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function Home() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const { t } = useLanguage();
+
     const [authMode, setAuthMode] = useState<'pi' | 'login' | 'register'>('pi');
     const [formData, setFormData] = useState({ username: '', password: '' });
+    const [loading, setLoading] = useState(false);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
         // Check if user is already logged in
