@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const MatchMaker = require('../core/matching/MatchMaker');
+const MatchMaker = require('../matching/MatchMaker');
 
 /**
  * 游戏加载器
@@ -26,7 +26,7 @@ class GameLoader {
      * @param {Object} io - Socket.IO 实例
      */
     loadAll(io) {
-        const gamesDir = path.join(__dirname, '../games');
+        const gamesDir = path.join(__dirname, '../../games');
 
         if (!fs.existsSync(gamesDir)) {
             console.error('[GameLoader] 游戏目录不存在:', gamesDir);
