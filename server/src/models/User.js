@@ -28,6 +28,12 @@ const UserSchema = new mongoose.Schema({
         immutable: true // 永远不可更改
     },
 
+    // 密码（仅非 Pi 用户需要，加密存储）
+    password: {
+        type: String,
+        select: false // 默认查询不返回密码
+    },
+
     // ========== 个人资料 ==========
     // 昵称（可更改，但不能与其他用户重复）
     nickname: {
