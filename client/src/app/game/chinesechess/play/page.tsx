@@ -267,11 +267,12 @@ export default function ChineseChessPlay() {
                     </div>
 
                     <GameRoomList
+                        gameName="中国象棋"
+                        tier={tier}
                         rooms={rooms}
                         currentRoomId={currentRoomId}
                         onJoinRoom={handleJoinRoom}
                         onQuickStart={handleQuickStart}
-                        gameState={gameState}
                         readyTimer={readyTimer}
                         isReady={isReady}
                         onReady={handleReady}
