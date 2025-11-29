@@ -312,15 +312,25 @@ export default function ChineseChessPlay() {
     // status === 'playing'
     return (
         <GamePlayLayout
+            gameName="中国象棋"
             gameState={gameState}
             onLeave={handleLeave}
-            gameBoard={
-                <ChessBoard
-                    gameState={gameState}
-                    onMove={handleMove}
-                    mySocketId={socket?.id}
-                />
-            }
-        />
+            onRestart={() => {
+                // 再来一局：如果还在房间里，只是重置了状态，可以重新准备
+                // 如果已经退出了，需要重新匹配
+                if (gameState?.status === 'ended') {
+                    // 实际上服务端会在结束后自动进入准备检查
+                    // 所以这里只需要确保UI显示正确
+                    setReadyTimer(null);
+                }
+            }}
+        >
+            <ChessBoard
+                board={gameState?.board || []}
+                turn={gameState?.turn || 'r'}
+                mySide={gameState?.players?.find((p: any) => p.socketId === socket?.id)?.side}
+                onMove={handleMove}
+            />
+        </GamePlayLayout>
     );
 }
