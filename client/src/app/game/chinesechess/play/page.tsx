@@ -281,7 +281,7 @@ export default function ChineseChessPlay() {
 
                     {showMatchSettings && (
                         <MatchSettingsPanel
-                            onClose={() => setShowMatchSettings(false)}
+                            onCancel={() => setShowMatchSettings(false)}
                             onStartMatch={handleStartAutoMatch}
                         />
                     )}
