@@ -1,19 +1,22 @@
-// server/src/games/chinesechess/rooms/ChineseChessRoom.js
-const MatchableGameRoom = require('../../../gamecore/MatchableGameRoom');
+const GameTable = require('../../../core/hierarchy/GameTable');
 const XiangqiRules = require('../logic/XiangqiRules');
-const EloService = require('../../../gamecore/EloService');
+const EloService = require('../../../gamecore/EloService'); // 保留 EloService，后续可重构
 
-class ChineseChessRoom extends MatchableGameRoom {
-    constructor(io, roomId, tier) {
-        // 调用父类构造函数：io, roomId, gameType, maxPlayers, tier
-        super(io, roomId, 'chinesechess', 2, tier);
+/**
+ * 中国象棋游戏桌
+ * 继承自 GameTable，实现具体的象棋逻辑
+ */
+class ChineseChessRoom extends GameTable {
+    constructor(io, tableId, tier) {
+        // 调用父类构造函数: io, tableId, gameType, maxPlayers, tier
+        super(io, tableId, 'chinesechess', 2, tier);
 
         // 游戏特定状态
         this.board = null;
         this.turn = null;
         this.history = [];
 
-        // 初始化空棋盘（等待开始）
+        // 初始化空棋盘
         this.resetBoard();
     }
 
@@ -21,7 +24,7 @@ class ChineseChessRoom extends MatchableGameRoom {
      * 重置棋盘
      */
     resetBoard() {
-        // Standard Starting Position (Red at bottom, Black at top)
+        // 标准开局 (红方在下，黑方在上)
         this.board = [
             ['r', 'n', 'b', 'a', 'k', 'a', 'b', 'n', 'r'],
             [null, null, null, null, null, null, null, null, null],
@@ -34,23 +37,22 @@ class ChineseChessRoom extends MatchableGameRoom {
             [null, null, null, null, null, null, null, null, null],
             ['R', 'N', 'B', 'A', 'K', 'A', 'B', 'N', 'R']
         ];
-        this.turn = 'r'; // Red goes first
+        this.turn = 'r'; // 红方先行
         this.history = [];
     }
 
     /**
-     * 游戏开始回调（由 MatchableGameRoom 调用）
+     * 游戏开始回调
      */
     onGameStart() {
         this.resetBoard();
 
         // 分配阵营：第一个玩家是红方，第二个是黑方
-        // 注意：matchState.players 顺序就是入座顺序
-        const redPlayer = this.matchState.players[0];
-        const blackPlayer = this.matchState.players[1];
+        const redPlayer = this.players[0];
+        const blackPlayer = this.players[1];
 
         // 发送初始状态给所有玩家
-        this.matchState.players.forEach((player) => {
+        this.players.forEach((player) => {
             const isRed = player.userId === redPlayer.userId;
             this.sendToPlayer(player.socketId, 'game_start', {
                 board: this.board,
@@ -60,52 +62,37 @@ class ChineseChessRoom extends MatchableGameRoom {
                     r: redPlayer.userId,
                     b: blackPlayer.userId
                 },
-                playerInfos: this.matchState.players.map(p => ({
+                playerInfos: this.players.map(p => ({
                     userId: p.userId,
                     nickname: p.nickname,
-                    title: p.title,
+                    title: p.title || '无', // 假设 title 在 player 对象中，如果没有则默认
                     avatar: p.avatar
                 }))
             });
         });
 
-        console.log(`[ChineseChess] Game started in room ${this.roomId}`);
+        console.log(`[ChineseChess] 游戏开始: ${this.tableId}`);
     }
 
     /**
-     * 获取公共游戏状态（用于旁观）
+     * 游戏结束回调
      */
-    getPublicGameState() {
-        // 如果游戏还没开始，只返回基础信息
-        if (this.matchState.status !== 'playing') {
-            return super.getPublicGameState();
-        }
-
-        const redPlayer = this.matchState.players[0];
-        const blackPlayer = this.matchState.players[1];
-
-        return {
-            ...super.getPublicGameState(),
-            board: this.board,
-            turn: this.turn,
-            players: {
-                r: redPlayer ? redPlayer.userId : null,
-                b: blackPlayer ? blackPlayer.userId : null
-            }
-        };
+    onGameEnd(result) {
+        console.log(`[ChineseChess] 游戏结束: ${this.tableId}, 结果:`, result);
+        // 可以在这里做一些清理工作
     }
 
     /**
-     * 处理移动
+     * 处理移动请求
      */
     handleMove(socket, move) {
-        if (this.matchState.status !== 'playing') return;
+        if (this.status !== 'playing') return;
 
         const { fromX, fromY, toX, toY } = move;
         const userId = socket.user._id.toString();
 
-        const redPlayer = this.matchState.players[0];
-        const blackPlayer = this.matchState.players[1];
+        const redPlayer = this.players[0];
+        const blackPlayer = this.players[1];
 
         // 验证是否是当前玩家的回合
         const isRed = userId === redPlayer.userId;
@@ -118,7 +105,7 @@ class ChineseChessRoom extends MatchableGameRoom {
 
         // 验证移动逻辑
         if (!XiangqiRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn)) {
-            socket.emit('error', { message: 'Invalid Move' });
+            socket.emit('error', { message: '非法移动' });
             return;
         }
 
@@ -133,7 +120,7 @@ class ChineseChessRoom extends MatchableGameRoom {
 
         // 检查胜利条件（吃掉将/帅）
         if (captured && captured.toLowerCase() === 'k') {
-            this.handleGameEnd(side); // 当前方获胜
+            this.handleWin(side); // 当前方获胜
             return;
         }
 
@@ -149,11 +136,11 @@ class ChineseChessRoom extends MatchableGameRoom {
     }
 
     /**
-     * 处理游戏结束
+     * 处理胜利
      */
-    async handleGameEnd(winnerSide) {
-        const redPlayer = this.matchState.players[0];
-        const blackPlayer = this.matchState.players[1];
+    async handleWin(winnerSide) {
+        const redPlayer = this.players[0];
+        const blackPlayer = this.players[1];
 
         const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
         const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
@@ -168,7 +155,7 @@ class ChineseChessRoom extends MatchableGameRoom {
 
         // 2. 游戏豆结算 (非免费室)
         if (this.tier !== 'free') {
-            const betAmount = this.matchState.matchSettings.baseBet || this.getBetAmount();
+            const betAmount = this.getBetAmount();
             await this.settle({
                 winner: winnerId,
                 loser: loserId,
@@ -176,7 +163,7 @@ class ChineseChessRoom extends MatchableGameRoom {
             });
         }
 
-        // 调用父类 endGame 处理通用逻辑（清理状态、广播结束、准备新局）
+        // 结束游戏
         this.endGame({
             winner: winnerSide, // 'r' or 'b'
             winnerId: winnerId,
@@ -185,19 +172,19 @@ class ChineseChessRoom extends MatchableGameRoom {
     }
 
     /**
-     * 游戏中断线的特殊处理
+     * 处理游戏中断线
      */
     onPlayerDisconnectDuringGame(userId) {
-        console.log(`[ChineseChess] Player ${userId} disconnected during game`);
+        console.log(`[ChineseChess] 玩家断线判负: ${userId}`);
 
-        const redPlayer = this.matchState.players[0];
-        const blackPlayer = this.matchState.players[1];
+        const redPlayer = this.players[0];
+        const blackPlayer = this.players[1];
 
         if (!redPlayer || !blackPlayer) return;
 
         // 判对手获胜
         const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
-        this.handleGameEnd(winnerSide);
+        this.handleWin(winnerSide);
     }
 
     getBetAmount() {
@@ -211,4 +198,3 @@ class ChineseChessRoom extends MatchableGameRoom {
 }
 
 module.exports = ChineseChessRoom;
-
