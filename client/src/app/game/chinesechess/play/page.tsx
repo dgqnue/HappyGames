@@ -258,12 +258,6 @@ export default function ChineseChessPlay() {
                 <div className="max-w-7xl mx-auto">
                     <div className="mb-6 flex items-center justify-between">
                         <h1 className="text-3xl font-bold text-amber-900">中国象棋 - {tier === 'free' ? '免费场' : tier === 'beginner' ? '初级场' : tier === 'intermediate' ? '中级场' : '高级场'}</h1>
-                        <button
-                            onClick={() => router.push('/game/chinesechess')}
-                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                        >
-                            返回
-                        </button>
                     </div>
 
                     <GameRoomList
