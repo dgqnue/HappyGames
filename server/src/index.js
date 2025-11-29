@@ -72,7 +72,24 @@ app.get('/', (req, res) => {
 
 // Static Files (for avatars and default images)
 const path = require('path');
-app.use('/images', express.static(path.join(__dirname, '../public/images')));
+const fs = require('fs');
+
+// Debug: Check static file path
+const imagesDir = path.join(__dirname, '../public/images');
+console.log('[Server] Images directory:', imagesDir);
+try {
+    if (fs.existsSync(imagesDir)) {
+        console.log('[Server] Images directory exists.');
+        const files = fs.readdirSync(imagesDir);
+        console.log('[Server] Files in images directory:', files);
+    } else {
+        console.error('[Server] Images directory does NOT exist!');
+    }
+} catch (err) {
+    console.error('[Server] Error checking images directory:', err);
+}
+
+app.use('/images', express.static(imagesDir));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // API Routes
