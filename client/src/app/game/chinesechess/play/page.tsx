@@ -33,6 +33,21 @@ export default function ChineseChessPlay() {
     });
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/');
+            return;
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+        console.log('Connecting to game server:', apiUrl);
+
+        const newSocket = io(apiUrl, {
+            auth: { token },
+            transports: ['polling', 'websocket'],
+            reconnection: true
+        });
+
         newSocket.on('connect', () => {
             console.log('[Socket] Connected');
             console.log('[Socket] Socket ID:', newSocket.id);
@@ -239,108 +254,72 @@ export default function ChineseChessPlay() {
 
     if (status === 'lobby') {
         return (
-            <>
-                <GameRoomList
-                    gameName="中国象棋"
-                    tier={tier}
-                    rooms={rooms}
-                    onJoinRoom={handleJoinRoom}
-                    onQuickStart={handleQuickStart}
-                    onLeave={() => router.push('/game/chinesechess')}
-                    currentRoomId={currentRoomId}
-                    isReady={isReady}
-                    readyTimer={readyTimer}
-                    onReady={handleReady}
-                    onLeaveRoom={() => {
-                        handleLeave();
-                        setGameState(null);
-                    }}
-                />
-
-                {showMatchSettings && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-2xl p-6 max-w-md w-full m-4">
-                            <MatchSettingsPanel
-                                onStartMatch={handleStartAutoMatch}
-                                onCancel={() => setShowMatchSettings(false)}
-                            />
-                        </div>
+            <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100 p-4">
+                <div className="max-w-7xl mx-auto">
+                    <div className="mb-6 flex items-center justify-between">
+                        <h1 className="text-3xl font-bold text-amber-900">中国象棋 - {tier === 'free' ? '免费场' : tier === 'beginner' ? '初级场' : tier === 'intermediate' ? '中级场' : '高级场'}</h1>
+                        <button
+                            onClick={() => router.push('/game/chinesechess')}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                            返回
+                        </button>
                     </div>
-                )}
-            </>
+
+                    <GameRoomList
+                        rooms={rooms}
+                        currentRoomId={currentRoomId}
+                        onJoinRoom={handleJoinRoom}
+                        onQuickStart={handleQuickStart}
+                        gameState={gameState}
+                        readyTimer={readyTimer}
+                        isReady={isReady}
+                        onReady={handleReady}
+                        onLeave={handleLeave}
+                    />
+
+                    {showMatchSettings && (
+                        <MatchSettingsPanel
+                            onClose={() => setShowMatchSettings(false)}
+                            onStartMatch={handleStartAutoMatch}
+                        />
+                    )}
+                </div>
+            </div>
         );
     }
 
     if (status === 'matching') {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
-                <div className="text-3xl font-bold text-amber-900 mb-4 animate-bounce">🔍 寻找对手中...</div>
-                <p className="text-gray-600">请稍候，正在为您匹配旗鼓相当的对手</p>
-                <button
-                    onClick={handleLeave}
-                    className="mt-8 px-6 py-2 text-gray-500 hover:text-gray-700 underline"
-                >
-                    取消匹配
-                </button>
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-100">
+                <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-900 mb-4 animate-pulse">匹配中...</div>
+                    <button
+                        onClick={() => {
+                            if (gameClient) gameClient.cancelMatch();
+                            setStatus('lobby');
+                        }}
+                        className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                        取消匹配
+                    </button>
+                </div>
             </div>
         );
     }
 
-    // 初始棋盘状态
-    const initialBoard = [
-        ['r', 'n', 'b', 'a', 'k', 'a', 'b', 'n', 'r'],
-        [null, null, null, null, null, null, null, null, null],
-        [null, 'c', null, null, null, null, null, 'c', null],
-        ['p', null, 'p', null, 'p', null, 'p', null, 'p'],
-        [null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null],
-        ['P', null, 'P', null, 'P', null, 'P', null, 'P'],
-        [null, 'C', null, null, null, null, null, 'C', null],
-        [null, null, null, null, null, null, null, null, null],
-        ['R', 'N', 'B', 'A', 'K', 'A', 'B', 'N', 'R']
-    ];
-
+    // status === 'playing'
     return (
         <GamePlayLayout
-            gameName="中国象棋"
             gameState={gameState}
             onLeave={handleLeave}
-            onRestart={() => {
-                // 再来一局：如果还在房间里，只是重置了状态，可以重新准备
-                // 如果已经退出了，需要重新匹配
-                if (gameState?.status === 'ended') {
-                    // 实际上服务端会在结束后自动进入准备检查
-                    // 所以这里只需要确保UI显示正确
-                    setReadyTimer(null);
-                }
-            }}
-        >
-            {/* 准备检查遮罩 */}
-            {readyTimer !== null && readyTimer > 0 && (
-                <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl text-center animate-in zoom-in duration-300">
-                        <h3 className="text-2xl font-bold text-amber-900 mb-2">游戏准备</h3>
-                        <div className="text-5xl font-mono font-bold text-orange-600 mb-6">{readyTimer}</div>
-                        <p className="text-gray-600 mb-6">请确认您已准备好开始游戏</p>
-                        <button
-                            onClick={handleReady}
-                            className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${isReady
-                                ? 'bg-green-500 text-white shadow-lg hover:shadow-xl hover:bg-green-600'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl'
-                                }`}
-                        >
-                            {isReady ? '已准备 (点击取消)' : '开始游戏'}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <ChessBoard
-                board={gameState?.board || initialBoard}
-                turn={gameState?.turn || 'r'}
-                mySide={gameState?.mySide}
-                onMove={handleMove}
-            />
-        </GamePlayLayout>
+            gameBoard={
+                <ChessBoard
+                    gameState={gameState}
+                    onMove={handleMove}
+                    mySocketId={socket?.id}
+                />
+            }
+        />
     );
 }
