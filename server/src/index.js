@@ -70,8 +70,14 @@ app.get('/', (req, res) => {
     res.send('HappyGames API is running');
 });
 
+// Static Files (for avatars and default images)
+const path = require('path');
+app.use('/images', express.static(path.join(__dirname, '../public/images')));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // API Routes
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/user', require('./routes/user')); // 新增用户资料管理路由
 app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api', require('./routes/settle'));
 
