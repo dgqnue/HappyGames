@@ -1,56 +1,58 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import WalletExchange from '../Lobby/WalletExchange';
 import ReferralDetailsModal from './ReferralDetailsModal';
 import { useLanguage } from '@/lib/i18n';
 
 /**
  * User Profile Component
- * Displays user information, wallet balance, and referral stats.
- * Allows users to edit their nickname and manage their assets.
+ * Displays comprehensive user information including:
+ * - Basic info (userId, username, nickname, avatar, gender)
+ * - Happy Beans balance
+ * - Game statistics for all played games
+ * - Referral stats
  */
 export default function UserProfile() {
-    const [profile, setProfile] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const searchParams = useSearchParams();
+    const router = useRouter();
     const { t } = useLanguage();
 
-    // State for nickname editing modal
+    const [profile, setProfile] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState('');
-
-    // State for logout confirmation modal
+    const [editNickname, setEditNickname] = useState('');
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-    // State for referral details modal
     const [showReferralDetails, setShowReferralDetails] = useState(false);
-
-    // Get userId from URL query
-    const userId = searchParams.get('userId');
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     useEffect(() => {
-        if (userId) {
-            fetchProfile(userId);
-        } else {
-            setLoading(false);
-        }
-    }, [userId]);
+        fetchProfile();
+    }, []);
 
     /**
      * Fetch User Profile
-     * Retrieves user data from the backend.
-     * @param {string} id - User ID
      */
-    const fetchProfile = async (id: string) => {
+    const fetchProfile = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile?userId=${id}`);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                router.push('/');
+                return;
+            }
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
             if (res.ok) {
-                const data = await res.json();
+                const { data } = await res.json();
                 setProfile(data);
             } else {
-                setProfile(null);
+                router.push('/');
             }
         } catch (error) {
             console.error('Failed to fetch profile', error);
@@ -59,172 +61,424 @@ export default function UserProfile() {
         }
     };
 
-    if (loading) return <div className="text-white text-center mt-20">{t.loading_profile}</div>;
+    /**
+     * Update Nickname
+     */
+    const handleUpdateNickname = async () => {
+        if (!editNickname.trim()) return;
 
-    if (!profile) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/nickname`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nickname: editNickname })
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                setProfile(result.data);
+                setIsEditing(false);
+                alert('昵称更新成功！');
+            } else {
+                alert(result.message || '更新失败');
+            }
+        } catch (error) {
+            alert('网络错误');
+        }
+    };
+
+    /**
+     * Update Gender
+     */
+    const handleUpdateGender = async (gender: 'male' | 'female') => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/gender`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ gender })
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                setProfile(result.data);
+                alert('性别更新成功！');
+            } else {
+                alert(result.message || '更新失败');
+            }
+        } catch (error) {
+            alert('网络错误');
+        }
+    };
+
+    /**
+     * Upload Avatar
+     */
+    const handleUploadAvatar = async () => {
+        if (!avatarFile) return;
+
+        setUploadingAvatar(true);
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('avatar', avatarFile);
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/avatar`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                setProfile({ ...profile, avatar: result.data.avatar });
+                setAvatarFile(null);
+                alert('头像上传成功！');
+            } else {
+                alert(result.message || '上传失败');
+            }
+        } catch (error) {
+            alert('网络错误');
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    /**
+     * Handle Logout
+     */
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('mock_pi_user');
+        router.push('/');
+    };
+
+    if (loading) {
         return (
-            <div className="max-w-md mx-auto bg-white/90 p-8 rounded-xl shadow-2xl mt-10">
-                <h2 className="text-2xl font-bold mb-4 text-amber-900">{t.profile_not_found}</h2>
-                <p className="text-gray-600 mb-4">{t.login_required}</p>
-                <a href="/" className="block w-full text-center bg-amber-600 text-white py-2 rounded-md hover:bg-amber-700">
-                    {t.go_home}
-                </a>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-2xl font-bold text-amber-900 animate-pulse">加载中...</div>
             </div>
         );
     }
 
-    /**
-     * Handle Logout
-     * Clears local storage and redirects to home page.
-     */
-    const handleLogout = () => {
-        setIsLoggingOut(true);
-    };
-
-    const confirmLogout = () => {
-        localStorage.removeItem('mock_pi_user');
-        window.location.href = '/';
-    };
-
-    return (
-        <div className="page-container">
-            {/* Profile Header */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl mb-6 flex flex-col md:flex-row items-center justify-between border border-white/50 gap-4">
-                <div className="flex items-center gap-4 md:gap-6">
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-200 rounded-full flex items-center justify-center text-3xl shadow-inner">
-                        {profile.avatar ? <img src={profile.avatar} alt="Avatar" className="w-full h-full rounded-full" /> : '👤'}
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-mobile-xl font-bold text-amber-900">
-                                {profile.nickname || profile.username}
-                            </h1>
-                            <button
-                                onClick={() => {
-                                    setEditName(profile.nickname || profile.username);
-                                    setIsEditing(true);
-                                }}
-                                className="text-amber-600 hover:text-amber-800 transition-colors"
-                                title={t.edit_nickname}
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="flex gap-3 mt-2">
-                            {profile.referralStats.inviteCount > 0 && (
-                                <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium border border-amber-200">
-                                    Lv.{profile.referralLevel} {t.promoter}
-                                </span>
-                            )}
-                            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200">
-                                {t.id}: {profile.referralCode}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <a
-                        href="/"
-                        className="w-10 h-10 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-sm"
-                        title={t.back_home}
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                    </a>
+    if (!profile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold mb-4 text-amber-900">未找到用户信息</h2>
                     <button
-                        onClick={handleLogout}
-                        className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center gap-2"
+                        onClick={() => router.push('/')}
+                        className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        {t.logout}
+                        返回首页
                     </button>
                 </div>
             </div>
+        );
+    }
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column: Wallet & Exchange */}
-                <div className="space-y-6">
-                    <WalletExchange userId={profile._id} nickname={profile.nickname || profile.username} />
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 p-4 md:p-8">
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl mb-6 border border-white/50">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-6">
+                            {/* Avatar */}
+                            <div className="relative">
+                                <div className="w-24 h-24 bg-gradient-to-br from-amber-200 to-orange-200 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                                    {profile.avatar ? (
+                                        <img
+                                            src={`${process.env.NEXT_PUBLIC_API_URL}${profile.avatar}`}
+                                            alt="Avatar"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <span className="text-4xl">👤</span>
+                                    )}
+                                </div>
+                                <label className="absolute bottom-0 right-0 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-amber-600 transition-colors shadow-lg">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                setAvatarFile(e.target.files[0]);
+                                            }
+                                        }}
+                                    />
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </label>
+                            </div>
+
+                            {/* User Info */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <h1 className="text-2xl font-bold text-amber-900">
+                                        {profile.nickname}
+                                    </h1>
+                                    <button
+                                        onClick={() => {
+                                            setEditNickname(profile.nickname);
+                                            setIsEditing(true);
+                                        }}
+                                        className="text-amber-600 hover:text-amber-800 transition-colors"
+                                        title="编辑昵称"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                        ID: {profile.userId}
+                                    </span>
+                                    <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                                        {profile.gender === 'male' ? '♂ 男' : '♀ 女'}
+                                    </span>
+                                    {profile.referralStats?.inviteCount > 0 && (
+                                        <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
+                                            Lv.{profile.referralLevel} 推广员
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => router.push('/')}
+                                className="w-10 h-10 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                                title="返回首页"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                            </button>
+                            <button
+                                onClick={() => setIsLoggingOut(true)}
+                                className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                退出登录
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Avatar Upload Button */}
+                    {avatarFile && (
+                        <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-amber-800">已选择: {avatarFile.name}</span>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setAvatarFile(null)}
+                                        className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
+                                    >
+                                        取消
+                                    </button>
+                                    <button
+                                        onClick={handleUploadAvatar}
+                                        disabled={uploadingAvatar}
+                                        className="px-4 py-1 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium disabled:opacity-50"
+                                    >
+                                        {uploadingAvatar ? '上传中...' : '上传'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Right Column: Stats & Referral */}
-                <div className="space-y-6">
-                    {/* Referral Stats */}
-                    <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
-                        <h3 className="text-xl font-bold text-amber-900 mb-4">{t.referral_stats}</h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                                <span className="text-gray-600">{t.invited_users}</span>
-                                <span className="font-bold text-mobile-base">{profile.referralStats.inviteCount}</span>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-6">
+                        {/* Basic Info Card */}
+                        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
+                            <h3 className="text-xl font-bold text-amber-900 mb-4">基本信息</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">用户 ID</span>
+                                    <span className="font-mono font-bold text-blue-600">{profile.userId}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">Pi 用户名</span>
+                                    <span className="font-medium">{profile.username}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">昵称</span>
+                                    <span className="font-medium">{profile.nickname}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">性别</span>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleUpdateGender('male')}
+                                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${profile.gender === 'male'
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            ♂ 男
+                                        </button>
+                                        <button
+                                            onClick={() => handleUpdateGender('female')}
+                                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${profile.gender === 'female'
+                                                    ? 'bg-pink-500 text-white'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            ♀ 女
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">欢乐豆</span>
+                                    <span className="font-bold text-orange-600 text-lg">{profile.happyBeans?.toLocaleString() || 0}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">注册时间</span>
+                                    <span className="text-sm">{new Date(profile.createdAt).toLocaleDateString()}</span>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                                <span className="text-gray-600">{t.total_flow}</span>
-                                <span className="font-bold text-mobile-base">{profile.referralStats.totalFlow.toLocaleString()} {t.beans}</span>
+                        </div>
+
+                        {/* Wallet & Exchange */}
+                        <WalletExchange userId={profile._id} nickname={profile.nickname} />
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                        {/* Game Stats */}
+                        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
+                            <h3 className="text-xl font-bold text-amber-900 mb-4">游戏数据</h3>
+                            {profile.gameStats && profile.gameStats.length > 0 ? (
+                                <div className="space-y-4">
+                                    {profile.gameStats.map((stat: any, index: number) => (
+                                        <div key={index} className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h4 className="font-bold text-lg text-amber-900">{stat.gameName}</h4>
+                                                <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-bold">
+                                                    {stat.rating}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">称号:</span>
+                                                    <span className="font-medium" style={{ color: stat.titleColor }}>{stat.title}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">总场次:</span>
+                                                    <span className="font-bold">{stat.gamesPlayed}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">胜率:</span>
+                                                    <span className="font-bold text-green-600">{stat.winRate}%</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">掉线率:</span>
+                                                    <span className="font-bold text-red-600">{stat.disconnectRate}%</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">最高连胜:</span>
+                                                    <span className="font-bold text-orange-600">{stat.maxWinStreak}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">当前连胜:</span>
+                                                    <span className="font-bold">{stat.currentWinStreak}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>暂无游戏数据</p>
+                                    <p className="text-sm mt-2">快去玩游戏吧！</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Referral Stats */}
+                        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
+                            <h3 className="text-xl font-bold text-amber-900 mb-4">推荐统计</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">推荐码</span>
+                                    <span className="font-mono font-bold text-amber-600">{profile.referralCode}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <span className="text-gray-600">邀请人数</span>
+                                    <span className="font-bold">{profile.referralStats?.inviteCount || 0}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">总流水</span>
+                                    <span className="font-bold">{profile.referralStats?.totalFlow?.toLocaleString() || 0} 豆</span>
+                                </div>
                             </div>
-                            <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
-                                <p className="text-sm text-orange-800 font-medium mb-2">{t.referral_link}:</p>
+                            <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
+                                <p className="text-sm text-orange-800 font-medium mb-2">推荐链接:</p>
                                 <code className="block bg-white p-2 rounded border border-orange-200 text-xs text-gray-600 break-all">
                                     {process.env.NEXT_PUBLIC_CLIENT_URL}?ref={profile.referralCode}
                                 </code>
                             </div>
                             <button
                                 onClick={() => setShowReferralDetails(true)}
-                                className="w-full py-2 mt-2 bg-amber-100 text-amber-800 rounded-lg font-bold hover:bg-amber-200 transition-colors"
+                                className="w-full py-2 mt-4 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition-colors"
                             >
-                                {t.view_details || 'View Details'}
+                                查看详情
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+
             {/* Edit Nickname Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
-                        <h3 className="text-xl font-bold text-amber-900 mb-4">{t.edit_nickname}</h3>
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                        <h3 className="text-xl font-bold text-amber-900 mb-4">修改昵称</h3>
                         <input
                             type="text"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
+                            value={editNickname}
+                            onChange={(e) => setEditNickname(e.target.value)}
                             className="w-full p-3 border border-gray-200 rounded-xl mb-4 focus:ring-2 focus:ring-amber-500 outline-none"
-                            placeholder={t.enter_nickname}
+                            placeholder="输入新昵称"
+                            maxLength={20}
                         />
+                        <p className="text-sm text-gray-500 mb-4">昵称不能与其他用户重复，最多20个字符</p>
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setIsEditing(false)}
                                 className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
                             >
-                                Cancel
+                                取消
                             </button>
                             <button
-                                onClick={async () => {
-                                    if (!editName.trim()) return;
-                                    try {
-                                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/update`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ userId: profile._id, nickname: editName })
-                                        });
-                                        const data = await res.json();
-                                        if (res.ok) {
-                                            setProfile({ ...profile, nickname: data.user.nickname });
-                                            setIsEditing(false);
-                                        } else {
-                                            alert(data.message || 'Failed to update nickname');
-                                        }
-                                    } catch (err) {
-                                        alert('Network error');
-                                    }
-                                }}
+                                onClick={handleUpdateNickname}
                                 className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors"
                             >
-                                {t.save}
+                                保存
                             </button>
                         </div>
                     </div>
@@ -234,26 +488,26 @@ export default function UserProfile() {
             {/* Logout Confirmation Modal */}
             {isLoggingOut && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in text-center">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
                         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{t.logout}</h3>
-                        <p className="text-gray-500 mb-6">{t.logout_confirm}</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">确认退出登录？</h3>
+                        <p className="text-gray-500 mb-6">退出后需要重新登录</p>
                         <div className="flex gap-3 justify-center">
                             <button
                                 onClick={() => setIsLoggingOut(false)}
                                 className="px-6 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
                             >
-                                {t.cancel}
+                                取消
                             </button>
                             <button
-                                onClick={confirmLogout}
+                                onClick={handleLogout}
                                 className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30"
                             >
-                                {t.logout}
+                                退出登录
                             </button>
                         </div>
                     </div>
