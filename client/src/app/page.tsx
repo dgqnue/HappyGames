@@ -138,14 +138,9 @@ export default function Home() {
                             <div className="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center text-lg shadow-inner border-2 border-white overflow-hidden">
                                 {user.avatar ?
                                     <img
-                                        src={user.avatar.startsWith('http') ? user.avatar : `${API_URL}${user.avatar}`}
+                                        src={user.avatar}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            const target = e.currentTarget;
-                                            if (target.src.includes('default-avatar.svg')) return;
-                                            target.src = `${API_URL}/images/default-avatar.svg`;
-                                        }}
                                     />
                                     : '👤'
                                 }

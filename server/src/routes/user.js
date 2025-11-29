@@ -8,6 +8,13 @@ const fs = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// 辅助函数：将相对路径的头像转换为完整 URL
+const getFullAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return 'https://happygames-tfdz.onrender.com/images/default-avatar.svg';
+    if (avatarPath.startsWith('http')) return avatarPath;
+    return `https://happygames-tfdz.onrender.com${avatarPath}`;
+};
+
 // ========== 公开路由 (无需认证) ==========
 
 /**
@@ -76,7 +83,7 @@ router.post('/register', async (req, res) => {
                 userId: newUser.userId,
                 username: newUser.username,
                 nickname: newUser.nickname,
-                avatar: newUser.avatar
+                avatar: getFullAvatarUrl(newUser.avatar)
             }
         });
 
@@ -146,7 +153,7 @@ router.post('/login', async (req, res) => {
                 userId: user.userId,
                 username: user.username,
                 nickname: user.nickname,
-                avatar: user.avatar
+                avatar: getFullAvatarUrl(user.avatar)
             }
         });
 
@@ -213,9 +220,13 @@ router.get('/profile', async (req, res) => {
             });
         }
 
+        // 转换头像为完整 URL
+        const userData = user.toObject();
+        userData.avatar = getFullAvatarUrl(userData.avatar);
+
         res.json({
             success: true,
-            data: user
+            data: userData
         });
     } catch (error) {
         console.error('获取用户信息失败:', error);

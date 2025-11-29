@@ -199,13 +199,6 @@ export default function UserProfile() {
         );
     }
 
-    // 处理头像 URL
-    const getAvatarUrl = (avatarPath: string) => {
-        if (!avatarPath) return `${API_URL}/images/default-avatar.svg`;
-        if (avatarPath.startsWith('http')) return avatarPath;
-        return `${API_URL}${avatarPath}`;
-    };
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 p-4 md:p-8">
             <div className="max-w-6xl mx-auto">
@@ -217,15 +210,9 @@ export default function UserProfile() {
                             <div className="relative group">
                                 <div className="w-24 h-24 bg-gradient-to-br from-amber-200 to-orange-200 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                                     <img
-                                        src={getAvatarUrl(profile.avatar)}
+                                        src={profile.avatar || 'https://happygames-tfdz.onrender.com/images/default-avatar.svg'}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            const target = e.currentTarget;
-                                            // 防止死循环
-                                            if (target.src.includes('default-avatar.svg')) return;
-                                            target.src = `${API_URL}/images/default-avatar.svg`;
-                                        }}
                                     />
                                 </div>
                                 <label className="absolute bottom-0 right-0 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-amber-600 transition-colors shadow-lg transform group-hover:scale-110">
@@ -364,8 +351,8 @@ export default function UserProfile() {
                                         <button
                                             onClick={() => handleUpdateGender('male')}
                                             className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${profile.gender === 'male'
-                                                    ? 'bg-blue-500 text-white shadow-md'
-                                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                 }`}
                                         >
                                             ♂ 男
@@ -373,8 +360,8 @@ export default function UserProfile() {
                                         <button
                                             onClick={() => handleUpdateGender('female')}
                                             className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${profile.gender === 'female'
-                                                    ? 'bg-pink-500 text-white shadow-md'
-                                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                ? 'bg-pink-500 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                 }`}
                                         >
                                             ♀ 女
