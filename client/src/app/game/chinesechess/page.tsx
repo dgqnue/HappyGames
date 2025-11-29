@@ -17,7 +17,7 @@ export default function ChineseChessCenter() {
             return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
         const newSocket = io(apiUrl, {
             auth: { token }
         });

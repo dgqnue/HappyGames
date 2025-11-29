@@ -33,21 +33,6 @@ export default function ChineseChessPlay() {
     });
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            router.push('/');
-            return;
-        }
-
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        console.log('Connecting to game server:', apiUrl);
-
-        const newSocket = io(apiUrl, {
-            auth: { token },
-            transports: ['polling', 'websocket'],
-            reconnection: true
-        });
-
         newSocket.on('connect', () => {
             console.log('[Socket] Connected');
             console.log('[Socket] Socket ID:', newSocket.id);

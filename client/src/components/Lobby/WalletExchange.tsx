@@ -27,7 +27,7 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
     const [successData, setSuccessData] = useState<{ amount: number; orderId?: string } | null>(null);
 
     useEffect(() => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
         const newSocket = io(apiUrl);
         setSocket(newSocket);
         return () => {
@@ -38,7 +38,8 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
     const fetchWallet = async () => {
         try {
             setError(null);
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wallet/${userId}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+            const res = await fetch(`${apiUrl}/api/wallet/${userId}`);
             if (res.ok) {
                 const data = await res.json();
                 setWallet(data);
@@ -53,7 +54,8 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
 
     const fetchTransactions = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wallet/transactions/${userId}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+            const res = await fetch(`${apiUrl}/api/wallet/transactions/${userId}`);
             if (res.ok) {
                 const data = await res.json();
                 setTransactions(data);
@@ -72,13 +74,14 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
 
     const handleExchange = async () => {
         setLoading(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
         try {
             if (activeTab === 'deposit') {
                 // Auto-detect deposit
                 // Simulate scanning delay
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wallet/deposit`, {
+                const res = await fetch(`${apiUrl}/api/wallet/deposit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId })
@@ -117,7 +120,7 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
                     return;
                 }
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wallet/withdraw`, {
+                const res = await fetch(`${apiUrl}/api/wallet/withdraw`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -235,80 +238,65 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
                             {t.wallet.no_memo}
                         </div>
 
-                        <div className="text-left text-sm text-amber-900/80 space-y-2 max-w-xs mx-auto mb-8">
-                            <p className="font-medium">{t.wallet.step1}</p>
-                            <p className="font-medium">{t.wallet.step2}</p>
-                        </div>
-
-                        <p className="text-xs text-gray-500 mb-4 max-w-xs mx-auto">
-                            {t.wallet.deposit_tip}
-                        </p>
-
                         <button
                             onClick={handleExchange}
                             disabled={loading}
-                            className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg transform transition hover:scale-[1.02] disabled:opacity-50"
+                            className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50"
                         >
-                            {loading ? 'Processing...' : t.wallet.check_deposit}
+                            {loading ? 'Checking...' : t.wallet.btn_check_deposit}
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.wallet.withdraw_addr}</label>
-                            <input
-                                type="text"
-                                value={withdrawAddress}
-                                onChange={(e) => setWithdrawAddress(e.target.value)}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all"
-                                placeholder="G-..."
-                            />
+                    <div>
+                        <h3 className="text-amber-900 font-bold mb-4">{t.wallet.withdraw_form}</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.amount}</label>
+                                <input
+                                    type="number"
+                                    value={exchangeAmount}
+                                    onChange={(e) => setExchangeAmount(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                    placeholder="0"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.address}</label>
+                                <input
+                                    type="text"
+                                    value={withdrawAddress}
+                                    onChange={(e) => setWithdrawAddress(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                    placeholder="G-..."
+                                />
+                            </div>
+                            <button
+                                onClick={handleExchange}
+                                disabled={loading}
+                                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 mt-2"
+                            >
+                                {loading ? 'Processing...' : t.wallet.btn_withdraw}
+                            </button>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.wallet.amount_beans}</label>
-                            <input
-                                type="number"
-                                value={exchangeAmount}
-                                onChange={(e) => setExchangeAmount(e.target.value)}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all"
-                                placeholder="1000"
-                            />
-                        </div>
-                        <button
-                            onClick={handleExchange}
-                            disabled={loading}
-                            className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg transform transition hover:scale-[1.02] mt-4 disabled:opacity-50"
-                        >
-                            {loading ? 'Processing...' : t.wallet.withdraw_btn}
-                        </button>
                     </div>
                 )}
             </div>
 
-            {/* Transaction History */}
+            {/* Transactions */}
             <div>
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t.wallet.history}</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <h3 className="text-lg font-bold text-amber-900 mb-4">{t.wallet.history}</h3>
+                <div className="space-y-3">
                     {transactions.length === 0 ? (
-                        <div className="text-center text-gray-400 text-sm py-4">No transactions yet</div>
+                        <div className="text-center text-gray-500 py-4 text-sm bg-gray-50 rounded-lg">No transactions yet</div>
                     ) : (
                         transactions.map((tx) => (
-                            <div key={tx._id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-100 hover:bg-gray-100 transition-colors">
+                            <div key={tx._id} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
                                 <div>
-                                    <div className="font-bold text-gray-800">
-                                        {tx.type === 'DEPOSIT' ? t.wallet.type_deposit : t.wallet.type_withdraw}
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                        {new Date(tx.createdAt).toLocaleDateString()}
-                                    </div>
+                                    <div className="font-bold text-gray-800 capitalize">{tx.type}</div>
+                                    <div className="text-xs text-gray-500">{new Date(tx.createdAt).toLocaleString()}</div>
                                 </div>
-                                <div className="text-right">
-                                    <div className={`font-bold ${tx.type === 'DEPOSIT' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {tx.type === 'DEPOSIT' ? '+' : '-'}{tx.amount.toLocaleString()} Beans
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                        ≈ {(tx.amount / 10000).toFixed(2)} Pi
-                                    </div>
+                                <div className={`font-bold ${tx.type === 'deposit' || tx.type === 'win' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {tx.type === 'deposit' || tx.type === 'win' ? '+' : '-'}{tx.amount}
                                 </div>
                             </div>
                         ))
@@ -316,28 +304,24 @@ export default function WalletExchange({ userId, nickname }: WalletExchangeProps
                 </div>
             </div>
 
-            {/* Deposit Success Modal */}
-            {showSuccessModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in text-center">
+            {/* Success Modal */}
+            {showSuccessModal && successData && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl transform scale-100 transition-transform">
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{t.wallet.deposit_success}</h3>
-                        <div className="bg-green-50 rounded-xl p-4 mb-6 border border-green-100">
-                            <p className="text-sm text-gray-500 mb-1">{t.wallet.received}</p>
-                            <p className="text-2xl font-bold text-green-600">+{successData?.amount?.toLocaleString()} Beans</p>
-                            {successData?.orderId && (
-                                <p className="text-xs text-gray-400 mt-2">Order ID: {successData.orderId}</p>
-                            )}
-                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Deposit Successful!</h3>
+                        <p className="text-gray-600 mb-6">
+                            You have received <span className="font-bold text-amber-600">{successData.amount}</span> Happy Beans.
+                        </p>
                         <button
                             onClick={() => setShowSuccessModal(false)}
-                            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-green-500/30"
+                            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-colors"
                         >
-                            {t.wallet.great}
+                            Awesome!
                         </button>
                     </div>
                 </div>

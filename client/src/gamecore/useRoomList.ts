@@ -80,7 +80,8 @@ export function useRoomList(
             if (!enableHttp) return;
 
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                // 1. HTTP Fallback Fetch
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
                 const url = `${apiUrl}/api/games/${gameType}/rooms?tier=${tier}`;
 
                 console.log('[RoomList] Fetching via HTTP:', url);
