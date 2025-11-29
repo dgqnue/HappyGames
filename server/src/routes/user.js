@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { piAuth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+
+// 应用认证中间件到所有路由
+router.use(piAuth);
 
 // 配置头像上传
 const storage = multer.diskStorage({
