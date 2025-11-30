@@ -7,6 +7,9 @@
  * 2. 处理玩家获取桌子列表的请求
  * 3. 维护该等级的准入规则
  */
+
+const MatchingRules = require('../../gamecore/MatchingRules');
+
 class GameTier {
     /**
      * @param {String} id - 游戏室ID (如: beginner)
@@ -24,6 +27,10 @@ class GameTier {
         // 准入规则 (默认无限制)
         this.minRating = 0;
         this.maxRating = Infinity;
+
+        // 维护已释放的桌号池 (用于ID复用)
+        this.freedIndices = [];
+        this.nextIndex = 0;
     }
 
     /**
@@ -38,7 +45,7 @@ class GameTier {
      * 检查玩家是否有权进入
      */
     canAccess(playerRating) {
-        return playerRating >= this.minRating && playerRating <= this.maxRating;
+        return MatchingRules.canAccessTier(playerRating, this.minRating, this.maxRating);
     }
 
     /**
@@ -55,10 +62,47 @@ class GameTier {
      * 添加新游戏桌
      */
     addTable() {
-        const tableId = `${this.id}_${this.tables.length}`;
+        let index;
+        if (this.freedIndices.length > 0) {
+            // 优先复用已释放的桌号 (从小到大)
+            this.freedIndices.sort((a, b) => a - b);
+            index = this.freedIndices.shift();
+        } else {
+            // 没有可复用的，使用新桌号
+            index = this.nextIndex++;
+        }
+
+        // 桌号从1开始显示，所以 ID 后缀用 index + 1
+        // 内部 index 从 0 开始
+        const tableId = `${this.id}_${index + 1}`;
         const table = this.createTable(tableId, this.id);
+
+        // 记录桌子的 index，方便释放时回收
+        table.index = index;
+
+        // 监听桌子销毁事件 (如果 GameTable 有 emit 'destroy' 的话)
+        // 或者在 removeTable 时手动回收
+
         this.tables.push(table);
         return table;
+    }
+
+    /**
+     * 移除游戏桌
+     */
+    removeTable(tableId) {
+        const index = this.tables.findIndex(t => t.tableId === tableId);
+        if (index !== -1) {
+            const table = this.tables[index];
+            // 回收桌号
+            if (typeof table.index === 'number') {
+                this.freedIndices.push(table.index);
+                console.log(`[GameTier] Recycled table index: ${table.index} (Table ID: ${tableId})`);
+            }
+            this.tables.splice(index, 1);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -78,7 +122,7 @@ class GameTier {
      * 查找可用游戏桌
      */
     findAvailableTable() {
-        return this.tables.find(t => t.status === 'idle' && t.players.length < t.maxPlayers);
+        return this.tables.find(t => MatchingRules.isTableAvailable(t));
     }
 
     /**

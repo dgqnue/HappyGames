@@ -107,19 +107,21 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                             </button>
                                             <button
                                                 onClick={onReady}
+                                                disabled={isReady}
                                                 className={`flex-1 py-2 font-bold rounded-lg transition-all ${isReady
-                                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                                    ? 'bg-green-500 text-white cursor-default'
                                                     : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
                                                     }`}
                                             >
-                                                {isReady ? '就绪' : '开始'}
+                                                {isReady ? '已就绪' : '开始'}
                                             </button>
                                         </div>
-                                        {readyTimer !== null && readyTimer !== undefined && !isNaN(readyTimer) && readyTimer > 0 && (
+                                        {/* 倒计时显示逻辑优化: 只要有 readyTimer 就显示，或者状态是 matching */}
+                                        {(readyTimer !== null && readyTimer !== undefined && !isNaN(readyTimer) && readyTimer > 0) || room.status === 'matching' ? (
                                             <div className="text-center text-orange-600 font-mono font-bold animate-pulse text-sm">
-                                                ⏱️ {readyTimer}s 后开始
+                                                ⏱️ {readyTimer || 30}s 后强制开始
                                             </div>
-                                        )}
+                                        ) : null}
                                     </div>
                                 ) : (
                                     <button

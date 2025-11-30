@@ -10,6 +10,7 @@
 
 const MatchRoomState = require('./MatchRoomState');
 const DisconnectTracker = require('./DisconnectTracker');
+const MatchingRules = require('./MatchingRules');
 const axios = require('axios');
 const crypto = require('crypto');
 const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';
@@ -140,6 +141,11 @@ class MatchableGameRoom {
      * 用于游戏桌列表显示
      */
     get status() {
+        // 如果满座但未开始，且未进入准备倒计时，视为 matching
+        if (this.matchState.players.length === this.maxPlayers &&
+            this.matchState.status === MatchingRules.TABLE_STATUS.WAITING) {
+            return MatchingRules.TABLE_STATUS.MATCHING;
+        }
         return this.matchState.status;
     }
 
@@ -151,29 +157,16 @@ class MatchableGameRoom {
     }
 
     /**
-     * 玩家加入游戏桌（兼容 BaseGameManager）
+     * 玩家加入游戏桌(兼容 BaseGameManager)
      */
     async join(socket) {
-        console.log(`[MatchableGameRoom] join() called for room ${this.roomId}`);
-        console.log(`[MatchableGameRoom] - socket.user:`, socket.user);
-        console.log(`[MatchableGameRoom] - gameType:`, this.gameType);
-
-        // 使用默认匹配设置
-        const defaultSettings = {
-            baseBet: 1000,
-            betRange: [500, 5000],
-            winRateRange: [0, 100],
-            maxDisconnectRate: 100
-        };
-
-        console.log(`[MatchableGameRoom] Calling playerJoin with default settings...`);
+        const defaultSettings = { ...MatchingRules.DEFAULT_SETTINGS };
         const result = await this.playerJoin(socket, defaultSettings);
-        console.log(`[MatchableGameRoom] playerJoin result:`, result);
         return result;
     }
 
     /**
-     * 离开游戏桌（兼容 BaseGameManager）
+     * 离开游戏桌(兼容 BaseGameManager)
      */
     leave(socket) {
         return this.playerLeave(socket);
@@ -187,7 +180,7 @@ class MatchableGameRoom {
         console.log(`[MatchableGameRoom] playerLeave called for room ${this.roomId}, userId: ${userId}`);
 
         // 记录之前的状态
-        const wasMatching = this.matchState.status === 'matching';
+        const wasMatching = this.matchState.status === MatchingRules.TABLE_STATUS.MATCHING;
 
         // 从玩家列表移除
         const wasPlayer = this.matchState.removePlayer(userId);
@@ -203,7 +196,7 @@ class MatchableGameRoom {
             this.broadcastRoomState();
 
             // 如果之前是匹配中，现在取消了，通知客户端取消倒计时
-            if (wasMatching && this.matchState.status !== 'matching') {
+            if (wasMatching && this.matchState.status !== MatchingRules.TABLE_STATUS.MATCHING) {
                 this.broadcast('ready_check_cancelled', {
                     reason: '玩家离开，匹配中断',
                     remainingPlayers: this.matchState.players.length
@@ -224,7 +217,7 @@ class MatchableGameRoom {
         console.log(`[MatchRoom] Player ${socket.user.username} disconnected from room ${this.roomId}`);
 
         // 检查玩家是否在游戏中
-        const wasInGame = this.matchState.status === 'playing';
+        const wasInGame = this.matchState.status === MatchingRules.TABLE_STATUS.PLAYING;
 
         // 如果在游戏中断线，记录掉线统计
         if (wasInGame) {
@@ -259,18 +252,16 @@ class MatchableGameRoom {
     }
 
     /**
-     * 玩家准备
+     * 玩家准备 (点击"开始"按钮)
      */
     playerReady(socket) {
         const userId = socket.user._id.toString();
         const result = this.matchState.setPlayerReady(userId, true);
 
+        this.broadcastRoomState();
+
         if (result === 'all_ready') {
-            // 所有玩家都准备好了，立即开始游戏
             this.startGame();
-        } else {
-            // 广播准备状态
-            this.broadcastRoomState();
         }
     }
 
@@ -289,6 +280,8 @@ class MatchableGameRoom {
     startReadyCheck() {
         const result = this.matchState.startReadyCheck();
         if (!result) return;
+
+        console.log(`[MatchableGameRoom] Starting 30s ready check for room ${this.roomId}`);
 
         // 广播准备检查开始
         this.broadcast('ready_check_start', {
@@ -316,8 +309,6 @@ class MatchableGameRoom {
 
         console.log(`[MatchableGameRoom] Ready players: ${readyPlayers.length}, Unready players: ${unreadyPlayers.length}`);
 
-        // 踢出未准备的玩家
-        // 踢出未准备的玩家
         unreadyPlayers.forEach(player => {
             console.log(`[MatchableGameRoom] Kicking unready player: ${player.nickname}`);
             const socket = this.io.sockets.sockets.get(player.socketId);
@@ -328,12 +319,8 @@ class MatchableGameRoom {
                 });
                 this.playerLeave(socket);
             } else {
-                // Socket 不存在（可能已断开），强制移除
                 console.log(`[MatchableGameRoom] Socket not found for player ${player.nickname}, force removing...`);
-                // 模拟 socket 对象以复用 playerLeave 逻辑，或者直接调用 removePlayer
-                // 这里直接调用 removePlayer 更安全
                 this.matchState.removePlayer(player.userId);
-                // 确保广播更新
                 this.broadcastRoomState();
             }
         });
@@ -360,7 +347,7 @@ class MatchableGameRoom {
      * 开始游戏（由子类实现具体逻辑）
      */
     startGame() {
-        this.matchState.status = 'playing';
+        this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
         this.matchState.cancelReadyCheck();
 
         // 停止僵尸桌检查
@@ -395,16 +382,11 @@ class MatchableGameRoom {
      * 游戏结束
      */
     endGame(result) {
-        this.matchState.status = 'ended';
-
         // 重置准备状态
         this.matchState.resetReadyStatus();
 
         // 广播游戏结束
         this.broadcast('game_over', result);
-
-        // 广播最新的房间状态（ended）给大厅
-        this.broadcastRoomState();
 
         // 游戏结束后延迟删除游戏桌
         setTimeout(() => {
@@ -418,10 +400,10 @@ class MatchableGameRoom {
                 }
             });
 
-            // 清空房间
+            // 清空房间,恢复为空闲状态
             this.matchState.players = [];
             this.matchState.spectators = [];
-            this.matchState.status = 'idle';
+            this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
 
             // 从游戏管理器中删除此游戏桌
             if (this.gameManager && this.gameManager.rooms && this.gameManager.rooms[this.tier]) {
@@ -437,7 +419,7 @@ class MatchableGameRoom {
 
             // 清理资源
             this.cleanup();
-        }, 5000); // 5秒后删除，给玩家时间查看结果
+        }, 5000); // 5秒后删除,给玩家时间查看结果
     }
 
     /**
@@ -510,7 +492,7 @@ class MatchableGameRoom {
         this.matchState.players = [];
         this.matchState.spectators = [];
         this.matchState.firstPlayerJoinedAt = null;
-        this.matchState.status = 'idle'; // 重置为空闲状态
+        this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
 
         this.broadcastRoomState();
     }
