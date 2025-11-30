@@ -12,8 +12,11 @@ const connectDB = async () => {
         console.log(`[DB] MONGO_URI: ${process.env.MONGO_URI ? '已设置' : '未设置'}`);
 
         const conn = await mongoose.connect(mongoUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
+            // 优化连接配置
+            maxPoolSize: 10, // 限制连接池大小，防止耗尽资源
+            serverSelectionTimeoutMS: 5000, // 5秒连接超时，避免长时间等待
+            socketTimeoutMS: 45000, // Socket 超时
+            family: 4 // 强制使用 IPv4，避免某些环境下的 IPv6 问题
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);

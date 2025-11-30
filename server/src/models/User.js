@@ -298,8 +298,31 @@ UserSchema.methods.deductHappyBeans = function (amount) {
  * 生成唯一的 userId
  */
 UserSchema.statics.generateUserId = async function () {
-    const count = await this.countDocuments();
-    return `HG${String(count + 1).padStart(8, '0')}`; // 例如: HG00000001
+    // 根本改进：使用随机数生成 ID，避免并发冲突和全表扫描性能问题
+    // 这种方式在分布式环境中更安全，且不依赖数据库当前的文档总数
+    let isUnique = false;
+    let userId = '';
+    let attempts = 0;
+
+    while (!isUnique && attempts < 5) {
+        // 生成 8 位随机数字 (10000000 - 99999999)
+        const random = Math.floor(10000000 + Math.random() * 90000000);
+        userId = `HG${random}`;
+
+        // 检查唯一性
+        const existing = await this.findOne({ userId });
+        if (!existing) {
+            isUnique = true;
+        }
+        attempts++;
+    }
+
+    // 极低概率兜底（如果连续5次随机都冲突）：使用时间戳后8位
+    if (!isUnique) {
+        userId = `HG${Date.now().toString().slice(-8)}`;
+    }
+
+    return userId;
 };
 
 /**
