@@ -62,6 +62,21 @@ class HttpService {
             }
 
             const targetTier = tier || 'free';
+
+            // 调试日志
+            console.log(`[HttpService] Manager 对象:`, {
+                exists: !!manager,
+                type: typeof manager,
+                hasTiers: manager && 'tiers' in manager,
+                tiersType: manager && typeof manager.tiers,
+                tiersIsMap: manager && manager.tiers instanceof Map,
+                keys: manager && manager.tiers ? Array.from(manager.tiers.keys()) : 'N/A'
+            });
+
+            if (!manager.tiers) {
+                throw new Error(`Manager.tiers is ${manager.tiers}. Manager keys: ${Object.keys(manager).join(', ')}`);
+            }
+
             const tierObj = manager.tiers.get(targetTier);
 
             if (!tierObj) {
