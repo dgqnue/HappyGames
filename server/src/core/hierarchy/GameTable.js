@@ -69,13 +69,18 @@ class GameTable {
         this.players.push(player);
         socket.join(this.tableId);
 
+        // 更新桌子状态
+        if (this.status === 'idle') {
+            this.status = 'waiting';
+        }
+
         // 通知桌内其他人
         this.broadcast('player_joined', {
             tableId: this.tableId,
             player: player
         });
 
-        console.log(`[GameTable] 玩家 ${player.nickname} 加入游戏桌 ${this.tableId}`);
+        console.log(`[GameTable] 玩家 ${player.nickname} 加入游戏桌 ${this.tableId}，当前状态: ${this.status}`);
         return true;
     }
 
@@ -97,6 +102,12 @@ class GameTable {
             });
 
             console.log(`[GameTable] 玩家 ${player.nickname} 离开游戏桌 ${this.tableId}`);
+
+            // 如果所有玩家都离开了，恢复 idle 状态
+            if (this.players.length === 0 && this.status === 'waiting') {
+                this.status = 'idle';
+                console.log(`[GameTable] 游戏桌 ${this.tableId} 恢复空闲状态`);
+            }
 
             // 如果游戏正在进行，可能需要判负
             if (this.status === 'playing') {
