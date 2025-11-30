@@ -169,8 +169,23 @@ class MatchMaker {
      * 检查两个玩家是否兼容
      */
     isMatchCompatible(p1, p2) {
-        // 示例：检查下注范围是否重叠
+        // 1. 不能是同一个人
+        if (p1.userId === p2.userId) return false;
+
+        // 2. 检查 ELO 分数差距 (如果都在 settings 中指定了范围)
+        // 默认允许 300 分差距
+        const scoreDiff = Math.abs(p1.stats.rating - p2.stats.rating);
+        if (scoreDiff > 300) {
+            // 如果等待时间超过 30 秒，放宽限制
+            const waitTime = Math.max(Date.now() - p1.joinTime, Date.now() - p2.joinTime);
+            if (waitTime < 30000) {
+                return false;
+            }
+        }
+
+        // 3. 检查下注范围 (如果有)
         // if (p1.settings.minBet > p2.settings.maxBet) return false;
+
         return true;
     }
 
