@@ -107,10 +107,15 @@ router.post('/register', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('注册失败:', error);
+        console.error('注册失败 - 详细错误:', error);
+        console.error('错误堆栈:', error.stack);
+        console.error('错误名称:', error.name);
+        console.error('错误消息:', error.message);
+
         res.status(500).json({
             success: false,
-            message: '服务器错误'
+            message: '服务器错误',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
