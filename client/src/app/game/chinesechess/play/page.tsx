@@ -240,6 +240,14 @@ export default function ChineseChessPlay() {
         }
     };
 
+    const handleLeaveRoom = () => {
+        if (gameClient) {
+            gameClient.leave();
+            setIsReady(false);
+            setReadyTimer(null);
+        }
+    };
+
     // 计算是否在房间中
     const amIInRoom = gameState && Array.isArray(gameState.players) && gameState.players.some((p: any) => p.socketId === socket?.id);
     const currentRoomId = amIInRoom ? gameState.roomId : null;
@@ -270,6 +278,7 @@ export default function ChineseChessPlay() {
                         readyTimer={readyTimer}
                         isReady={isReady}
                         onReady={handleReady}
+                        onLeaveRoom={handleLeaveRoom}
                         onLeave={handleLeave}
                     />
 
