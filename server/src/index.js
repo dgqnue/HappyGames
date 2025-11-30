@@ -115,6 +115,20 @@ app.get('/', (req, res) => {
     res.send('HappyGames API 正在运行');
 });
 
+// 健康检查端点
+app.get('/health', (req, res) => {
+    const mongoose = require('mongoose');
+    const health = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        games: gameLoader ? gameLoader.getGameList() : [],
+        uptime: process.uptime()
+    };
+    res.json(health);
+});
+
+
 // 用户相关路由
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/user', require('./routes/user'));
