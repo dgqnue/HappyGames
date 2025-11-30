@@ -114,6 +114,13 @@ class GameTable {
                 this.onPlayerDisconnectDuringGame(userId);
             }
 
+            // 向离开的玩家发送清空状态，确保客户端 UI 更新
+            socket.emit('state', {
+                roomId: null,
+                players: [],
+                status: 'idle'
+            });
+
             return true;
         }
 

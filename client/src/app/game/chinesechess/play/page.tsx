@@ -245,6 +245,7 @@ export default function ChineseChessPlay() {
             gameClient.leave();
             setIsReady(false);
             setReadyTimer(null);
+            setGameState(null); // 清除游戏状态，确保 UI 更新
         }
     };
 
