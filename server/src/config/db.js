@@ -20,6 +20,23 @@ const connectDB = async () => {
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
+
+        // 自动修复索引：尝试删除旧的 referralCode 索引，以便 Mongoose 重新创建正确的 sparse 索引
+        try {
+            const collection = conn.connection.collection('users');
+            const indexes = await collection.indexes();
+            const referralIndex = indexes.find(idx => idx.name === 'referralCode_1');
+
+            if (referralIndex && !referralIndex.sparse) {
+                console.log('[DB] 检测到旧的 referralCode 索引缺少 sparse 属性，正在删除...');
+                await collection.dropIndex('referralCode_1');
+                console.log('[DB] 旧索引已删除，Mongoose 将在启动时自动重建正确的索引。');
+            }
+        } catch (err) {
+            // 忽略索引不存在的错误
+            console.log('[DB] 索引检查/修复跳过:', err.message);
+        }
+
     } catch (error) {
         console.error(`Error: ${error.message}`);
         process.exit(1);

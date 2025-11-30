@@ -150,6 +150,7 @@ const UserSchema = new mongoose.Schema({
     referralCode: {
         type: String,
         unique: true,
+        sparse: true, // 关键修复：允许 null 值重复（即允许多个用户没有推荐码）
         index: true
     },
     referrer: {
