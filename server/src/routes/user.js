@@ -114,8 +114,9 @@ router.post('/register', async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: '服务器错误',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: '服务器错误: ' + error.message, // 直接将错误显示在消息中
+            error: error.message,
+            stack: error.stack // 包含堆栈信息
         });
     }
 });
