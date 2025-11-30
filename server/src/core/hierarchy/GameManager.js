@@ -115,41 +115,59 @@ class GameManager {
      * 处理加入游戏桌
      */
     async handleJoinTable(socket, { tier: tierId, roomId: tableId }) {
-        const tier = this.tiers.get(tierId);
-        if (!tier) return socket.emit('error', { message: '游戏室不存在' });
+        console.log(`[GameManager] handleJoinTable: tier=${tierId}, table=${tableId}, user=${socket.user.username}`);
+        try {
+            const tier = this.tiers.get(tierId);
+            if (!tier) {
+                console.error(`[GameManager] 游戏室不存在: ${tierId}`);
+                return socket.emit('error', { message: '游戏室不存在' });
+            }
 
-        // 检查权限
-        const stats = await this.getUserStats(socket.user._id);
-        if (!tier.canAccess(stats.rating)) {
-            return socket.emit('error', { code: 'TIER_RESTRICTED', message: '等级分不满足要求' });
-        }
+            // 检查权限
+            console.log(`[GameManager] 获取用户数据: ${socket.user._id}`);
+            const stats = await this.getUserStats(socket.user._id);
+            console.log(`[GameManager] 用户评分: ${stats.rating}`);
 
-        // 查找游戏桌
-        let table = tier.findTable(tableId);
+            if (!tier.canAccess(stats.rating)) {
+                console.warn(`[GameManager] 权限不足: ${stats.rating}`);
+                return socket.emit('error', { code: 'TIER_RESTRICTED', message: '等级分不满足要求' });
+            }
 
-        // 如果指定了ID但没找到，报错
-        if (tableId && !table) {
-            return socket.emit('error', { message: '游戏桌不存在' });
-        }
+            // 查找游戏桌
+            let table = tier.findTable(tableId);
 
-        // 如果没指定ID，找一个空闲的
-        if (!table) {
-            table = tier.findAvailableTable();
-        }
+            // 如果指定了ID但没找到，报错
+            if (tableId && !table) {
+                console.error(`[GameManager] 游戏桌不存在: ${tableId}`);
+                return socket.emit('error', { message: '游戏桌不存在' });
+            }
 
-        // 如果还是没有，创建新的
-        if (!table) {
-            table = tier.addTable();
-        }
+            // 如果没指定ID，找一个空闲的
+            if (!table) {
+                table = tier.findAvailableTable();
+            }
 
-        // 尝试加入
-        const success = await table.join(socket);
-        if (success) {
-            socket.currentRoomId = table.tableId;
-            socket.currentGameId = this.gameType;
-            this.setupTableListeners(socket, table);
-        } else {
-            socket.emit('error', { message: '加入失败，房间已满' });
+            // 如果还是没有，创建新的
+            if (!table) {
+                console.log(`[GameManager] 创建新桌子`);
+                table = tier.addTable();
+            }
+
+            // 尝试加入
+            console.log(`[GameManager] 尝试加入桌子: ${table.tableId}`);
+            const success = await table.join(socket);
+            if (success) {
+                console.log(`[GameManager] 加入成功`);
+                socket.currentRoomId = table.tableId;
+                socket.currentGameId = this.gameType;
+                this.setupTableListeners(socket, table);
+            } else {
+                console.warn(`[GameManager] 加入失败`);
+                socket.emit('error', { message: '加入失败，房间已满' });
+            }
+        } catch (err) {
+            console.error(`[GameManager] handleJoinTable 出错:`, err);
+            socket.emit('error', { message: '加入游戏失败: ' + err.message });
         }
     }
 
