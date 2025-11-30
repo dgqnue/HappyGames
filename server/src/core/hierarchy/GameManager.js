@@ -112,6 +112,17 @@ class GameManager {
     }
 
     /**
+     * 广播房间列表更新
+     */
+    broadcastRoomUpdate(tierId) {
+        const tier = this.tiers.get(tierId);
+        if (tier) {
+            const broadcastRoom = `${this.gameType}_${tierId}`;
+            this.io.to(broadcastRoom).emit('room_list', tier.getTableList());
+        }
+    }
+
+    /**
      * 处理加入游戏桌
      */
     async handleJoinTable(socket, { tier: tierId, roomId: tableId }) {
@@ -161,6 +172,12 @@ class GameManager {
                 socket.currentRoomId = table.tableId;
                 socket.currentGameId = this.gameType;
                 this.setupTableListeners(socket, table);
+
+                // 广播房间列表更新
+                this.broadcastRoomUpdate(tierId);
+
+                // 发送当前桌子状态给该玩家
+                table.sendState(socket);
             } else {
                 console.warn(`[GameManager] 加入失败`);
                 socket.emit('error', { message: '加入失败，房间已满' });
@@ -252,6 +269,7 @@ class GameManager {
             table.leave(socket);
             socket.currentRoomId = null;
             socket.currentGameId = null;
+            this.broadcastRoomUpdate(table.tier);
         });
 
         // 准备/取消准备
@@ -288,6 +306,7 @@ class GameManager {
                     const table = tier.findTable(socket.currentRoomId);
                     if (table) {
                         table.leave(socket);
+                        this.broadcastRoomUpdate(tierId);
                     }
                 }
             }

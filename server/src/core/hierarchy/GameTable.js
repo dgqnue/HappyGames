@@ -187,6 +187,28 @@ class GameTable {
         this.io.to(socketId).emit(event, data);
     }
 
+    /**
+     * 发送当前状态给指定玩家
+     */
+    sendState(socket) {
+        const state = this.getGameState();
+        socket.emit('state', state);
+    }
+
+    /**
+     * 获取当前游戏状态
+     * 子类应该重写此方法以包含游戏特定的数据
+     */
+    getGameState() {
+        return {
+            roomId: this.tableId,
+            players: this.players,
+            spectators: this.spectators,
+            status: this.status,
+            // 子类可以扩展更多数据
+        };
+    }
+
     // --- 结算方法 ---
 
     /**
