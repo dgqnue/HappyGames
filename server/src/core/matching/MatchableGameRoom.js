@@ -29,6 +29,10 @@ class MatchableGameRoom {
         // 游戏状态（由子类管理）
         this.gameState = null;
 
+        // 倒计时锁定状态（仅锁定就绪/取消就绪/离开操作）
+        this.isLocked = false;
+        this.countdownTimer = null;
+
         // 启动僵尸桌检查
         this.startZombieCheck();
     }
@@ -183,6 +187,11 @@ class MatchableGameRoom {
      * 离开游戏桌(兼容 BaseGameManager)
      */
     leave(socket) {
+        // 如果倒计时已开始，不允许主动离开
+        if (this.isLocked) {
+            socket.emit('error', { message: '游戏即将开始，无法离开房间' });
+            return false;
+        }
         return this.playerLeave(socket);
     }
 
@@ -215,6 +224,11 @@ class MatchableGameRoom {
                     reason: '玩家离开，匹配中断',
                     remainingPlayers: this.matchState.players.length
                 });
+            }
+
+            // 如果正在游戏倒计时，取消它
+            if (this.countdownTimer) {
+                this.cancelGameCountdown();
             }
         }
 
@@ -269,26 +283,102 @@ class MatchableGameRoom {
      * 玩家准备 (点击"开始"按钮)
      */
     playerReady(socket) {
+        // 如果倒计时已开始，不允许改变就绪状态
+        if (this.isLocked) {
+            socket.emit('error', { message: '游戏即将开始，无法改变状态' });
+            return;
+        }
+
         const userId = socket.user._id.toString();
         const result = this.matchState.setPlayerReady(userId, true);
 
         this.broadcastRoomState();
 
         if (result === 'all_ready') {
-            this.startGame();
+            // 所有玩家都准备好了，开始3-2-1倒计时
+            this.startGameCountdown();
         }
+    }
+
+    /**
+     * 开始游戏倒计时 (3-2-1)
+     */
+    startGameCountdown() {
+        // 锁定就绪/取消就绪/离开操作
+        this.isLocked = true;
+        console.log(`[MatchableGameRoom] Starting game countdown for room ${this.roomId}`);
+
+        // 广播锁定状态
+        this.broadcast('game_locked', {
+            message: '所有玩家已就绪，游戏即将开始',
+            locked: true
+        });
+
+        let countdown = 3;
+
+        // 立即广播第一个倒计时
+        this.broadcast('game_countdown', { count: countdown });
+
+        // 设置倒计时定时器
+        this.countdownTimer = setInterval(() => {
+            countdown--;
+
+            if (countdown > 0) {
+                // 继续倒计时
+                this.broadcast('game_countdown', { count: countdown });
+            } else {
+                // 倒计时结束，清除定时器
+                clearInterval(this.countdownTimer);
+                this.countdownTimer = null;
+
+                // 广播游戏开始
+                this.broadcast('game_countdown', { count: 0, message: '游戏开始！' });
+
+                // 延迟 500ms 后真正开始游戏，让客户端显示"游戏开始"
+                setTimeout(() => {
+                    this.startGame();
+                }, 500);
+            }
+        }, 1000); // 每秒一次
+    }
+
+    /**
+     * 取消游戏倒计时
+     */
+    cancelGameCountdown() {
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+        this.isLocked = false;
+
+        this.broadcast('game_countdown_cancelled', {
+            message: '倒计时已取消',
+            locked: false
+        });
     }
 
     /**
      * 玩家取消准备
      */
     playerUnready(socket) {
+        // 如果倒计时已开始，不允许取消就绪
+        if (this.isLocked) {
+            socket.emit('error', { message: '游戏即将开始，无法改变状态' });
+            return;
+        }
+
         const userId = socket.user._id.toString();
         this.matchState.setPlayerReady(userId, false);
 
         // 取消准备检查倒计时，防止玩家被踢出
         // 并且将状态重置为 WAITING，以便客户端显示"开始"按钮
         this.matchState.cancelReadyCheck();
+
+        // 如果有游戏倒计时，也取消它 (虽然有锁应该不会走到这里，但为了安全)
+        if (this.countdownTimer) {
+            this.cancelGameCountdown();
+        }
 
         // 通知客户端取消准备检查倒计时
         this.broadcast('ready_check_cancelled', {
@@ -372,6 +462,13 @@ class MatchableGameRoom {
      * 开始游戏（由子类实现具体逻辑）
      */
     startGame() {
+        // 解锁并清除倒计时
+        this.isLocked = false;
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+
         this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
         this.matchState.cancelReadyCheck();
 
