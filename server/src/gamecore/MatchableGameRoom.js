@@ -361,9 +361,12 @@ class MatchableGameRoom {
             this.matchState.zombieTimer = null;
         }
 
-        // 子类应该重写此方法来初始化游戏状态
+        // 子类应该重写此方法来初始化游戏状态并发送具体的 game_start 事件
         this.onGameStart();
 
+        // 移除通用的 game_start 广播，因为它会覆盖子类发送的带有具体游戏数据（如棋盘）的事件
+        // 导致客户端收到不完整的数据而崩溃
+        /*
         this.broadcast('game_start', {
             players: this.matchState.players.map(p => ({
                 userId: p.userId,
@@ -371,6 +374,7 @@ class MatchableGameRoom {
                 title: p.title
             }))
         });
+        */
 
         // 广播最新的房间状态（playing）给大厅
         this.broadcastRoomState();
