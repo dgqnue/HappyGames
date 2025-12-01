@@ -48,7 +48,7 @@ class MatchableGameRoom {
 
         // 获取玩家统计数据
         console.log(`[MatchableGameRoom] Fetching player stats...`);
-        const UserGameStats = require('../models/UserGameStats');
+        const UserGameStats = require('../../models/UserGameStats');
         const stats = await UserGameStats.findOne({
             userId: socket.user._id,
             gameType: this.gameType
