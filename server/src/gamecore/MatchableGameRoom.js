@@ -271,6 +271,11 @@ class MatchableGameRoom {
     playerUnready(socket) {
         const userId = socket.user._id.toString();
         this.matchState.setPlayerReady(userId, false);
+
+        // 取消准备检查倒计时，防止玩家被踢出
+        // 并且将状态重置为 WAITING，以便客户端显示"开始"按钮
+        this.matchState.cancelReadyCheck();
+
         this.broadcastRoomState();
     }
 
