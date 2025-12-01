@@ -9,7 +9,7 @@
  */
 
 const MatchRoomState = require('./MatchRoomState');
-const DisconnectTracker = require('./DisconnectTracker');
+const DisconnectTracker = require('../../gamecore/DisconnectTracker');
 const MatchingRules = require('./MatchingRules');
 const axios = require('axios');
 const crypto = require('crypto');

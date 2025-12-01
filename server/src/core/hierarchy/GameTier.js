@@ -8,7 +8,7 @@
  * 3. 维护该等级的准入规则
  */
 
-const MatchingRules = require('../../gamecore/MatchingRules');
+const MatchingRules = require('../matching/MatchingRules');
 
 class GameTier {
     /**

@@ -1,12 +1,12 @@
 const RoomManager = require('../game/RoomManager');
-const Matchmaker = require('../game/Matchmaker');
+const MatchingRules = require('../core/matching/MatchingRules');
 const WalletService = require('../services/WalletService');
 
 const feed = [];   // Save last 20 feed items
 
 module.exports = (io, socket) => {
-    // Start matchmaker if not started
-    Matchmaker.start();
+    // Matchmaker is now managed by GameLoader
+    // MatchingRules.MatchMaker is a class, not a singleton instance here
 
     socket.on('join_lobby', async (data) => {
         socket.join('lobby');
@@ -72,8 +72,9 @@ module.exports = (io, socket) => {
         // For demo, we assume socket.user is set by auth middleware
         if (!socket.user) return socket.emit('error', 'Not authenticated');
 
-        Matchmaker.addToQueue(socket.user, socket, criteria);
-        socket.emit('matchmaking_started');
+        // Legacy matchmaking call - now handled by GameManager via 'auto_match' event
+        // Matchmaker.addToQueue(socket.user, socket, criteria);
+        socket.emit('error', 'Please use the new matchmaking system');
     });
 
     socket.on('join_table', ({ roomId, tableId }) => {

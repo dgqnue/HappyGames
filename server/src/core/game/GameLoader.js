@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const MatchingRules = require('../../gamecore/MatchingRules');
+const MatchingRules = require('../matching/MatchingRules');
 
 /**
  * 游戏加载器
