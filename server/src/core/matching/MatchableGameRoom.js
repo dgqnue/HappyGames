@@ -399,52 +399,47 @@ class MatchableGameRoom {
     endGame(result) {
         console.log(`[MatchableGameRoom] endGame called for room ${this.roomId}`);
 
+        // 广播游戏结束（让客户端先收到结果）
+        this.broadcast('game_over', result);
+
         // 立即将状态设置为 IDLE，防止显示"游戏中"
         this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
 
         // 重置准备状态
         this.matchState.resetReadyStatus();
 
-        // 广播游戏结束
-        this.broadcast('game_over', result);
-
         // 立即广播状态更新，让大厅看到房间已空闲
         this.broadcastRoomState();
 
-        // 游戏结束后延迟踢出玩家和删除游戏桌
-        setTimeout(() => {
-            console.log(`[MatchableGameRoom] Cleaning up room ${this.roomId}...`);
-
-            // 踢出所有玩家
-            this.matchState.players.forEach(player => {
-                const socket = this.io.sockets.sockets.get(player.socketId);
-                if (socket) {
-                    socket.leave(this.roomId);
-                }
-            });
-
-            // 清空房间
-            this.matchState.players = [];
-            this.matchState.spectators = [];
-
-            // 再次广播状态更新
-            this.broadcastRoomState();
-
-            // 从游戏管理器中删除此游戏桌
-            if (this.gameManager && this.gameManager.rooms && this.gameManager.rooms[this.tier]) {
-                const index = this.gameManager.rooms[this.tier].findIndex(r => r.roomId === this.roomId);
-                if (index !== -1) {
-                    this.gameManager.rooms[this.tier].splice(index, 1);
-                    console.log(`[MatchableGameRoom] Removed table ${this.roomId} from ${this.tier} room`);
-
-                    // 广播房间列表更新
-                    this.gameManager.broadcastRoomList(this.tier);
-                }
+        // 立即踢出所有玩家
+        this.matchState.players.forEach(player => {
+            const socket = this.io.sockets.sockets.get(player.socketId);
+            if (socket) {
+                socket.leave(this.roomId);
             }
+        });
 
-            // 清理资源
-            this.cleanup();
-        }, 5000); // 5秒后删除,给玩家时间查看结果
+        // 清空房间
+        this.matchState.players = [];
+        this.matchState.spectators = [];
+
+        // 再次广播状态更新
+        this.broadcastRoomState();
+
+        // 从游戏管理器中删除此游戏桌
+        if (this.gameManager && this.gameManager.rooms && this.gameManager.rooms[this.tier]) {
+            const index = this.gameManager.rooms[this.tier].findIndex(r => r.roomId === this.roomId);
+            if (index !== -1) {
+                this.gameManager.rooms[this.tier].splice(index, 1);
+                console.log(`[MatchableGameRoom] Removed table ${this.roomId} from ${this.tier} room`);
+
+                // 广播房间列表更新
+                this.gameManager.broadcastRoomList(this.tier);
+            }
+        }
+
+        // 清理资源
+        this.cleanup();
     }
 
     /**
