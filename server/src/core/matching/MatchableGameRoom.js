@@ -276,6 +276,12 @@ class MatchableGameRoom {
         // 并且将状态重置为 WAITING，以便客户端显示"开始"按钮
         this.matchState.cancelReadyCheck();
 
+        // 通知客户端取消准备检查倒计时
+        this.broadcast('ready_check_cancelled', {
+            reason: '玩家取消准备',
+            remainingPlayers: this.matchState.players.length
+        });
+
         this.broadcastRoomState();
     }
 
@@ -391,15 +397,23 @@ class MatchableGameRoom {
      * 游戏结束
      */
     endGame(result) {
+        console.log(`[MatchableGameRoom] endGame called for room ${this.roomId}`);
+
+        // 立即将状态设置为 IDLE，防止显示"游戏中"
+        this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
+
         // 重置准备状态
         this.matchState.resetReadyStatus();
 
         // 广播游戏结束
         this.broadcast('game_over', result);
 
-        // 游戏结束后延迟删除游戏桌
+        // 立即广播状态更新，让大厅看到房间已空闲
+        this.broadcastRoomState();
+
+        // 游戏结束后延迟踢出玩家和删除游戏桌
         setTimeout(() => {
-            console.log(`[MatchableGameRoom] Game ended in room ${this.roomId}, removing table...`);
+            console.log(`[MatchableGameRoom] Cleaning up room ${this.roomId}...`);
 
             // 踢出所有玩家
             this.matchState.players.forEach(player => {
@@ -409,10 +423,12 @@ class MatchableGameRoom {
                 }
             });
 
-            // 清空房间,恢复为空闲状态
+            // 清空房间
             this.matchState.players = [];
             this.matchState.spectators = [];
-            this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
+
+            // 再次广播状态更新
+            this.broadcastRoomState();
 
             // 从游戏管理器中删除此游戏桌
             if (this.gameManager && this.gameManager.rooms && this.gameManager.rooms[this.tier]) {
