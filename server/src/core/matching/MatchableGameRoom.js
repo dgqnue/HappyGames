@@ -548,6 +548,43 @@ class MatchableGameRoom {
     }
 
     /**
+     * 发送当前状态给指定玩家
+     */
+    sendState(socket) {
+        const roomInfo = this.matchState.getRoomInfo();
+        roomInfo.status = this.status;
+
+        const state = {
+            ...roomInfo,
+            players: this.matchState.players.map(p => ({
+                userId: p.userId,
+                socketId: p.socketId,
+                nickname: p.nickname,
+                avatar: p.avatar,
+                ready: p.ready,
+                title: p.title,
+                winRate: p.winRate,
+                disconnectRate: p.disconnectRate
+            }))
+        };
+        socket.emit('state', state);
+    }
+
+    /**
+     * 获取当前游戏状态
+     * 子类应该重写此方法以包含游戏特定的数据
+     */
+    getGameState() {
+        return {
+            roomId: this.roomId,
+            players: this.matchState.players,
+            spectators: this.matchState.spectators,
+            status: this.status,
+            // 子类可以扩展更多数据
+        };
+    }
+
+    /**
      * 广播消息
      */
     broadcast(event, data) {
