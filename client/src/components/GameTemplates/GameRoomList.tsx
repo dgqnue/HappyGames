@@ -107,13 +107,17 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                             </button>
                                             <button
                                                 onClick={onReady}
-                                                disabled={isReady}
-                                                className={`flex-1 py-2 font-bold rounded-lg transition-all ${isReady
-                                                    ? 'bg-green-500 text-white cursor-default'
+                                                className={`flex-1 py-2 font-bold rounded-lg transition-all group ${isReady
+                                                    ? 'bg-green-500 text-white hover:bg-red-500' // Ready状态下悬停变红，提示可取消
                                                     : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
                                                     }`}
                                             >
-                                                {isReady ? '已就绪' : '开始'}
+                                                {isReady ? (
+                                                    <span className="group-hover:hidden">就绪</span>
+                                                ) : '开始'}
+                                                {isReady && (
+                                                    <span className="hidden group-hover:inline">取消</span>
+                                                )}
                                             </button>
                                         </div>
                                         {/* 倒计时显示逻辑优化: 只要有 readyTimer 就显示，或者状态是 matching */}
