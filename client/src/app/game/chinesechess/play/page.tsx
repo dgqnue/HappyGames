@@ -233,12 +233,12 @@ export default function ChineseChessPlay() {
                 // 取消准备
                 console.log('[handleReady] Calling playerUnready');
                 gameClient.playerUnready();
-                // 不要立即设置本地状态，等待服务器确认
+                setIsReady(false); // 立即更新本地状态，提供即时反馈
             } else {
                 // 准备
                 console.log('[handleReady] Calling playerReady');
                 gameClient.playerReady();
-                // 不要立即设置本地状态，等待服务器确认
+                setIsReady(true); // 立即更新本地状态，提供即时反馈
             }
         }
     };
