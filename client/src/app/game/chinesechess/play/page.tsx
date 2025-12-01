@@ -227,15 +227,18 @@ export default function ChineseChessPlay() {
     };
 
     const handleReady = () => {
+        console.log('[handleReady] Current isReady:', isReady);
         if (gameClient) {
             if (isReady) {
                 // 取消准备
+                console.log('[handleReady] Calling playerUnready');
                 gameClient.playerUnready();
-                setIsReady(false);
+                // 不要立即设置本地状态，等待服务器确认
             } else {
                 // 准备
+                console.log('[handleReady] Calling playerReady');
                 gameClient.playerReady();
-                setIsReady(true);
+                // 不要立即设置本地状态，等待服务器确认
             }
         }
     };
