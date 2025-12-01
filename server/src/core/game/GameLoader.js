@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const MatchMaker = require('../matching/MatchMaker');
+const MatchingRules = require('../../gamecore/MatchingRules');
 
 /**
  * 游戏加载器
@@ -18,7 +18,7 @@ class GameLoader {
         this.managers = new Map();
 
         // 全局匹配器（所有游戏共享）
-        this.matchMaker = new MatchMaker();
+        this.matchMaker = new MatchingRules.MatchMaker();
     }
 
     /**
