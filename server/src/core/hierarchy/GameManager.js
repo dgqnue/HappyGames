@@ -274,7 +274,7 @@ class GameManager {
 
         // 准备/取消准备
         socket.on('player_ready', () => table.playerReady(socket));
-        // socket.on('player_unready', () => table.playerUnready(socket)); // 如果需要
+        socket.on('player_unready', () => table.playerUnready(socket));
 
         // 断线处理
         socket.removeAllListeners('disconnect');
