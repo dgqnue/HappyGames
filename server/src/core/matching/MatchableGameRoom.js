@@ -365,17 +365,6 @@ class MatchableGameRoom {
         if (this.matchState.zombieTimer) {
             clearTimeout(this.matchState.zombieTimer);
             this.matchState.zombieTimer = null;
-        }
-
-        try {
-            // 子类应该重写此方法来初始化游戏状态并发送具体的 game_start 事件
-            this.onGameStart();
-
-            // 广播最新的房间状态（playing）给大厅
-            this.broadcastRoomState();
-        } catch (error) {
-            console.error(`[MatchableGameRoom] Error starting game in room ${this.roomId}:`, error);
-
             // 发生错误，恢复状态
             this.matchState.status = MatchingRules.TABLE_STATUS.WAITING;
             this.matchState.resetReadyStatus();

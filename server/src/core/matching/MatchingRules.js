@@ -6,6 +6,10 @@
  */
 
 class MatchingRules {
+    static {
+        console.log('[MatchingRules] Module loaded - Version 2.0 (Fixes Applied)');
+    }
+
     /**
      * 默认匹配设置
      */
