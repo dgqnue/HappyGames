@@ -523,6 +523,10 @@ class MatchableGameRoom {
     broadcastRoomState() {
         console.log(`[MatchableGameRoom] broadcastRoomState called for room ${this.roomId}`);
         const roomInfo = this.matchState.getRoomInfo();
+
+        // 使用 MatchableGameRoom 的 status getter（会处理满座但未开始的情况）
+        roomInfo.status = this.status;
+
         console.log(`[MatchableGameRoom] roomInfo:`, JSON.stringify(roomInfo));
 
         // 发送 'room_state' 给大厅列表（保持轻量）

@@ -25,11 +25,11 @@ export default function ChineseChessPlay() {
     const [readyTimer, setReadyTimer] = useState<number | null>(null);
     const [isReady, setIsReady] = useState(false);
 
-    // 使用双通道获取房间列表（更快的刷新间隔）
+    // 使用双通道获取房间列表（极快的刷新间隔）
     const rooms = useRoomList(socket, 'chinesechess', tier, {
         enableHttp: true,
         enableSocket: true,
-        pollInterval: 1000  // 1秒刷新一次，确保UI及时更新
+        pollInterval: 100  // 0.1秒刷新一次，确保UI即时更新
     });
 
     useEffect(() => {
