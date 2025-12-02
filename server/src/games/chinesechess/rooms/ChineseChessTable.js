@@ -1,15 +1,22 @@
-const MatchableGameTable = require('../../../core/matching/MatchableGameTable');
+const BaseGameTable = require('../../../gamecore/BaseGameTable');
+const MatchPlayers = require('../../../core/matching/MatchPlayers');
 const XiangqiRules = require('../logic/XiangqiRules');
-const EloService = require('../../../gamecore/EloService'); // 保留 EloService，后续可重构
+const EloService = require('../../../gamecore/EloService');
 
 /**
  * 中国象棋游戏桌 (ChineseChessTable)
- * 继承自 MatchableGameTable，实现具体的象棋逻辑
+ * 直接继承自 BaseGameTable，使用 MatchPlayers 处理匹配逻辑
  */
-class ChineseChessTable extends MatchableGameTable {
+class ChineseChessTable extends BaseGameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
-        // 调用父类构造函数: io, roomId, gameType, maxPlayers, tier
-        super(io, tableId, gameType, maxPlayers, tier);
+        super(io, tableId);
+
+        this.gameType = gameType;
+        this.maxPlayers = maxPlayers;
+        this.tier = tier;
+
+        // 初始化匹配管理器
+        this.matchPlayers = new MatchPlayers(this);
 
         // 游戏特定状态
         this.board = null;
@@ -19,6 +26,48 @@ class ChineseChessTable extends MatchableGameTable {
         // 初始化空棋盘
         this.resetBoard();
     }
+
+    // --- 委托给 MatchPlayers 的属性 ---
+
+    get players() {
+        return this.matchPlayers.players;
+    }
+
+    get spectators() {
+        return this.matchPlayers.spectators;
+    }
+
+    get status() {
+        return this.matchPlayers.status;
+    }
+
+    set status(value) {
+        this.matchPlayers.status = value;
+    }
+
+    // --- 委托给 MatchPlayers 的方法 ---
+
+    async playerJoin(socket, matchSettings) {
+        return await this.matchPlayers.playerJoin(socket, matchSettings);
+    }
+
+    playerLeave(socket) {
+        return this.matchPlayers.playerLeave(socket);
+    }
+
+    handlePlayerDisconnect(socket) {
+        return this.matchPlayers.handlePlayerDisconnect(socket);
+    }
+
+    playerReady(socket) {
+        return this.matchPlayers.playerReady(socket);
+    }
+
+    playerUnready(socket) {
+        return this.matchPlayers.playerUnready(socket);
+    }
+
+    // --- 游戏逻辑 ---
 
     /**
      * 重置棋盘
@@ -42,11 +91,17 @@ class ChineseChessTable extends MatchableGameTable {
     }
 
     /**
+     * 开始游戏 (由 MatchPlayers 调用)
+     */
+    startGame() {
+        this.resetBoard();
+        this.onGameStart();
+    }
+
+    /**
      * 游戏开始回调
      */
     onGameStart() {
-        this.resetBoard();
-
         // 分配阵营：第一个玩家是红方，第二个是黑方
         const redPlayer = this.players[0];
         const blackPlayer = this.players[1];
@@ -65,21 +120,13 @@ class ChineseChessTable extends MatchableGameTable {
                 playerInfos: this.players.map(p => ({
                     userId: p.userId,
                     nickname: p.nickname,
-                    title: p.title || '无', // 假设 title 在 player 对象中，如果没有则默认
+                    title: p.title || '无',
                     avatar: p.avatar
                 }))
             });
         });
 
         console.log(`[ChineseChess] 游戏开始: ${this.tableId}`);
-    }
-
-    /**
-     * 游戏结束回调
-     */
-    onGameEnd(result) {
-        console.log(`[ChineseChess] 游戏结束: ${this.tableId}, 结果:`, result);
-        // 可以在这里做一些清理工作
     }
 
     /**
@@ -172,6 +219,26 @@ class ChineseChessTable extends MatchableGameTable {
     }
 
     /**
+     * 结束游戏
+     */
+    endGame(result) {
+        console.log(`[ChineseChess] 游戏结束: ${this.tableId}, 结果:`, result);
+        this.broadcast('game_over', result);
+
+        // 重置匹配管理器
+        this.matchPlayers.reset();
+
+        // 踢出所有玩家
+        this.players.forEach(p => {
+            const socket = this.io.sockets.sockets.get(p.socketId);
+            if (socket) socket.leave(this.tableId);
+        });
+        this.matchPlayers.matchState.players = [];
+
+        this.broadcastRoomState();
+    }
+
+    /**
      * 处理游戏中断线
      */
     onPlayerDisconnectDuringGame(userId) {
@@ -194,6 +261,54 @@ class ChineseChessTable extends MatchableGameTable {
             case 'advanced': return 10000;
             default: return 0;
         }
+    }
+
+    // --- 必须实现的 BaseGameTable 方法 ---
+
+    /**
+     * 广播房间状态
+     * MatchPlayers 需要调用此方法
+     */
+    broadcastRoomState() {
+        const roomInfo = this.matchPlayers.matchState.getRoomInfo();
+        roomInfo.status = this.status;
+
+        const state = {
+            ...roomInfo,
+            players: this.players.map(p => ({
+                userId: p.userId,
+                socketId: p.socketId,
+                nickname: p.nickname,
+                avatar: p.avatar,
+                ready: p.ready,
+                title: p.title,
+                winRate: p.winRate,
+                disconnectRate: p.disconnectRate
+            }))
+        };
+
+        // 广播给房间内所有人
+        this.io.to(this.tableId).emit('table_update', state);
+
+        // 这里的逻辑可能需要调整：
+        // 原始 MatchableGameTable 中，broadcastRoomState 似乎也用于更新大厅列表？
+        // 不，大厅列表是通过 GameRoom.getTableList() 获取的。
+        // GameRoom.getTableList() 使用 table.status, table.players.length 等属性。
+        // 因为我们委托了 getter，所以 GameRoom 应该能获取到正确的数据。
+    }
+
+    /**
+     * 发送消息给指定玩家
+     */
+    sendToPlayer(socketId, event, data) {
+        this.io.to(socketId).emit(event, data);
+    }
+
+    /**
+     * 广播消息
+     */
+    broadcast(event, data) {
+        this.io.to(this.tableId).emit(event, data);
     }
 }
 
