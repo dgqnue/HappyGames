@@ -237,28 +237,51 @@ class ChineseChessCenter extends GameCenter {
      * @param {Array} players - 玩家列表
      */
     async handleMatchFound(players) {
-        // 默认放入 'free' 场，或者根据玩家等级决定
-        const roomType = 'free';
-        const gameRoom = this.gameRooms.get(roomType);
+        // 计算玩家平均分
+        const totalRating = players.reduce((sum, p) => sum + (p.stats.rating || 0), 0);
+        const avgRating = totalRating / players.length;
 
-        // 找一个空桌子
-        let table = gameRoom.findAvailableTable();
-        if (!table) {
-            table = gameRoom.addTable();
+        // 根据平均分决定房间类型
+        let roomType = 'free';
+        if (avgRating < 1500) {
+            roomType = 'beginner';
+        } else if (avgRating < 1800) {
+            roomType = 'intermediate';
+        } else {
+            roomType = 'advanced';
         }
 
-        console.log(`[${this.gameType}] 匹配成功，分配到桌子: ${table.tableId}`);
+        console.log(`[${this.gameType}] 匹配成功 (平均分: ${avgRating.toFixed(0)}), 分配到: ${roomType}`);
+
+        const gameRoom = this.gameRooms.get(roomType);
+        if (!gameRoom) {
+            console.error(`[ChineseChessCenter] 找不到房间: ${roomType}, 降级到 free`);
+            roomType = 'free';
+        }
+
+        const targetRoom = this.gameRooms.get(roomType);
+
+        // 找一个空桌子
+        let table = targetRoom.findAvailableTable();
+        if (!table) {
+            table = targetRoom.addTable();
+        }
+
+        console.log(`[${this.gameType}] 分配桌子: ${table.tableId}`);
 
         // 将玩家加入桌子
         for (const p of players) {
             // 通知前端匹配成功
             p.socket.emit('match_found', {
                 roomId: table.tableId,
-                message: '匹配成功！'
+                message: '匹配成功！正在进入游戏...'
             });
 
             // 执行加入逻辑
+            // 注意：自动匹配进入时，我们通常希望忽略某些严格的准入检查（因为匹配器已经检查过了）
+            // 但这里我们还是走标准流程，如果匹配器逻辑正确，应该能通过
             await table.join(p.socket);
+
             p.socket.currentRoomId = table.tableId;
             p.socket.currentGameId = this.gameType;
             this.setupTableListeners(p.socket, table);

@@ -2,6 +2,10 @@ const GameTable = require('../../../core/hierarchy/GameTable');
 const MatchPlayers = require('../../../core/matching/MatchPlayers');
 const XiangqiRules = require('../logic/XiangqiRules');
 const EloService = require('../../../gamecore/EloService');
+const axios = require('axios');
+const crypto = require('crypto');
+
+const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';
 
 /**
  * 中国象棋游戏桌 (ChineseChessTable)
@@ -253,6 +257,51 @@ class ChineseChessTable extends GameTable {
             case 'intermediate': return 1000;
             case 'advanced': return 10000;
             default: return 0;
+        }
+    }
+
+    // --- 结算相关方法 (从基类移入) ---
+
+    /**
+     * 签名函数：增加时间戳 (timestamp) 和随机数 (nonce)
+     */
+    sign(data) {
+        // 签名数据必须包含 batchId, timestamp, nonce, result, 以防止重放攻击
+        return crypto.createHmac('sha256', SECRET_KEY)
+            .update(JSON.stringify(data))
+            .digest('hex');
+    }
+
+    /**
+     * 异步结算 API 调用
+     */
+    async settle(result) {
+        // 生成唯一的 BatchId, timestamp, nonce
+        const batchId = `${this.tableId}-${Date.now()}`;
+        const timestamp = Date.now();
+        const nonce = crypto.randomBytes(16).toString('hex');
+
+        const settlementPayload = {
+            batchId,
+            timestamp,
+            nonce,
+            result, // 包含 winner, loser, amount 等详细信息
+        };
+
+        try {
+            const signature = this.sign(settlementPayload);
+            // Assuming the API is running on localhost for internal calls
+            const apiUrl = process.env.API_URL || 'http://localhost:5000';
+            await axios.post(`${apiUrl}/api/settle`, settlementPayload, {
+                headers: {
+                    "x-signature": signature
+                }
+            });
+        } catch (err) {
+            console.error(`Settlement failed for Table ${this.tableId}:`, err);
+            // 即使异步请求失败，也需要记录，以便后续人工干预或重试
+            // 建议：发送一个内部系统错误消息给当前游戏桌的所有玩家
+            this.broadcast('system_error', { code: 'W005', message: '结算服务请求失败，请联系客服' });
         }
     }
 
