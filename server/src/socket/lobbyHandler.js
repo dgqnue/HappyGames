@@ -1,4 +1,5 @@
-const RoomManager = require('../game/RoomManager');
+// RoomManager 已被移除，加入游戏桌的逻辑现在由各个 GameCenter 处理
+// const RoomManager = require('../game/RoomManager');
 const MatchPlayers = require('../core/matching/MatchPlayers');
 const MatchingRules = MatchPlayers.MatchingRules;
 const WalletService = require('../services/WalletService');
@@ -78,14 +79,7 @@ module.exports = (io, socket) => {
         socket.emit('error', 'Please use the new matchmaking system');
     });
 
-    socket.on('join_table', ({ roomId, tableId }) => {
-        if (!socket.user) return socket.emit('error', 'Not authenticated');
-        const result = RoomManager.joinTable(roomId, tableId, socket.user, socket);
-        if (result.success) {
-            socket.join(tableId);
-            io.to(tableId).emit('table_update', result.table);
-        } else {
-            socket.emit('error', result.message);
-        }
-    });
+    // 注意：join_table 事件已废弃
+    // 加入游戏桌的逻辑现在由各个 GameCenter 通过 'chinesechess_join' 等事件处理
+    // 如果需要通用的加入桌子逻辑，请使用对应游戏的事件
 };
