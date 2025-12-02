@@ -19,7 +19,8 @@ class GameLoader {
         this.gameCenters = new Map();
 
         // 全局匹配器（所有游戏共享）
-        this.matchMaker = new MatchingRules.MatchMaker();
+        // 注意：MatchMaker 现在是 MatchPlayers 的静态属性，不是 MatchingRules 的
+        this.matchMaker = new MatchPlayers.MatchMaker();
     }
 
     /**
