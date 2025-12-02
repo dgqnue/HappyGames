@@ -51,19 +51,19 @@ class GameCenter {
 
     /**
      * 创建游戏房间
+     * 子类应该重写此方法以使用特定的 Room 类
      */
     createGameRoom(id, name, minRating, maxRating) {
         const gameRoom = new GameRoom(id, name, (tableId, roomType) => {
             // 工厂函数：创建具体的游戏桌实例
-            // MatchableGameTable signature: (io, tableId, gameType, maxPlayers, roomType)
-            // 注意：MatchableGameTable 的构造函数参数名之前是 tier，现在对应 roomType
             const table = new this.TableClass(this.io, tableId, this.gameType, 2, roomType);
             table.gameCenter = this; // Set gameCenter reference
             return table;
         });
 
         gameRoom.setAccessRule(minRating, maxRating);
-        gameRoom.initTables(3); // 默认创建3张桌子
+        // 注意：initTables 应该在子类的 createGameRoom 中调用
+        // 因为不同游戏可能需要不同数量的桌子
 
         this.gameRooms.set(id, gameRoom);
         console.log(`[GameCenter] 创建游戏房间: ${name} (${id})`);

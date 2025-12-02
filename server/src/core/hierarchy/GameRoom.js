@@ -1,15 +1,10 @@
 /**
- * 游戏房间 (GameRoom)
+ * 游戏房间基类 (GameRoom)
  * 代表一个特定等级的游戏区域（如：初级室、高级室）
  * 
- * 主要职责：
- * 1. 管理该房间下的所有游戏桌 (GameTable)
- * 2. 处理玩家获取桌子列表的请求
- * 3. 维护该房间的准入规则
+ * 这是一个抽象基类，只定义最基础的属性和方法
+ * 具体的实现逻辑应该在子类中完成
  */
-
-const MatchPlayers = require('../matching/MatchPlayers');
-const MatchingRules = MatchPlayers.MatchingRules;
 
 class GameRoom {
     /**
@@ -28,14 +23,12 @@ class GameRoom {
         // 准入规则 (默认无限制)
         this.minRating = 0;
         this.maxRating = Infinity;
-
-        // 维护已释放的桌号池 (用于ID复用)
-        this.freedIndices = [];
-        this.nextIndex = 0;
     }
 
     /**
      * 设置准入规则
+     * @param {Number} minRating - 最低等级分
+     * @param {Number} maxRating - 最高等级分
      */
     setAccessRule(minRating, maxRating) {
         this.minRating = minRating;
@@ -44,94 +37,34 @@ class GameRoom {
 
     /**
      * 检查玩家是否有权进入
+     * @param {Number} playerRating - 玩家等级分
+     * @returns {Boolean} 是否可以进入
      */
     canAccess(playerRating) {
-        return MatchingRules.canAccessTier(playerRating, this.minRating, this.maxRating);
+        return playerRating >= this.minRating && playerRating <= this.maxRating;
     }
 
     /**
-     * 初始化游戏桌
-     * @param {Number} count - 初始数量
+     * 获取房间信息
+     * @returns {Object} 房间基本信息
      */
-    initTables(count) {
-        for (let i = 0; i < count; i++) {
-            this.addTable();
-        }
+    getRoomInfo() {
+        return {
+            id: this.id,
+            name: this.name,
+            minRating: this.minRating,
+            maxRating: this.maxRating,
+            tableCount: this.tables.length
+        };
     }
 
-    /**
-     * 添加新游戏桌
-     */
-    addTable() {
-        let index;
-        if (this.freedIndices.length > 0) {
-            // 优先复用已释放的桌号 (从小到大)
-            this.freedIndices.sort((a, b) => a - b);
-            index = this.freedIndices.shift();
-        } else {
-            // 没有可复用的，使用新桌号
-            index = this.nextIndex++;
-        }
-
-        // 桌号从1开始显示，所以 ID 后缀用 index + 1
-        // 内部 index 从 0 开始
-        const tableId = `${this.id}_${index + 1}`;
-        const table = this.createTable(tableId, this.id);
-
-        // 记录桌子的 index，方便释放时回收
-        table.index = index;
-
-        // 监听桌子销毁事件 (如果 GameTable 有 emit 'destroy' 的话)
-        // 或者在 removeTable 时手动回收
-
-        this.tables.push(table);
-        return table;
-    }
-
-    /**
-     * 移除游戏桌
-     */
-    removeTable(tableId) {
-        const index = this.tables.findIndex(t => t.tableId === tableId);
-        if (index !== -1) {
-            const table = this.tables[index];
-            // 回收桌号
-            if (typeof table.index === 'number') {
-                this.freedIndices.push(table.index);
-                console.log(`[GameRoom] Recycled table index: ${table.index} (Table ID: ${tableId})`);
-            }
-            this.tables.splice(index, 1);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 获取游戏桌列表信息
-     */
-    getTableList() {
-        return this.tables.map(table => ({
-            id: table.tableId,
-            status: table.status,
-            players: table.players.length,
-            spectators: table.spectators.length,
-            maxPlayers: table.maxPlayers
-        }));
-    }
-
-    /**
-     * 查找可用游戏桌
-     */
-    findAvailableTable() {
-        return this.tables.find(t => MatchingRules.isTableAvailable(t));
-    }
-
-    /**
-     * 根据ID查找游戏桌
-     */
-    findTable(tableId) {
-        return this.tables.find(t => t.tableId === tableId);
-    }
+    // 以下方法应该在子类中实现
+    // initTables(count) - 初始化游戏桌
+    // addTable() - 添加新游戏桌
+    // removeTable(tableId) - 移除游戏桌
+    // getTableList() - 获取游戏桌列表
+    // findAvailableTable() - 查找可用游戏桌
+    // findTable(tableId) - 根据ID查找游戏桌
 }
 
 module.exports = GameRoom;
