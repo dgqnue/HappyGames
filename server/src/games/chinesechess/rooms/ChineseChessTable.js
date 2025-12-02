@@ -7,9 +7,9 @@ const EloService = require('../../../gamecore/EloService'); // 保留 EloService
  * 继承自 MatchableGameTable，实现具体的象棋逻辑
  */
 class ChineseChessTable extends MatchableGameTable {
-    constructor(io, tableId, tier) {
+    constructor(io, tableId, gameType, maxPlayers, tier) {
         // 调用父类构造函数: io, roomId, gameType, maxPlayers, tier
-        super(io, tableId, 'chinesechess', 2, tier);
+        super(io, tableId, gameType, maxPlayers, tier);
 
         // 游戏特定状态
         this.board = null;
