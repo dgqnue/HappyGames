@@ -149,22 +149,18 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                     )}
                 </div>
             </div>
-        </div>
-            </div >
 
-    {/* 游戏开始倒计时遮罩 */ }
-{
-    gameCountdown !== null && gameCountdown !== undefined && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className="bg-white p-10 rounded-3xl shadow-2xl text-center transform scale-110 animate-bounce">
-                <div className="text-2xl font-bold text-gray-600 mb-4">游戏即将开始</div>
-                <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-red-600">
-                    {gameCountdown === 0 ? 'GO!' : gameCountdown}
+            {/* 游戏开始倒计时遮罩 */}
+            {gameCountdown !== null && gameCountdown !== undefined && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl text-center transform scale-110 animate-bounce">
+                        <div className="text-2xl font-bold text-gray-600 mb-4">游戏即将开始</div>
+                        <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-red-600">
+                            {gameCountdown === 0 ? 'GO!' : gameCountdown}
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
-    )
-}
-        </div >
     );
 };
