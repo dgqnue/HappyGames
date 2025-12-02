@@ -102,8 +102,12 @@ class GameCenter {
      * 处理获取房间列表
      */
     handleGetRooms(socket, roomType) {
+        console.log(`[GameCenter] handleGetRooms called with roomType: ${roomType}`);
+        console.log(`[GameCenter] Available game rooms:`, Array.from(this.gameRooms.keys()));
+
         const gameRoom = this.gameRooms.get(roomType);
         if (!gameRoom) {
+            console.error(`[GameCenter] Game room not found for roomType: ${roomType}`);
             return socket.emit('error', { message: '无效的游戏房间' });
         }
 
@@ -111,8 +115,11 @@ class GameCenter {
         // 广播房间名格式: gameType_roomType (例如: chinesechess_beginner)
         const broadcastRoom = `${this.gameType}_${roomType}`;
         socket.join(broadcastRoom);
+        console.log(`[GameCenter] Socket joined broadcast room: ${broadcastRoom}`);
 
-        socket.emit('room_list', gameRoom.getTableList());
+        const tableList = gameRoom.getTableList();
+        console.log(`[GameCenter] Sending table list:`, tableList);
+        socket.emit('room_list', tableList);
     }
 
     /**
