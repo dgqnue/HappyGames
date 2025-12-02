@@ -49,7 +49,7 @@ class HttpService {
                 throw new Error('GameLoader not initialized');
             }
 
-            const gameCenter = this.gameLoader.getManager(gameId);
+            const gameCenter = this.gameLoader.getGameCenter(gameId);
 
             if (!gameCenter) {
                 console.warn(`[HttpService] 游戏不存在: ${gameId}`);
