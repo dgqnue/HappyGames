@@ -1,12 +1,3 @@
-require('dotenv').config();
-// Trigger restart
-const express = require('express');
-const http = require('http');
-const connectDB = require('./config/db');
-const initCronJobs = require('./cron/eloCron');
-
-// 引入新的核心模块
-const SocketServer = require('./core/network/SocketServer');
 const GameLoader = require('./core/game/GameLoader');
 const HttpService = require('./core/network/HttpService');
 
