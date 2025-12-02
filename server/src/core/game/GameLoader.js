@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const MatchingRules = require('../matching/MatchingRules');
+const MatchPlayers = require('../matching/MatchPlayers');
+const MatchingRules = MatchPlayers.MatchingRules;
 
 /**
  * 游戏加载器

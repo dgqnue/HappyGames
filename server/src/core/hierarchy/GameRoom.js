@@ -8,7 +8,8 @@
  * 3. 维护该房间的准入规则
  */
 
-const MatchingRules = require('../matching/MatchingRules');
+const MatchPlayers = require('../matching/MatchPlayers');
+const MatchingRules = MatchPlayers.MatchingRules;
 
 class GameRoom {
     /**

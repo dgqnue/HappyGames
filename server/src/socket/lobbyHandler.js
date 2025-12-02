@@ -1,5 +1,6 @@
 const RoomManager = require('../game/RoomManager');
-const MatchingRules = require('../core/matching/MatchingRules');
+const MatchPlayers = require('../core/matching/MatchPlayers');
+const MatchingRules = MatchPlayers.MatchingRules;
 const WalletService = require('../services/WalletService');
 
 const feed = [];   // Save last 20 feed items
