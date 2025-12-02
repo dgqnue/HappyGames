@@ -18,7 +18,7 @@ const mockIo = {
 };
 
 // 加载必要的类
-const ChineseChessCenter = require('./server/src/games/chinesechess/ChineseChessCenter');
+const ChineseChessCenter = require('./server/src/games/chinesechess/rooms/ChineseChessCenter');
 
 console.log('=== 测试 ChineseChessCenter 初始化 (Refactored) ===\n');
 
