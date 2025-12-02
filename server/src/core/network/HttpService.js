@@ -38,9 +38,6 @@ class HttpService {
     /**
      * 处理获取房间列表请求
      */
-    /**
-     * 处理获取房间列表请求
-     */
     handleGetRooms(req, res) {
         const { gameId } = req.params;
         const { tier } = req.query;
@@ -52,42 +49,42 @@ class HttpService {
                 throw new Error('GameLoader not initialized');
             }
 
-            const manager = this.gameLoader.getManager(gameId);
+            const gameCenter = this.gameLoader.getManager(gameId);
 
-            if (!manager) {
+            if (!gameCenter) {
                 console.warn(`[HttpService] 游戏不存在: ${gameId}`);
                 const availableGames = this.gameLoader.getGameList();
                 console.warn(`[HttpService] 当前可用游戏: ${availableGames.join(', ')}`);
                 return res.status(404).json({ message: '游戏不存在', availableGames });
             }
 
-            const targetTier = tier || 'free';
+            const roomType = tier || 'free';
 
             // 调试日志
-            console.log(`[HttpService] Manager 对象:`, {
-                exists: !!manager,
-                type: typeof manager,
-                hasTiers: manager && 'tiers' in manager,
-                tiersType: manager && typeof manager.tiers,
-                tiersIsMap: manager && manager.tiers instanceof Map,
-                keys: manager && manager.tiers ? Array.from(manager.tiers.keys()) : 'N/A'
+            console.log(`[HttpService] GameCenter 对象:`, {
+                exists: !!gameCenter,
+                type: typeof gameCenter,
+                hasGameRooms: gameCenter && 'gameRooms' in gameCenter,
+                gameRoomsType: gameCenter && typeof gameCenter.gameRooms,
+                gameRoomsIsMap: gameCenter && gameCenter.gameRooms instanceof Map,
+                keys: gameCenter && gameCenter.gameRooms ? Array.from(gameCenter.gameRooms.keys()) : 'N/A'
             });
 
-            if (!manager.tiers) {
-                throw new Error(`Manager.tiers is ${manager.tiers}. Manager keys: ${Object.keys(manager).join(', ')}`);
+            if (!gameCenter.gameRooms) {
+                throw new Error(`GameCenter.gameRooms is ${gameCenter.gameRooms}. GameCenter keys: ${Object.keys(gameCenter).join(', ')}`);
             }
 
-            const tierObj = manager.tiers.get(targetTier);
+            const gameRoom = gameCenter.gameRooms.get(roomType);
 
-            if (!tierObj) {
-                console.warn(`[HttpService] 游戏室不存在: ${targetTier}`);
-                const availableTiers = Array.from(manager.tiers.keys());
-                return res.status(400).json({ message: '无效的游戏室', availableTiers });
+            if (!gameRoom) {
+                console.warn(`[HttpService] 游戏房间不存在: ${roomType}`);
+                const availableRooms = Array.from(gameCenter.gameRooms.keys());
+                return res.status(400).json({ message: '无效的游戏房间', availableRooms });
             }
 
-            const rooms = tierObj.getTableList();
-            console.log(`[HttpService] 成功获取房间列表: ${rooms.length} 个房间`);
-            res.json(rooms);
+            const tables = gameRoom.getTableList();
+            console.log(`[HttpService] 成功获取桌子列表: ${tables.length} 个桌子`);
+            res.json(tables);
 
         } catch (error) {
             console.error('[HttpService] 获取房间列表失败:', error);
