@@ -394,7 +394,7 @@ class MatchMaker {
 
         // 匹配成功回调处理器
         // Key: 游戏类型
-        // Value: 回调函数 (players) => void，用于通知 GameManager 创建房间
+        // Value: 回调函数 (players) => void，用于通知 GameCenter 创建房间
         this.handlers = new Map();
 
         this.start();
@@ -536,7 +536,7 @@ class MatchMaker {
 
                     console.log(`[MatchMaker] 匹配成功: ${p1.userId} vs ${p2.userId}`);
 
-                    // 调用注册的回调函数，通常是 GameManager.handleMatchFound
+                    // 调用注册的回调函数，通常是 GameCenter.handleMatchFound
                     // 这将触发创建房间、将玩家加入房间等后续流程
                     handler([p1, p2]);
                     break;

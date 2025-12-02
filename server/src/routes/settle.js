@@ -2,17 +2,17 @@
 const express = require('express');
 const router = express.Router();
 const queue = require('../gamecore/queue'); // 消息队列服务
-const BaseGameRoom = require('../gamecore/BaseGameRoom'); // To access sign method? 
-// No, BaseGameRoom is a class. We need a static helper or instance. 
-// The user's code imported { sign } from BaseGameRoom. 
-// My BaseGameRoom implementation has `sign` as a method. 
+const BaseGameTable = require('../gamecore/BaseGameTable');
+// Note: BaseGameTable is a class. We need a static helper or instance. 
+// The user's code imported { sign } from BaseGameTable. 
+// My BaseGameTable implementation has `sign` as a method. 
 // I should make it static or export it separately.
-// Let's modify BaseGameRoom.js to export sign as well, or just duplicate/import crypto here.
+// Let's modify BaseGameTable.js to export sign as well, or just duplicate/import crypto here.
 // For "faithfully implement", I should export it.
-// But BaseGameRoom.js exports the class. 
-// I will modify BaseGameRoom.js to export the class AND the sign function if possible, 
-// or just instantiate a dummy room to sign? No that's inefficient.
-// I'll use a helper in BaseGameRoom.js.
+// But BaseGameTable.js exports the class. 
+// I will modify BaseGameTable.js to export the class AND the sign function if possible, 
+// or just instantiate a dummy table to sign? No that's inefficient.
+// I'll use a helper in BaseGameTable.js.
 
 const crypto = require('crypto');
 const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';

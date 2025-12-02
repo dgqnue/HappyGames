@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import io from 'socket.io-client';
-import { GameTierSelector } from '@/components/GameTemplates/GameTierSelector';
+import { GameRoomSelector } from '@/components/GameTemplates/GameRoomSelector';
 
 export default function ChineseChessCenter() {
     const router = useRouter();
@@ -50,9 +50,9 @@ export default function ChineseChessCenter() {
     }
 
     return (
-        <GameTierSelector
+        <GameRoomSelector
             gameName="中国象棋"
-            gameNameEn="Chinese Chess (Xiangqi)"
+            gameNameEn="Chinese Chess"
             gamePath="/game/chinesechess"
             userStats={userStats}
         />

@@ -15,7 +15,7 @@ const lobbyHandler = require('../../socket/lobbyHandler'); // 暂时引用旧位
 class SocketServer {
     constructor(server) {
         this.io = null;
-        this.gameManagers = new Map(); // 存储注册的游戏管理器
+        this.gameCenters = new Map(); // 存储注册的游戏中心
         this.init(server);
     }
 
@@ -80,13 +80,13 @@ class SocketServer {
     }
 
     /**
-     * 注册游戏管理器
+     * 注册游戏中心
      * @param {String} gameType - 游戏类型标识
-     * @param {Object} manager - 游戏管理器实例
+     * @param {Object} center - 游戏中心实例
      */
-    registerGameManager(gameType, manager) {
-        this.gameManagers.set(gameType, manager);
-        console.log(`[SocketServer] 游戏管理器已注册: ${gameType}`);
+    registerGameCenter(gameType, center) {
+        this.gameCenters.set(gameType, center);
+        console.log(`[SocketServer] 游戏中心已注册: ${gameType}`);
     }
 
     /**
@@ -116,14 +116,14 @@ class SocketServer {
      * 处理开始游戏请求
      */
     handleStartGame(socket, gameType) {
-        const manager = this.gameManagers.get(gameType);
-        if (!manager) {
-            console.error(`[SocketServer] 未找到游戏管理器: ${gameType}`);
+        const center = this.gameCenters.get(gameType);
+        if (!center) {
+            console.error(`[SocketServer] 未找到游戏中心: ${gameType}`);
             return socket.emit('system_error', { code: 404, message: '游戏服务未找到' });
         }
 
-        // 转发给对应的游戏管理器
-        manager.onPlayerJoin(socket);
+        // 转发给对应的游戏中心
+        center.onPlayerJoin(socket);
     }
 
     /**
@@ -132,11 +132,11 @@ class SocketServer {
     handleDisconnect(socket) {
         console.log(`[SocketServer] 用户已断开: ${socket.user.username}`);
 
-        // 如果玩家在游戏中，通知对应的管理器
+        // 如果玩家在游戏中，通知对应的中心
         if (socket.currentGameId) {
-            const manager = this.gameManagers.get(socket.currentGameId);
-            if (manager) {
-                manager.onPlayerDisconnect(socket);
+            const center = this.gameCenters.get(socket.currentGameId);
+            if (center) {
+                center.onPlayerDisconnect(socket);
             }
         }
     }

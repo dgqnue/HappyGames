@@ -24,6 +24,8 @@ export default function ChineseChessPlay() {
     const [showMatchSettings, setShowMatchSettings] = useState(false);
     const [readyTimer, setReadyTimer] = useState<number | null>(null);
     const [isReady, setIsReady] = useState(false);
+    const [gameCountdown, setGameCountdown] = useState<number | null>(null);
+    const [isLocked, setIsLocked] = useState(false);
 
     // 使用双通道获取房间列表（极快的刷新间隔）
     const rooms = useRoomList(socket, 'chinesechess', tier, {
@@ -140,6 +142,25 @@ export default function ChineseChessPlay() {
                 }
             });
 
+            // 监听游戏倒计时锁定
+            newSocket.on('game_locked', (data: any) => {
+                console.log('游戏锁定:', data);
+                setIsLocked(data.locked);
+            });
+
+            // 监听游戏倒计时
+            newSocket.on('game_countdown', (data: any) => {
+                console.log('游戏倒计时:', data);
+                setGameCountdown(data.count);
+            });
+
+            // 监听游戏倒计时取消
+            newSocket.on('game_countdown_cancelled', (data: any) => {
+                console.log('游戏倒计时取消:', data);
+                setGameCountdown(null);
+                setIsLocked(false);
+            });
+
             // 监听被踢出
             newSocket.on('kicked', (data: any) => {
                 alert(`您已被踢出房间: ${data.reason}`);
@@ -228,6 +249,10 @@ export default function ChineseChessPlay() {
 
     const handleReady = () => {
         console.log('[handleReady] Current isReady:', isReady);
+        if (isLocked) {
+            console.warn('[handleReady] Game is locked, cannot toggle ready state');
+            return;
+        }
         if (gameClient) {
             if (isReady) {
                 // 取消准备
@@ -284,6 +309,8 @@ export default function ChineseChessPlay() {
                         onReady={handleReady}
                         onLeaveRoom={handleLeaveRoom}
                         onLeave={handleLeave}
+                        gameCountdown={gameCountdown}
+                        isLocked={isLocked}
                     />
 
                     {showMatchSettings && (

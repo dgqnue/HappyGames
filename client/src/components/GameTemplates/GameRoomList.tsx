@@ -18,6 +18,8 @@ interface GameRoomListProps {
     currentRoomId?: string | null;
     isReady?: boolean;
     readyTimer?: number | null;
+    gameCountdown?: number | null;
+    isLocked?: boolean;
     onReady?: () => void;
     onLeaveRoom?: () => void;
 }
@@ -32,6 +34,8 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
     currentRoomId,
     isReady,
     readyTimer,
+    gameCountdown,
+    isLocked,
     onReady,
     onLeaveRoom
 }) => {
@@ -107,10 +111,11 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                                             </button>
                                             <button
                                                 onClick={onReady}
+                                                disabled={isLocked}
                                                 className={`flex-1 py-2 font-bold rounded-lg transition-all ${isReady
                                                     ? 'bg-green-500 text-white hover:bg-green-600'
                                                     : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg'
-                                                    }`}
+                                                    } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 {isReady ? '就绪' : '开始'}
                                             </button>
@@ -145,5 +150,21 @@ export const GameRoomList: React.FC<GameRoomListProps> = ({
                 </div>
             </div>
         </div>
+            </div >
+
+    {/* 游戏开始倒计时遮罩 */ }
+{
+    gameCountdown !== null && gameCountdown !== undefined && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div className="bg-white p-10 rounded-3xl shadow-2xl text-center transform scale-110 animate-bounce">
+                <div className="text-2xl font-bold text-gray-600 mb-4">游戏即将开始</div>
+                <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-red-600">
+                    {gameCountdown === 0 ? 'GO!' : gameCountdown}
+                </div>
+            </div>
+        </div>
+    )
+}
+        </div >
     );
 };

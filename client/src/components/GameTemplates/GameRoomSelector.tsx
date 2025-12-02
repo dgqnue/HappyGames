@@ -18,7 +18,7 @@ interface UserStats {
     titleColor: string;
 }
 
-interface GameTierSelectorProps {
+interface GameRoomSelectorProps {
     gameName: string;
     gameNameEn: string;
     gamePath: string;
@@ -34,7 +34,7 @@ const DEFAULT_TIERS: Tier[] = [
     { id: 'advanced', name: '高级室', desc: '> 1800分', minRating: 1801, maxRating: 9999, color: 'bg-purple-100' }
 ];
 
-export const GameTierSelector: React.FC<GameTierSelectorProps> = ({
+export const GameRoomSelector: React.FC<GameRoomSelectorProps> = ({
     gameName,
     gameNameEn,
     gamePath,

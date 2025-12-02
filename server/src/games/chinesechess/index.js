@@ -1,2 +1,2 @@
-const ChineseChessManager = require('./ChineseChessManager');
-module.exports = ChineseChessManager;
+const ChineseChessCenter = require('./ChineseChessCenter');
+module.exports = ChineseChessCenter;

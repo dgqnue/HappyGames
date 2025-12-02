@@ -1,18 +1,18 @@
 /**
- * 游戏室 (GameTier)
+ * 游戏房间 (GameRoom)
  * 代表一个特定等级的游戏区域（如：初级室、高级室）
  * 
  * 主要职责：
- * 1. 管理该等级下的所有游戏桌
+ * 1. 管理该房间下的所有游戏桌 (GameTable)
  * 2. 处理玩家获取桌子列表的请求
- * 3. 维护该等级的准入规则
+ * 3. 维护该房间的准入规则
  */
 
 const MatchingRules = require('../matching/MatchingRules');
 
-class GameTier {
+class GameRoom {
     /**
-     * @param {String} id - 游戏室ID (如: beginner)
+     * @param {String} id - 游戏房间ID (如: beginner)
      * @param {String} name - 显示名称 (如: 初级室)
      * @param {Function} tableFactory - 创建游戏桌的工厂函数
      */
@@ -97,7 +97,7 @@ class GameTier {
             // 回收桌号
             if (typeof table.index === 'number') {
                 this.freedIndices.push(table.index);
-                console.log(`[GameTier] Recycled table index: ${table.index} (Table ID: ${tableId})`);
+                console.log(`[GameRoom] Recycled table index: ${table.index} (Table ID: ${tableId})`);
             }
             this.tables.splice(index, 1);
             return true;
@@ -133,4 +133,4 @@ class GameTier {
     }
 }
 
-module.exports = GameTier;
+module.exports = GameRoom;

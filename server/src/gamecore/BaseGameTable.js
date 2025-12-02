@@ -1,12 +1,17 @@
-// 文件：server/src/gamecore/BaseGameRoom.js
+// 文件：server/src/gamecore/BaseGameTable.js
 const axios = require('axios');
 const crypto = require('crypto');
 const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY'; // 确保安全存储
 
-class BaseGameRoom {
+/**
+ * 游戏桌基类 (BaseGameTable)
+ * 定义了游戏桌的基本行为：玩家加入、离开、游戏开始、结束、消息广播、结算等。
+ * 游戏桌是玩家实际进行游戏的场所。
+ */
+class BaseGameTable {
     constructor(io, roomId) {
         this.io = io;
-        this.roomId = roomId;
+        this.roomId = roomId; // 游戏桌ID
         this.players = [];
     }
 
@@ -15,7 +20,7 @@ class BaseGameRoom {
     onGameStart() { }
     onGameEnd() { }
 
-    // 发送消息到房间内的所有玩家
+    // 发送消息到游戏桌内的所有玩家
     broadcast(event, data) {
         this.io.to(this.roomId).emit(event, data);
     }
@@ -57,11 +62,11 @@ class BaseGameRoom {
                 }
             });
         } catch (err) {
-            console.error(`Settlement failed for Room ${this.roomId}:`, err);
+            console.error(`Settlement failed for Table ${this.roomId}:`, err);
             // **[优化]** 即使异步请求失败，也需要记录，以便后续人工干预或重试
-            // 建议：发送一个内部系统错误消息给当前房间的所有玩家
+            // 建议：发送一个内部系统错误消息给当前游戏桌的所有玩家
             this.broadcast('system_error', { code: 'W005', message: '结算服务请求失败，请联系客服' });
         }
     }
 }
-module.exports = BaseGameRoom;
+module.exports = BaseGameTable;

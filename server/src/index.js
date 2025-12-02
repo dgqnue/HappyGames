@@ -71,7 +71,7 @@ console.log('[Server] 初始化游戏加载器...');
 const gameLoader = new GameLoader();
 gameLoader.loadAll(socketServer.io);
 
-// 3. 将游戏管理器注册到 Socket 服务器
+// 3. 将游戏中心注册到 Socket 服务器
 gameLoader.registerToSocketServer(socketServer);
 
 // 4. 初始化 HTTP 服务（提供游戏相关的 HTTP API）

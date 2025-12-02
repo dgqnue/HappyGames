@@ -8,14 +8,14 @@ const MatchingRules = require('../matching/MatchingRules');
  * 
  * 主要职责：
  * 1. 扫描 games 目录下的所有游戏模块
- * 2. 实例化每个游戏的管理器
- * 3. 将游戏管理器注册到 Socket 服务器
+ * 2. 实例化每个游戏的中心 (GameCenter)
+ * 3. 将游戏中心注册到 Socket 服务器
  * 4. 统一管理匹配系统
  */
 class GameLoader {
     constructor() {
-        // 游戏管理器集合 Map<gameType, GameManager>
-        this.managers = new Map();
+        // 游戏中心集合 Map<gameType, GameCenter>
+        this.gameCenters = new Map();
 
         // 全局匹配器（所有游戏共享）
         this.matchMaker = new MatchingRules.MatchMaker();
@@ -52,7 +52,7 @@ class GameLoader {
             }
         });
 
-        console.log(`[GameLoader] 游戏加载完成，共加载 ${this.managers.size} 个游戏`);
+        console.log(`[GameLoader] 游戏加载完成，共加载 ${this.gameCenters.size} 个游戏`);
     }
 
     /**
@@ -62,35 +62,37 @@ class GameLoader {
      * @param {String} gamePath - 游戏目录路径
      */
     loadGame(io, gameType, gamePath) {
-        // 查找游戏管理器文件
+        // 查找游戏中心文件
         // 支持两种命名方式：
-        // 1. <GameName>Manager.js (推荐)
-        // 2. index.js (兼容旧版)
+        // 1. <GameName>Center.js (推荐)
+        // 2. <GameName>Manager.js (兼容旧版)
+        // 3. index.js (兼容旧版)
 
-        const managerFiles = [
+        const centerFiles = [
+            path.join(gamePath, `${this.capitalize(gameType)}Center.js`),
             path.join(gamePath, `${this.capitalize(gameType)}Manager.js`),
             path.join(gamePath, 'index.js')
         ];
 
-        let ManagerClass = null;
+        let CenterClass = null;
         let foundPath = null;
 
-        for (const filePath of managerFiles) {
+        for (const filePath of centerFiles) {
             if (fs.existsSync(filePath)) {
-                ManagerClass = require(filePath);
+                CenterClass = require(filePath);
                 foundPath = filePath;
                 break;
             }
         }
 
-        if (!ManagerClass) {
-            console.warn(`[GameLoader] 未找到游戏管理器: ${gameType}`);
+        if (!CenterClass) {
+            console.warn(`[GameLoader] 未找到游戏中心文件: ${gameType}`);
             return;
         }
 
-        // 实例化管理器
-        const manager = new ManagerClass(io, this.matchMaker);
-        this.managers.set(gameType, manager);
+        // 实例化游戏中心
+        const gameCenter = new CenterClass(io, this.matchMaker);
+        this.gameCenters.set(gameType, gameCenter);
 
         console.log(`[GameLoader] ✓ 已加载游戏: ${gameType} (${path.basename(foundPath)})`);
     }
@@ -100,25 +102,25 @@ class GameLoader {
      * @param {Object} socketServer - SocketServer 实例
      */
     registerToSocketServer(socketServer) {
-        for (const [gameType, manager] of this.managers) {
-            socketServer.registerGameManager(gameType, manager);
+        for (const [gameType, gameCenter] of this.gameCenters) {
+            socketServer.registerGameCenter(gameType, gameCenter);
         }
         console.log('[GameLoader] 所有游戏已注册到 Socket 服务器');
     }
 
     /**
-     * 获取游戏管理器
+     * 获取游戏中心
      * @param {String} gameType 
      */
-    getManager(gameType) {
-        return this.managers.get(gameType);
+    getGameCenter(gameType) {
+        return this.gameCenters.get(gameType);
     }
 
     /**
      * 获取所有游戏列表
      */
     getGameList() {
-        return Array.from(this.managers.keys());
+        return Array.from(this.gameCenters.keys());
     }
 
     /**

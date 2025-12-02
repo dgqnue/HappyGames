@@ -1,12 +1,12 @@
-const MatchableGameRoom = require('../../../core/matching/MatchableGameRoom');
+const MatchableGameTable = require('../../../core/matching/MatchableGameTable');
 const XiangqiRules = require('../logic/XiangqiRules');
 const EloService = require('../../../gamecore/EloService'); // 保留 EloService，后续可重构
 
 /**
- * 中国象棋游戏桌
- * 继承自 MatchableGameRoom，实现具体的象棋逻辑
+ * 中国象棋游戏桌 (ChineseChessTable)
+ * 继承自 MatchableGameTable，实现具体的象棋逻辑
  */
-class ChineseChessRoom extends MatchableGameRoom {
+class ChineseChessTable extends MatchableGameTable {
     constructor(io, tableId, tier) {
         // 调用父类构造函数: io, roomId, gameType, maxPlayers, tier
         super(io, tableId, 'chinesechess', 2, tier);
@@ -197,4 +197,4 @@ class ChineseChessRoom extends MatchableGameRoom {
     }
 }
 
-module.exports = ChineseChessRoom;
+module.exports = ChineseChessTable;
