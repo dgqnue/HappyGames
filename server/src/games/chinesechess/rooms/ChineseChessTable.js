@@ -1,13 +1,13 @@
-const BaseGameTable = require('../../../gamecore/BaseGameTable');
+const GameTable = require('../../../core/hierarchy/GameTable');
 const MatchPlayers = require('../../../core/matching/MatchPlayers');
 const XiangqiRules = require('../logic/XiangqiRules');
 const EloService = require('../../../gamecore/EloService');
 
 /**
  * 中国象棋游戏桌 (ChineseChessTable)
- * 直接继承自 BaseGameTable，使用 MatchPlayers 处理匹配逻辑
+ * 直接继承自 GameTable，使用 MatchPlayers 处理匹配逻辑
  */
-class ChineseChessTable extends BaseGameTable {
+class ChineseChessTable extends GameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
         super(io, tableId);
 

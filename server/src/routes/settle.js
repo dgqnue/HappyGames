@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const queue = require('../gamecore/queue'); // 消息队列服务
-const BaseGameTable = require('../gamecore/BaseGameTable');
+const GameTable = require('../core/hierarchy/GameTable');
 // Note: BaseGameTable is a class. We need a static helper or instance. 
 // The user's code imported { sign } from BaseGameTable. 
 // My BaseGameTable implementation has `sign` as a method. 

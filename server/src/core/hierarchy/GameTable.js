@@ -4,11 +4,11 @@ const crypto = require('crypto');
 const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY'; // 确保安全存储
 
 /**
- * 游戏桌基类 (BaseGameTable)
+ * 游戏桌基类 (GameTable)
  * 定义了游戏桌的基本行为：玩家加入、离开、游戏开始、结束、消息广播、结算等。
  * 游戏桌是玩家实际进行游戏的场所。
  */
-class BaseGameTable {
+class GameTable {
     constructor(io, roomId) {
         this.io = io;
         this.roomId = roomId; // 游戏桌ID
@@ -73,4 +73,4 @@ class BaseGameTable {
         }
     }
 }
-module.exports = BaseGameTable;
+module.exports = GameTable;
