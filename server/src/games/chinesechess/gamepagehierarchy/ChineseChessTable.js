@@ -55,8 +55,18 @@ class ChineseChessTable extends GameTable {
         return await this.matchPlayers.playerJoin(socket, matchSettings);
     }
 
+    // join 方法别名，用于兼容 GameCenter 的调用
+    async join(socket, matchSettings) {
+        return await this.playerJoin(socket, matchSettings);
+    }
+
     playerLeave(socket) {
         return this.matchPlayers.playerLeave(socket);
+    }
+
+    // leave 方法别名
+    leave(socket) {
+        return this.playerLeave(socket);
     }
 
     handlePlayerDisconnect(socket) {
