@@ -32,6 +32,11 @@ class HttpService {
             this.handleGetGameList(req, res);
         });
 
+        // 调试接口：检查 GameLoader 状态
+        this.app.get('/api/debug/gameloader', (req, res) => {
+            this.handleDebugGameLoader(req, res);
+        });
+
         console.log('[HttpService] HTTP 路由已配置');
     }
 
@@ -107,6 +112,45 @@ class HttpService {
             console.error('[HttpService] 获取游戏列表失败:', error);
             res.status(500).json({ message: '服务器错误' });
         }
+    }
+
+    /**
+     * 处理 GameLoader 调试请求
+     */
+    handleDebugGameLoader(req, res) {
+        const fs = require('fs');
+        const path = require('path');
+
+        const debugInfo = {
+            cwd: process.cwd(),
+            dirname: __dirname,
+            gamesDirResolved: path.join(__dirname, '../../games'),
+            gamesDirExists: fs.existsSync(path.join(__dirname, '../../games')),
+            gameCenters: this.gameLoader.getGameList(),
+            folderContents: {},
+            env: {
+                NODE_ENV: process.env.NODE_ENV
+            }
+        };
+
+        try {
+            const gamesDir = debugInfo.gamesDirResolved;
+            if (debugInfo.gamesDirExists) {
+                const folders = fs.readdirSync(gamesDir);
+                debugInfo.folders = folders;
+
+                folders.forEach(folder => {
+                    const folderPath = path.join(gamesDir, folder);
+                    if (fs.lstatSync(folderPath).isDirectory()) {
+                        debugInfo.folderContents[folder] = fs.readdirSync(folderPath);
+                    }
+                });
+            }
+        } catch (err) {
+            debugInfo.error = err.message;
+        }
+
+        res.json(debugInfo);
     }
 }
 
