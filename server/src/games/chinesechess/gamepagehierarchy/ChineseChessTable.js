@@ -221,21 +221,14 @@ class ChineseChessTable extends GameTable {
     /**
      * 结束游戏
      */
+    /**
+     * 结束游戏
+     */
     endGame(result) {
         console.log(`[ChineseChess] 游戏结束: ${this.tableId}, 结果:`, result);
-        this.broadcast('game_over', result);
 
-        // 重置匹配管理器
-        this.matchPlayers.reset();
-
-        // 踢出所有玩家
-        this.players.forEach(p => {
-            const socket = this.io.sockets.sockets.get(p.socketId);
-            if (socket) socket.leave(this.tableId);
-        });
-        this.matchPlayers.matchState.players = [];
-
-        this.broadcastRoomState();
+        // 委托给 MatchPlayers 处理游戏结束流程 (包含再来一局逻辑)
+        this.matchPlayers.onGameEnd(result);
     }
 
     /**

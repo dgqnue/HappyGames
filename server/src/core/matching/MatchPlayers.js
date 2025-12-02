@@ -7,12 +7,12 @@ const DisconnectTracker = require('../../gamecore/DisconnectTracker');
  */
 
 /**
- * 游戏匹配规则配置
- * 定义了平台所有游戏的匹配规则和逻辑
+ * 游戏匹配规则配置类
+ * 定义了平台所有游戏的匹配规则、常量配置和校验逻辑
  */
 class MatchingRules {
     static {
-        console.log('[MatchingRules] Module loaded - Version 3.0 (Consolidated)');
+        console.log('[MatchingRules] 模块已加载 - Version 3.1 (完整版)');
     }
 
     /**
@@ -43,23 +43,29 @@ class MatchingRules {
     static TABLE_STATUS = {
         IDLE: 'idle',           // 空闲状态 (无玩家入座)
         WAITING: 'waiting',     // 等待中 (有玩家但未满座)
-        MATCHING: 'matching',   // 匹配中 (满座但未全部就绪)
-        PLAYING: 'playing'      // 游戏中
+        MATCHING: 'matching',   // 匹配中 (满座但未全部就绪/准备中)
+        PLAYING: 'playing'      // 游戏中 (所有玩家已就绪，游戏进行中)
     };
 
     /**
-     * 倒计时配置
+     * 倒计时配置 (单位: 毫秒)
      */
     static COUNTDOWN_CONFIG = {
         readyTimeout: 30000,    // 准备倒计时: 30秒 (满座后所有玩家需在此时间内点击"开始")
+        rematchTimeout: 10000,  // 再来一局倒计时: 10秒 (游戏结束后等待玩家确认)
         zombieTimeout: 300000   // 僵尸桌清理: 5分钟 (从第一个玩家入座起,5分钟内未开始游戏则清理)
     };
 
     /**
      * 检查玩家是否符合房间的匹配条件
+     * @param {Object} playerStats - 玩家统计数据 (胜率、掉线率等)
+     * @param {Object} playerSettings - 玩家设置的匹配偏好
+     * @param {Object} roomSettings - 房间当前的匹配设置
+     * @param {Boolean} isFirstPlayer - 是否是房间的第一个玩家
+     * @returns {Object} { canJoin: Boolean, reason: String }
      */
     static checkMatchCriteria(playerStats, playerSettings, roomSettings, isFirstPlayer = false) {
-        // 第一个玩家直接允许
+        // 规则：第一个入座的玩家自动通过，并确立房间规则
         if (isFirstPlayer) {
             return { canJoin: true, reason: '第一个玩家,自动通过' };
         }
@@ -68,7 +74,7 @@ class MatchingRules {
 
         // 1. 检查底豆匹配 (双向匹配)
         if (playerSettings) {
-            // 房间的底豆必须在玩家接受的范围内
+            // 规则：房间的底豆必须在玩家接受的范围内
             if (baseBet < playerSettings.betRange[0] || baseBet > playerSettings.betRange[1]) {
                 return {
                     canJoin: false,
@@ -76,7 +82,7 @@ class MatchingRules {
                 };
             }
 
-            // 玩家设定的底豆必须在房间接受的范围内
+            // 规则：玩家设定的底豆必须在房间接受的范围内 (用于自动匹配时的双向验证)
             if (playerSettings.baseBet < betRange[0] || playerSettings.baseBet > betRange[1]) {
                 return {
                     canJoin: false,
@@ -162,13 +168,6 @@ class MatchingRules {
             errors.push('掉线率必须在 0% - 100% 之间');
         }
 
-        // 检查等级分范围 (如果设置了)
-        if (settings.ratingRange && settings.ratingRange.length === 2) {
-            if (settings.ratingRange[0] > settings.ratingRange[1]) {
-                errors.push('等级分范围最小值不能大于最大值');
-            }
-        }
-
         return {
             valid: errors.length === 0,
             errors
@@ -193,12 +192,12 @@ class MatchingRules {
      * 判断游戏桌是否可以加入
      */
     static canJoinTable(status, currentPlayers, maxPlayers) {
-        // 只有空闲或等待中的桌子可以加入
+        // 规则：只有空闲或等待中的桌子可以加入
         if (status !== this.TABLE_STATUS.IDLE && status !== this.TABLE_STATUS.WAITING) {
             return false;
         }
 
-        // 必须还有空位
+        // 规则：必须还有空位
         return currentPlayers < maxPlayers;
     }
 
@@ -206,7 +205,7 @@ class MatchingRules {
      * 判断是否应该开始准备倒计时
      */
     static shouldStartReadyCheck(currentPlayers, maxPlayers, status) {
-        // 满座且状态为等待中时,应该开始准备倒计时
+        // 规则：满座且状态为等待中时,应该开始准备倒计时
         return currentPlayers === maxPlayers && status === this.TABLE_STATUS.WAITING;
     }
 
@@ -214,11 +213,12 @@ class MatchingRules {
      * 判断是否是僵尸桌 (需要清理)
      */
     static isZombieTable(firstPlayerJoinedAt, status) {
-        // 如果没有玩家或正在游戏中,不是僵尸桌
+        // 规则：如果没有玩家或正在游戏中,不是僵尸桌
         if (!firstPlayerJoinedAt || status === this.TABLE_STATUS.PLAYING) {
             return false;
         }
 
+        // 规则：从第一个玩家入座起，超过5分钟未开始游戏
         const elapsed = Date.now() - firstPlayerJoinedAt;
         return elapsed >= this.COUNTDOWN_CONFIG.zombieTimeout;
     }
@@ -227,7 +227,7 @@ class MatchingRules {
      * 自动匹配的桌子分配策略
      */
     static findAvailableTableForAutoMatch(tables, tier) {
-        // 优先使用空闲状态的桌子
+        // 规则：优先使用空闲状态的桌子
         const idleTable = tables.find(t =>
             t.status === this.TABLE_STATUS.IDLE &&
             t.tier === tier
@@ -239,14 +239,6 @@ class MatchingRules {
 
         // 如果没有空闲桌子,返回 null (需要创建新桌子)
         return null;
-    }
-
-    /**
-     * 获取桌子编号 (从 tableId 中提取)
-     */
-    static getTableNumber(tableId) {
-        const parts = tableId.split('_');
-        return parseInt(parts[parts.length - 1]) || 0;
     }
 
     /**
@@ -296,21 +288,6 @@ class MatchingRules {
             return this.TABLE_STATUS.WAITING;
         }
     }
-
-    /**
-     * 检查玩家等级分是否符合游戏室准入要求
-     */
-    static canAccessTier(playerRating, minRating, maxRating) {
-        return playerRating >= minRating && playerRating <= maxRating;
-    }
-
-    /**
-     * 检查游戏桌是否可用于加入
-     */
-    static isTableAvailable(table) {
-        return table.status === this.TABLE_STATUS.IDLE &&
-            table.players.length < table.maxPlayers;
-    }
 }
 
 /**
@@ -333,6 +310,7 @@ class MatchMaker {
 
     start() {
         if (this.checkInterval) return;
+        // 每3秒处理一次匹配队列
         this.checkInterval = setInterval(() => {
             this.processQueues();
         }, 3000);
@@ -366,6 +344,7 @@ class MatchMaker {
 
         console.log(`[MatchMaker] 玩家 ${player.userId} 加入 ${gameType} 匹配队列`);
 
+        // 立即尝试匹配一次
         this.matchGame(gameType);
 
         return { success: true };
@@ -394,6 +373,7 @@ class MatchMaker {
         const queue = this.queues.get(gameType);
         if (!queue || queue.length < 2) return;
 
+        // 按等待时间排序，先入先出
         queue.sort((a, b) => a.joinTime - b.joinTime);
 
         const matchedIndices = new Set();
@@ -404,6 +384,7 @@ class MatchMaker {
             return;
         }
 
+        // 简单的两两匹配逻辑
         for (let i = 0; i < queue.length; i++) {
             if (matchedIndices.has(i)) continue;
 
@@ -424,6 +405,7 @@ class MatchMaker {
             }
         }
 
+        // 移除已匹配的玩家
         if (matchedIndices.size > 0) {
             const indices = Array.from(matchedIndices).sort((a, b) => b - a);
             for (const idx of indices) {
@@ -435,9 +417,12 @@ class MatchMaker {
     isMatchCompatible(p1, p2) {
         if (p1.userId === p2.userId) return false;
 
+        // 简单的分差匹配逻辑
         const scoreDiff = Math.abs(p1.stats.rating - p2.stats.rating);
         if (scoreDiff > 300) {
+            // 如果分差过大，检查等待时间
             const waitTime = Math.max(Date.now() - p1.joinTime, Date.now() - p2.joinTime);
+            // 等待超过30秒则放宽匹配条件
             if (waitTime < 30000) {
                 return false;
             }
@@ -449,7 +434,7 @@ class MatchMaker {
         const queue = this.queues.get(gameType) || [];
         return {
             count: queue.length,
-            avgWaitTime: 0
+            avgWaitTime: 0 // TODO: 实现平均等待时间计算
         };
     }
 }
@@ -475,12 +460,23 @@ class MatchRoomState {
         console.log(`[MatchRoomState] Room ${roomId} initialized with status: ${this.status}`);
 
         this.matchSettings = { ...MatchingRules.DEFAULT_SETTINGS };
+
+        // 倒计时定时器
         this.readyTimer = null;
         this.readyTimeout = MatchingRules.COUNTDOWN_CONFIG.readyTimeout;
+
         this.zombieTimer = null;
         this.zombieTimeout = MatchingRules.COUNTDOWN_CONFIG.zombieTimeout;
+
+        this.rematchTimer = null;
+        this.rematchTimeout = MatchingRules.COUNTDOWN_CONFIG.rematchTimeout;
+
+        // 记录时间点
         this.createdAt = Date.now();
         this.firstPlayerJoinedAt = null;
+
+        // 再来一局请求集合
+        this.rematchRequests = new Set();
     }
 
     canPlayerJoin(playerStats, playerSettings = null) {
@@ -531,6 +527,7 @@ class MatchRoomState {
         if (index === -1) return false;
 
         this.players.splice(index, 1);
+        this.rematchRequests.delete(userId);
 
         if (this.readyTimer) {
             clearTimeout(this.readyTimer);
@@ -549,6 +546,7 @@ class MatchRoomState {
             }
             this.firstPlayerJoinedAt = null;
             this.matchSettings = { ...MatchingRules.DEFAULT_SETTINGS };
+            this.rematchRequests.clear();
             console.log(`[MatchRoom] Room emptied, match settings reset to default`);
         }
 
@@ -618,6 +616,14 @@ class MatchRoomState {
         return MatchingRules.isZombieTable(this.firstPlayerJoinedAt, this.status);
     }
 
+    requestRematch(userId) {
+        if (this.players.find(p => p.userId === userId)) {
+            this.rematchRequests.add(userId);
+            return this.rematchRequests.size === this.players.length; // 如果所有人都同意，返回 true
+        }
+        return false;
+    }
+
     getRoomInfo() {
         return {
             roomId: this.roomId,
@@ -632,20 +638,16 @@ class MatchRoomState {
                 title: p.title,
                 winRate: p.winRate,
                 disconnectRate: p.disconnectRate,
-                ready: p.ready
+                ready: p.ready,
+                wantsRematch: this.rematchRequests.has(p.userId)
             }))
         };
     }
 
     cleanup() {
-        if (this.readyTimer) {
-            clearTimeout(this.readyTimer);
-            this.readyTimer = null;
-        }
-        if (this.zombieTimer) {
-            clearTimeout(this.zombieTimer);
-            this.zombieTimer = null;
-        }
+        if (this.readyTimer) clearTimeout(this.readyTimer);
+        if (this.zombieTimer) clearTimeout(this.zombieTimer);
+        if (this.rematchTimer) clearTimeout(this.rematchTimer);
     }
 }
 
@@ -658,7 +660,7 @@ class MatchRoomState {
 /**
  * 玩家匹配管理器 (MatchPlayers)
  * 
- * 负责处理游戏桌的玩家匹配、准备、倒计时等逻辑。
+ * 负责处理游戏桌的玩家匹配、准备、倒计时、再来一局等逻辑。
  * 整合了 MatchRoomState 和 MatchingRules。
  */
 class MatchPlayers {
@@ -1025,11 +1027,120 @@ class MatchPlayers {
     }
 
     /**
+     * 游戏结束处理
+     * @param {Object} result - 游戏结果
+     */
+    onGameEnd(result) {
+        console.log(`[MatchPlayers] Game ended in room ${this.roomId}`);
+
+        // 重置准备状态
+        this.matchState.resetReadyStatus();
+
+        // 状态变为匹配中 (等待再来一局)
+        this.matchState.status = MatchingRules.TABLE_STATUS.MATCHING;
+
+        // 清空之前的再来一局请求
+        this.matchState.rematchRequests.clear();
+
+        // 广播游戏结束和开始再来一局倒计时
+        this.table.broadcast('game_ended', {
+            result,
+            rematchTimeout: this.matchState.rematchTimeout
+        });
+
+        this.startRematchCountdown();
+    }
+
+    /**
+     * 开始再来一局倒计时
+     */
+    startRematchCountdown() {
+        if (this.matchState.rematchTimer) clearTimeout(this.matchState.rematchTimer);
+
+        console.log(`[MatchPlayers] Starting rematch countdown for room ${this.roomId}`);
+
+        this.matchState.rematchTimer = setTimeout(() => {
+            this.onRematchTimeout();
+        }, this.matchState.rematchTimeout);
+    }
+
+    /**
+     * 玩家请求再来一局
+     */
+    playerRequestRematch(socket) {
+        const userId = socket.user._id.toString();
+        const allAgreed = this.matchState.requestRematch(userId);
+
+        this.table.broadcast('rematch_update', {
+            userId,
+            wantsRematch: true,
+            agreedCount: this.matchState.rematchRequests.size,
+            totalPlayers: this.matchState.players.length
+        });
+
+        if (allAgreed) {
+            // 所有人都同意，立即开始新游戏
+            if (this.matchState.rematchTimer) {
+                clearTimeout(this.matchState.rematchTimer);
+                this.matchState.rematchTimer = null;
+            }
+            this.startGame();
+        }
+    }
+
+    /**
+     * 再来一局倒计时结束
+     */
+    onRematchTimeout() {
+        console.log(`[MatchPlayers] Rematch timeout for room ${this.roomId}`);
+
+        const players = [...this.matchState.players];
+        const agreedPlayers = [];
+        const kickedPlayers = [];
+
+        players.forEach(p => {
+            if (this.matchState.rematchRequests.has(p.userId)) {
+                agreedPlayers.push(p);
+            } else {
+                kickedPlayers.push(p);
+            }
+        });
+
+        // 踢出未同意的玩家
+        kickedPlayers.forEach(p => {
+            const socket = this.io.sockets.sockets.get(p.socketId);
+            if (socket) {
+                socket.emit('kicked', {
+                    reason: '未确认再来一局',
+                    code: 'REMATCH_TIMEOUT'
+                });
+                this.playerLeave(socket);
+            } else {
+                this.matchState.removePlayer(p.userId);
+            }
+        });
+
+        // 如果还有玩家，状态变为等待中，等待新人加入
+        if (this.matchState.players.length > 0) {
+            this.matchState.status = MatchingRules.TABLE_STATUS.WAITING;
+            this.matchState.rematchRequests.clear();
+            this.table.broadcastRoomState();
+
+            // 重新启动僵尸桌检查
+            this.startZombieCheck();
+        } else {
+            // 房间空了，重置
+            this.reset();
+        }
+    }
+
+    /**
      * 游戏结束重置
      */
     reset() {
         this.matchState.resetReadyStatus();
-        this.matchState.status = MatchingRules.TABLE_STATUS.WAITING;
+        this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
+        this.matchState.rematchRequests.clear();
         this.startZombieCheck();
     }
 
@@ -1042,7 +1153,17 @@ class MatchPlayers {
         this.matchState.zombieTimer = setTimeout(() => {
             if (this.matchState.isZombieRoom()) {
                 console.log(`[MatchPlayers] Room ${this.roomId} is a zombie room, cleaning up...`);
-                // 可以在这里实现自动清理逻辑
+                // 强制清理所有玩家
+                [...this.matchState.players].forEach(p => {
+                    const socket = this.io.sockets.sockets.get(p.socketId);
+                    if (socket) {
+                        socket.emit('kicked', {
+                            reason: '长时间未开始游戏，房间已关闭',
+                            code: 'ZOMBIE_ROOM'
+                        });
+                        this.playerLeave(socket);
+                    }
+                });
             }
         }, this.matchState.zombieTimeout);
     }
