@@ -1,14 +1,3 @@
-const GameLoader = require('./core/game/GameLoader');
-const HttpService = require('./core/network/HttpService');
-
-const app = express();
-const server = http.createServer(app);
-
-console.log('[Server] 启动 HappyGames 服务器...');
-
-// 调试环境变量
-console.log('[EnvDebug] 环境变量检查:');
-console.log(`[EnvDebug] NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`[EnvDebug] MONGODB_URI exists: ${!!process.env.MONGODB_URI}`);
 console.log(`[EnvDebug] MONGO_URI exists: ${!!process.env.MONGO_URI}`);
 if (process.env.MONGO_URI) {
