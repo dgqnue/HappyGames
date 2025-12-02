@@ -15,6 +15,10 @@ class BaseGameTable {
         // Note: players 属性由子类管理（MatchableGameTable 使用 getter）
     }
 
+    get tableId() {
+        return this.roomId;
+    }
+
     onJoin(player) { }
     onLeave(player) { }
     onGameStart() { }
