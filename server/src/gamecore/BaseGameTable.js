@@ -12,7 +12,7 @@ class BaseGameTable {
     constructor(io, roomId) {
         this.io = io;
         this.roomId = roomId; // 游戏桌ID
-        this.players = [];
+        // Note: players 属性由子类管理（MatchableGameTable 使用 getter）
     }
 
     onJoin(player) { }
