@@ -1,5 +1,6 @@
 const GameCenter = require('../../core/hierarchy/GameCenter');
 const ChineseChessTable = require('./rooms/ChineseChessTable');
+const ChineseChessRoom = require('./rooms/ChineseChessRoom');
 
 /**
  * 中国象棋游戏中心 (ChineseChessCenter)
@@ -21,6 +22,32 @@ class ChineseChessCenter extends GameCenter {
         super(io, 'chinesechess', ChineseChessTable, matchMaker);
 
         console.log('[ChineseChessCenter] 中国象棋游戏中心已初始化');
+    }
+
+    /**
+     * 重写创建游戏房间方法
+     * 使用 ChineseChessRoom 而不是通用的 GameRoom
+     */
+    createGameRoom(id, name, minRating, maxRating) {
+        const gameRoom = new ChineseChessRoom(id, name, (tableId, roomType) => {
+            // 工厂函数：创建象棋游戏桌实例
+            const table = new this.TableClass(this.io, tableId, this.gameType, 2, roomType);
+            table.gameCenter = this;
+            return table;
+        });
+
+        gameRoom.setAccessRule(minRating, maxRating);
+        gameRoom.initTables(3); // 默认创建3张桌子
+
+        // 可以设置象棋特有的规则
+        // gameRoom.setChessRules({
+        //     timeLimit: 60,
+        //     allowUndo: true,
+        //     allowDraw: true
+        // });
+
+        this.gameRooms.set(id, gameRoom);
+        console.log(`[ChineseChessCenter] 创建象棋房间: ${name} (${id})`);
     }
 
     /**
