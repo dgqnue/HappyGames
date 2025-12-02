@@ -68,21 +68,37 @@ class GameLoader {
         // 2. <GameName>Manager.js (兼容旧版)
         // 3. index.js (兼容旧版)
 
-        const centerFiles = [
-            path.join(gamePath, `${this.capitalize(gameType)}Center.js`),
-            path.join(gamePath, `${this.capitalize(gameType)}Manager.js`),
-            path.join(gamePath, 'index.js')
-        ];
+        // 自动查找游戏中心文件
+        // 策略：
+        // 1. 查找以 Center.js 结尾的文件 (如 ChineseChessCenter.js)
+        // 2. 查找以 Manager.js 结尾的文件 (兼容旧版)
+        // 3. 查找 index.js
 
         let CenterClass = null;
         let foundPath = null;
 
-        for (const filePath of centerFiles) {
-            if (fs.existsSync(filePath)) {
-                CenterClass = require(filePath);
-                foundPath = filePath;
-                break;
+        try {
+            const files = fs.readdirSync(gamePath);
+
+            // 优先查找 *Center.js
+            let targetFile = files.find(f => f.endsWith('Center.js'));
+
+            // 其次查找 *Manager.js
+            if (!targetFile) {
+                targetFile = files.find(f => f.endsWith('Manager.js'));
             }
+
+            // 最后尝试 index.js
+            if (!targetFile && files.includes('index.js')) {
+                targetFile = 'index.js';
+            }
+
+            if (targetFile) {
+                foundPath = path.join(gamePath, targetFile);
+                CenterClass = require(foundPath);
+            }
+        } catch (err) {
+            console.error(`[GameLoader] 查找文件出错: ${gameType}`, err);
         }
 
         if (!CenterClass) {
