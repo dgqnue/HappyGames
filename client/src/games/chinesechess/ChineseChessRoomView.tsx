@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ChineseChessRoomClient } from './gamepagehierarchy/ChineseChessRoomClient';
-import { ChineseChessTableView } from './ChineseChessTableView';
+import { ChineseChessMatchView } from './ChineseChessMatchView';
 
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
@@ -22,15 +22,26 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
         setRoomState(roomClient.getState());
     }, [roomClient]);
 
-    // 如果选择了游戏桌，显示游戏桌视图
+    // 检查是否正在游戏中（已入座且游戏已开始）
     const tableClient = roomClient.getChessTableClient();
-    if (roomState.selectedTableId && tableClient) {
-        return (
-            <ChineseChessTableView
-                tableClient={tableClient}
-                onBack={() => roomClient.deselectTable()}
-            />
-        );
+    const myTableId = roomState.selectedTableId;
+    const myTable = roomState.tables?.find((t: any) => t.tableId === myTableId);
+
+    // 如果游戏已开始且我在桌上，显示全屏对局视图
+    if (myTableId && myTable?.status === 'playing' && tableClient) {
+        const matchClient = tableClient.getChessMatchClient();
+        if (matchClient) {
+            return (
+                <ChineseChessMatchView
+                    matchClient={matchClient}
+                    onBack={() => {
+                        // 游戏结束或强制离开时返回
+                        // 注意：正常游戏结束逻辑应该由 MatchClient 处理
+                        roomClient.deselectTable();
+                    }}
+                />
+            );
+        }
     }
 
     return (
@@ -54,79 +65,14 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
                 {/* 游戏桌列表 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {roomState.tables && roomState.tables.length > 0 ? (
-                        roomState.tables.map((table: any) => {
-                            // 根据 MatchPlayers.js 中的 TABLE_STATUS 定义
-                            const status = table.status || 'idle';
-                            const isIdle = status === 'idle';
-                            const isWaiting = status === 'waiting';
-                            const isMatching = status === 'matching';
-                            const isPlaying = status === 'playing';
-
-                            // 确定是否可以加入（只有空闲或等待中的桌子可以加入）
-                            const playerCount = table.playerCount || 0;
-                            const maxPlayers = table.maxPlayers || 2;
-                            const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
-
-                            return (
-                                <div
-                                    key={table.tableId}
-                                    onClick={() => canJoin && roomClient.selectTable(table.tableId)}
-                                    className={`bg-white rounded-2xl p-6 shadow-lg border border-amber-100 transition-all group relative overflow-hidden ${!canJoin
-                                            ? 'opacity-70 cursor-not-allowed bg-gray-50'
-                                            : 'cursor-pointer hover:shadow-xl hover:scale-[1.02]'
-                                        }`}
-                                >
-                                    {/* 状态标签 */}
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-colors ${isPlaying ? 'bg-red-100' :
-                                                isMatching ? 'bg-purple-100' :
-                                                    isWaiting ? 'bg-amber-100' : 'bg-green-100'
-                                            }`}>
-                                            {isPlaying ? '⚔️' : isMatching ? '⏳' : isWaiting ? '👥' : '♟️'}
-                                        </div>
-                                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${isPlaying ? 'bg-red-100 text-red-700' :
-                                                isMatching ? 'bg-purple-100 text-purple-700' :
-                                                    isWaiting ? 'bg-amber-100 text-amber-700' :
-                                                        'bg-green-100 text-green-700'
-                                            }`}>
-                                            {isPlaying ? '游戏中' : isMatching ? '匹配中' : isWaiting ? '等待中' : '空闲'}
-                                        </div>
-                                    </div>
-
-                                    <h3 className="text-xl font-bold text-gray-800 mb-1">
-                                        {table.tableId}号桌
-                                    </h3>
-
-                                    <p className="text-gray-500 text-sm mb-4">
-                                        {table.baseBet ? `底豆: ${table.baseBet}` : '标准对局'}
-                                    </p>
-
-                                    <div className="flex items-center justify-between text-sm text-gray-400 border-t border-gray-100 pt-4">
-                                        <div className="flex items-center gap-1">
-                                            <span>👤</span>
-                                            <span>{playerCount}/{maxPlayers}</span>
-                                        </div>
-
-                                        {canJoin ? (
-                                            <div className="text-amber-600 font-medium group-hover:translate-x-1 transition-transform">
-                                                入座 &rarr;
-                                            </div>
-                                        ) : (
-                                            <div className="text-gray-400 font-medium">
-                                                {isPlaying ? '观战' : '已满'}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* 锁定遮罩 (针对不可加入的桌子) */}
-                                    {!canJoin && (isPlaying || isMatching) && (
-                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <span className="text-xl">🔒</span>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
+                        roomState.tables.map((table: any) => (
+                            <GameTableCard
+                                key={table.tableId}
+                                table={table}
+                                roomClient={roomClient}
+                                isMyTable={table.tableId === myTableId}
+                            />
+                        ))
                     ) : (
                         <div className="col-span-full text-center py-20 text-gray-400">
                             <div className="text-6xl mb-4">📭</div>
@@ -136,5 +82,131 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
                 </div>
             </div>
         </main>
+    );
+}
+
+// 单个游戏桌卡片组件
+function GameTableCard({ table, roomClient, isMyTable }: { table: any, roomClient: ChineseChessRoomClient, isMyTable: boolean }) {
+    // 提取纯数字桌号 (例如 "beginner_1" -> "1")
+    const displayId = table.tableId.split('_').pop();
+
+    const status = table.status || 'idle';
+    const isIdle = status === 'idle';
+    const isWaiting = status === 'waiting';
+    const isMatching = status === 'matching';
+    const isPlaying = status === 'playing';
+
+    const playerCount = table.playerCount || 0;
+    const maxPlayers = table.maxPlayers || 2;
+    const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
+
+    // 如果是我所在的桌子，获取 TableClient 来操作
+    const tableClient = isMyTable ? roomClient.getChessTableClient() : null;
+    const [isReady, setIsReady] = useState(false);
+
+    // 简单的本地状态同步（实际应从 tableClient 获取）
+    useEffect(() => {
+        if (tableClient) {
+            const state = tableClient.getState();
+            setIsReady(state.isReady || false);
+
+            // 订阅更新
+            tableClient.init((s) => setIsReady(s.isReady || false));
+        }
+    }, [tableClient]);
+
+    const handleJoin = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (canJoin) {
+            roomClient.selectTable(table.tableId);
+        }
+    };
+
+    const handleReady = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (tableClient) {
+            tableClient.setReady(!isReady);
+        }
+    };
+
+    const handleLeave = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (tableClient) {
+            tableClient.leaveTable();
+            roomClient.deselectTable();
+        }
+    };
+
+    return (
+        <div className={`bg-white rounded-2xl p-6 shadow-lg border border-amber-100 transition-all relative overflow-hidden ${isMyTable ? 'ring-4 ring-amber-400 scale-[1.02] z-10' : ''
+            }`}>
+            {/* 顶部：桌号 + 状态 */}
+            <div className="flex justify-between items-start mb-6">
+                <h3 className="text-3xl font-bold text-gray-800">
+                    {displayId}
+                </h3>
+
+                <div className={`px-3 py-1 rounded-full text-xs font-bold ${isPlaying ? 'bg-red-100 text-red-700' :
+                        isMatching ? 'bg-purple-100 text-purple-700' :
+                            isWaiting ? 'bg-amber-100 text-amber-700' :
+                                'bg-green-100 text-green-700'
+                    }`}>
+                    {isPlaying ? '游戏中' : isMatching ? '匹配中' : isWaiting ? '等待中' : '空闲'}
+                </div>
+            </div>
+
+            {/* 中间：底豆信息 */}
+            <div className="mb-8">
+                <p className="text-gray-500 text-sm">
+                    {table.baseBet ? `底豆: ${table.baseBet}` : '标准对局'}
+                </p>
+            </div>
+
+            {/* 底部：操作按钮 + 人数 */}
+            <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center gap-1 text-gray-400 text-sm">
+                    <span>👤</span>
+                    <span>{playerCount}/{maxPlayers}</span>
+                </div>
+
+                {isMyTable ? (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleLeave}
+                            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition-colors text-sm"
+                        >
+                            离座
+                        </button>
+                        <button
+                            onClick={handleReady}
+                            className={`px-6 py-2 rounded-lg font-bold text-white transition-colors shadow-md ${isReady
+                                    ? 'bg-green-500 hover:bg-green-600'
+                                    : 'bg-amber-500 hover:bg-amber-600'
+                                }`}
+                        >
+                            {isReady ? '已就绪' : '准备'}
+                        </button>
+                    </div>
+                ) : (
+                    canJoin ? (
+                        <button
+                            onClick={handleJoin}
+                            className="w-32 py-2 bg-white border-2 border-red-500 text-red-500 rounded-lg font-bold hover:bg-red-50 transition-colors shadow-sm"
+                        >
+                            入座
+                        </button>
+                    ) : (
+                        <span className="text-gray-400 font-medium px-4 py-2">
+                            {isPlaying ? '观战' : '已满'}
+                        </span>
+                    )
+                )}
+            </div>
+
+            {/* 自己的标记 */}
+            {isMyTable && (
+                <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+            )}
+        </div>
     );
 }

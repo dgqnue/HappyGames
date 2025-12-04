@@ -74,7 +74,7 @@ export function ChineseChessCenterView({ centerClient, onBack }: ChineseChessCen
                             </svg>
                         </button>
                         <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
-                            <span className="text-4xl">🏮</span> 中国象棋大厅
+                            <span className="text-4xl">🏮</span> 中国象棋游戏中心
                         </h1>
                     </div>
 

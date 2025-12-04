@@ -161,23 +161,12 @@ export default function LobbyDashboard() {
                             className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
                                 }`}
                         >
-                            {/* 渐变背景 */}
-                            <div className={`w-full h-full bg-gradient-to-br ${slide.color} flex items-center justify-center relative overflow-hidden`}>
-                                {/* 装饰性光晕效果 */}
-                                <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-10 -translate-y-10 blur-xl"></div>
-                                <div className="absolute bottom-0 right-0 w-40 h-40 bg-black/10 rounded-full translate-x-10 translate-y-10 blur-xl"></div>
-
-                                {/* 幻灯片文字内容 */}
-                                <div className="text-center text-white p-6 relative z-10">
-                                    <h2 className="text-3xl md:text-4xl font-bold mb-2 drop-shadow-md">{slide.title}</h2>
-                                    <p className="text-white/90 font-medium text-lg">{slide.desc}</p>
-                                </div>
-
-                                {/* 背景图片（半透明叠加） */}
+                            {/* 纯图片展示 */}
+                            <div className="w-full h-full relative">
                                 <img
                                     src={slide.image}
                                     alt={slide.title}
-                                    className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+                                    className="w-full h-full object-cover"
                                     onError={(e) => e.currentTarget.style.display = 'none'}
                                 />
                             </div>
