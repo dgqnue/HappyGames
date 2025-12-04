@@ -82,7 +82,7 @@ export default function LobbyDashboard() {
 
     useEffect(() => {
         // 创建 Socket.io 连接
-        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001', {
+        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
             auth: {
                 token: localStorage.getItem('token')
             }

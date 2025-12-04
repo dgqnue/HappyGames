@@ -34,7 +34,7 @@ export default function ChineseChessPage() {
             return;
         }
 
-        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001', {
+        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
             auth: { token }
         });
 
