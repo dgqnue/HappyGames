@@ -51,10 +51,13 @@ class GameRoom {
     getRoomInfo() {
         return {
             id: this.id,
+            tier: this.id, // 添加 tier 字段以兼容前端
             name: this.name,
+            status: 'active', // 房间状态：active 或 maintenance
             minRating: this.minRating,
             maxRating: this.maxRating,
-            tableCount: this.tables.length
+            tableCount: this.tables.length,
+            playerCount: this.tables.reduce((sum, table) => sum + (table.players?.length || 0), 0)
         };
     }
 
