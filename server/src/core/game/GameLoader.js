@@ -82,17 +82,19 @@ class GameLoader {
         try {
             const files = fs.readdirSync(gamePath);
 
-            // 优先查找 *Center.js
-            let targetFile = files.find(f => f.endsWith('Center.js'));
-
-            // 其次查找 *Manager.js
-            if (!targetFile) {
-                targetFile = files.find(f => f.endsWith('Manager.js'));
+            // 优先查找 index.js (作为入口文件)
+            if (files.includes('index.js')) {
+                targetFile = 'index.js';
             }
 
-            // 最后尝试 index.js
-            if (!targetFile && files.includes('index.js')) {
-                targetFile = 'index.js';
+            // 其次查找 *Center.js
+            if (!targetFile) {
+                targetFile = files.find(f => f.endsWith('Center.js'));
+            }
+
+            // 最后查找 *Manager.js
+            if (!targetFile) {
+                targetFile = files.find(f => f.endsWith('Manager.js'));
             }
 
             if (targetFile) {
