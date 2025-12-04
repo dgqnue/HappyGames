@@ -26,15 +26,9 @@ class SocketServer {
     init(server) {
         this.io = socketIo(server, {
             cors: {
-                origin: [
-                    'https://www.happygames.online',
-                    'https://happygames.online',
-                    'http://localhost:3000',
-                    'http://localhost:3001',
-                    'http://localhost:5000'
-                ],
+                origin: "*",  // 临时允许所有来源
                 methods: ["GET", "POST"],
-                credentials: true
+                credentials: false
             },
             transports: ['websocket', 'polling'],
             allowEIO3: true,
