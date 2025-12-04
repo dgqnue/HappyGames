@@ -82,6 +82,8 @@ class GameLoader {
         try {
             const files = fs.readdirSync(gamePath);
 
+            let targetFile = null;
+
             // 优先查找 index.js (作为入口文件)
             if (files.includes('index.js')) {
                 targetFile = 'index.js';
