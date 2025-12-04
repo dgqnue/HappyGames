@@ -161,7 +161,7 @@ export default function HomePage() {
 
     // ========== 渲染逻辑 ==========
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 relative overflow-hidden bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50">
+        <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 relative overflow-hidden">
 
             {/* 顶部导航栏 */}
             <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-20">
