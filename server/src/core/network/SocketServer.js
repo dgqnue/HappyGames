@@ -26,40 +26,20 @@ class SocketServer {
     init(server) {
         this.io = socketIo(server, {
             cors: {
-                origin: (origin, callback) => {
-                    const allowedOrigins = [
-                        'https://www.happygames.online',
-                        'https://happygames.online',
-                        'http://localhost:3000',
-                        'http://localhost:3001',
-                        'http://localhost:5000'
-                    ];
-
-                    // 如果没有 origin（比如同源请求），允许
-                    if (!origin) {
-                        return callback(null, true);
-                    }
-
-                    // 如果在白名单中，允许
-                    if (allowedOrigins.includes(origin)) {
-                        return callback(null, true);
-                    }
-
-                    // 开发环境允许所有源
-                    if (process.env.NODE_ENV === 'development') {
-                        return callback(null, true);
-                    }
-
-                    // 其他情况拒绝
-                    console.warn(`[SocketServer] 拒绝来自非白名单的连接: ${origin}`);
-                    callback(new Error('Not allowed by CORS'));
-                },
-                methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                credentials: true,
-                allowedHeaders: ["Content-Type", "Authorization"]
+                origin: [
+                    'https://www.happygames.online',
+                    'https://happygames.online',
+                    'http://localhost:3000',
+                    'http://localhost:3001',
+                    'http://localhost:5000'
+                ],
+                methods: ["GET", "POST"],
+                credentials: true
             },
             transports: ['websocket', 'polling'],
-            allowEIO3: true
+            allowEIO3: true,
+            pingTimeout: 60000,
+            pingInterval: 25000
         });
 
         this.setupMiddleware();
