@@ -122,7 +122,7 @@ export abstract class GameCenterClient {
      */
     public joinGameCenter(): void {
         console.log(`[${this.gameType}CenterClient] Joining game center`);
-        this.socket.emit(`${this.gameType}_join_center`);
+        this.socket.emit('start_game', this.gameType);
 
         // 请求房间列表
         this.getRoomList();

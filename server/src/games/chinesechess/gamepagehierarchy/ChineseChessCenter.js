@@ -77,8 +77,18 @@ class ChineseChessCenter extends GameCenter {
         console.log(`[${this.gameType}] 玩家进入游戏中心: ${socket.user.username}`);
 
         // 1. 监听获取房间列表请求
-        socket.on('get_rooms', ({ tier, roomType }) => {
+        socket.on(`${this.gameType}_get_rooms`, ({ tier, roomType }) => {
             this.handleGetRooms(socket, roomType || tier);
+        });
+
+        // 1.5 监听获取用户统计请求
+        socket.on(`${this.gameType}_get_stats`, async () => {
+            try {
+                const stats = await this.getUserStats(socket.user._id);
+                socket.emit('user_stats', stats);
+            } catch (err) {
+                console.error(`[${this.gameType}] 获取用户统计失败:`, err);
+            }
         });
 
         // 2. 监听加入游戏桌请求 (手动加入)
@@ -130,6 +140,15 @@ class ChineseChessCenter extends GameCenter {
      */
     handleGetRooms(socket, roomType) {
         console.log(`[ChineseChessCenter] handleGetRooms called with roomType: ${roomType}`);
+
+        // If no roomType specified, return list of all rooms
+        if (!roomType) {
+            const rooms = [];
+            for (const room of this.gameRooms.values()) {
+                rooms.push(room.getRoomInfo());
+            }
+            return socket.emit('room_list', rooms);
+        }
 
         const gameRoom = this.gameRooms.get(roomType);
         if (!gameRoom) {

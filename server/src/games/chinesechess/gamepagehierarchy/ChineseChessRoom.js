@@ -122,9 +122,9 @@ class ChineseChessRoom extends GameRoom {
      */
     getTableList() {
         return this.tables.map(table => ({
-            id: table.tableId,
+            tableId: table.tableId,
             status: table.status,
-            players: table.players.length,
+            playerCount: table.players.length,
             spectators: table.spectators.length,
             maxPlayers: table.maxPlayers
         }));
@@ -154,8 +154,11 @@ class ChineseChessRoom extends GameRoom {
     getRoomInfo() {
         const baseInfo = super.getRoomInfo();
 
+        const totalPlayers = this.tables.reduce((sum, t) => sum + t.players.length, 0);
+
         return {
             ...baseInfo,
+            playerCount: totalPlayers,
             gameType: this.gameType,
             rules: {
                 timeLimit: this.timeLimit,
