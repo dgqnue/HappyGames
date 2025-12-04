@@ -33,7 +33,7 @@ body {
 
 @layer components {
     .page-container {
-        @apply w-full px-3 md:max-w-7xl md:mx-auto md:px-6;
+        @apply w-full max-w-7xl mx-auto;
     }
 
     .text-mobile-base {
