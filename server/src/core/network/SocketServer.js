@@ -31,19 +31,35 @@ class SocketServer {
                         'https://www.happygames.online',
                         'https://happygames.online',
                         'http://localhost:3000',
-                        'http://localhost:3001'
+                        'http://localhost:3001',
+                        'http://localhost:5000'
                     ];
-                    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
-                        callback(null, true);
-                    } else {
-                        console.warn(`[SocketServer] 非白名单来源连接: ${origin}`);
-                        callback(null, true);
+
+                    // 如果没有 origin（比如同源请求），允许
+                    if (!origin) {
+                        return callback(null, true);
                     }
+
+                    // 如果在白名单中，允许
+                    if (allowedOrigins.includes(origin)) {
+                        return callback(null, true);
+                    }
+
+                    // 开发环境允许所有源
+                    if (process.env.NODE_ENV === 'development') {
+                        return callback(null, true);
+                    }
+
+                    // 其他情况拒绝
+                    console.warn(`[SocketServer] 拒绝来自非白名单的连接: ${origin}`);
+                    callback(new Error('Not allowed by CORS'));
                 },
                 methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                credentials: true
+                credentials: true,
+                allowedHeaders: ["Content-Type", "Authorization"]
             },
-            transports: ['websocket', 'polling']
+            transports: ['websocket', 'polling'],
+            allowEIO3: true
         });
 
         this.setupMiddleware();
