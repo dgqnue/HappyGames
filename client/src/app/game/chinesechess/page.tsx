@@ -81,11 +81,23 @@ export default function ChineseChessPage() {
         );
     }
 
-    // If a room is selected, show the Room View (Placeholder for now, or basic implementation)
-    if (centerState.selectedRoomId && centerClient?.getRoomClient()) {
+    // If a room is selected, show the Room View
+    if (centerState.selectedRoomId) {
+        const roomClient = centerClient?.getRoomClient();
+
+        if (!roomClient) {
+            // Room client is still being created, show loading
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-amber-50">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mb-4"></div>
+                    <p className="text-amber-800">Loading Room...</p>
+                </div>
+            );
+        }
+
         return (
             <RoomView
-                roomClient={centerClient.getRoomClient() as ChineseChessRoomClient}
+                roomClient={roomClient as ChineseChessRoomClient}
                 onBack={handleBackToCenter}
             />
         );
@@ -177,15 +189,32 @@ export default function ChineseChessPage() {
 // Helper Components & Functions
 
 function RoomView({ roomClient, onBack }: { roomClient: ChineseChessRoomClient, onBack: () => void }) {
-    const [roomState, setRoomState] = useState<any>(null);
+    const [roomState, setRoomState] = useState<any>(roomClient.getState());
 
     useEffect(() => {
+        // 设置状态更新回调（注意：roomClient 可能已经被初始化过）
+        // 我们需要重新设置回调以更新 RoomView 的状态
         roomClient.init((state) => {
+            console.log('[RoomView] Room state updated:', state);
             setRoomState(state);
         });
+
+        // 获取当前状态
+        const currentState = roomClient.getState();
+        console.log('[RoomView] Initial state:', currentState);
+        setRoomState(currentState);
     }, [roomClient]);
 
-    if (!roomState) return <div>Loading Room...</div>;
+    console.log('[RoomView] Rendering with state:', roomState);
+
+    if (!roomState || !roomState.currentRoom) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-amber-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mb-4"></div>
+                <p className="text-amber-800">Loading Room...</p>
+            </div>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-amber-50 p-4 md:p-8">
@@ -200,7 +229,7 @@ function RoomView({ roomClient, onBack }: { roomClient: ChineseChessRoomClient, 
                         </svg>
                     </button>
                     <h1 className="text-2xl font-bold text-amber-900">
-                        {roomState.name || '游戏房间'}
+                        {roomState.currentRoom?.name || '游戏房间'}
                     </h1>
                 </div>
 
