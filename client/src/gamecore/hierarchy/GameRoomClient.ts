@@ -1,0 +1,288 @@
+/**
+ * 游戏房间客户端基类 (GameRoomClient)
+ * 
+ * 对应后端的 GameRoom 类
+ * 
+ * 职责：
+ * - 管理房间信息（房间ID、名称、等级限制）
+ * - 获取游戏桌列表
+ * - 选择游戏桌
+ * - 管理 GameTableClient 实例
+ * 
+ * 使用方法：
+ * class MyGameRoomClient extends GameRoomClient {
+ *     constructor(socket, gameType, TableClientClass) {
+ *         super(socket, gameType, TableClientClass);
+ *     }
+ *     
+ *     protected setupRoomListeners() {
+ *         // 添加游戏特定的事件监听
+ *     }
+ * }
+ */
+
+import { Socket } from 'socket.io-client';
+import { GameTableClient } from './GameTableClient';
+
+export interface TableInfo {
+    tableId: string;
+    playerCount: number;
+    maxPlayers: number;
+    status: 'waiting' | 'playing' | 'full';
+    players?: any[];
+    [key: string]: any;
+}
+
+export interface RoomInfo {
+    id: string;
+    name: string;
+    minRating?: number;
+    maxRating?: number;
+    tableCount?: number;
+}
+
+export interface GameRoomState {
+    currentRoom: RoomInfo | null;
+    tables: TableInfo[];
+    selectedTableId: string | null;
+    [key: string]: any;
+}
+
+export abstract class GameRoomClient {
+    protected socket: Socket;
+    protected gameType: string;
+    protected state: GameRoomState;
+    protected onStateUpdate: ((state: GameRoomState) => void) | null = null;
+
+    // 游戏桌客户端（选择游戏桌后创建）
+    protected tableClient: GameTableClient | null = null;
+    protected TableClientClass: new (socket: Socket) => GameTableClient;
+
+    constructor(
+        socket: Socket,
+        gameType: string,
+        TableClientClass: new (socket: Socket) => GameTableClient
+    ) {
+        this.socket = socket;
+        this.gameType = gameType;
+        this.TableClientClass = TableClientClass;
+        this.state = {
+            currentRoom: null,
+            tables: [],
+            selectedTableId: null
+        };
+    }
+
+    /**
+     * 初始化游戏房间客户端
+     * @param onStateUpdate - 状态更新回调函数
+     */
+    public init(onStateUpdate: (state: GameRoomState) => void): void {
+        this.onStateUpdate = onStateUpdate;
+        this.setupCommonListeners();
+        this.setupRoomListeners();
+        console.log(`[${this.gameType}RoomClient] Initialized`);
+    }
+
+    /**
+     * 设置通用事件监听
+     */
+    protected setupCommonListeners(): void {
+        // 房间列表更新
+        this.socket.on('room_list', (data: any) => {
+            console.log(`[${this.gameType}RoomClient] Room list update:`, data);
+            this.handleRoomListUpdate(data);
+        });
+
+        // 游戏桌列表更新
+        this.socket.on('table_list', (data: any) => {
+            console.log(`[${this.gameType}RoomClient] Table list update:`, data);
+            this.handleTableListUpdate(data);
+        });
+    }
+
+    /**
+     * 设置游戏特定的事件监听
+     * 子类可以重写此方法
+     */
+    protected setupRoomListeners(): void {
+        // 默认实现为空，子类可以重写
+    }
+
+    /**
+     * 处理房间列表更新
+     */
+    protected handleRoomListUpdate(data: any): void {
+        // 子类可以重写此方法来处理特定格式的数据
+        this.updateState({ rooms: data });
+    }
+
+    /**
+     * 处理游戏桌列表更新
+     */
+    protected handleTableListUpdate(data: any): void {
+        const tables = Array.isArray(data) ? data : [];
+        this.updateState({ tables });
+    }
+
+    /**
+     * 获取房间列表
+     * @param roomType - 房间类型（如：beginner, intermediate, advanced）
+     */
+    public getRoomList(roomType?: string): void {
+        console.log(`[${this.gameType}RoomClient] Getting room list:`, roomType);
+        const event = `${this.gameType}_get_rooms`;
+        this.socket.emit(event, roomType ? { roomType } : {});
+    }
+
+    /**
+     * 进入房间
+     * @param roomInfo - 房间信息
+     */
+    public enterRoom(roomInfo: RoomInfo): void {
+        console.log(`[${this.gameType}RoomClient] Entering room:`, roomInfo);
+        this.updateState({
+            currentRoom: roomInfo,
+            tables: [] // 清空旧的游戏桌列表
+        });
+
+        // 请求游戏桌列表
+        this.getTableList(roomInfo.id);
+    }
+
+    /**
+     * 离开房间
+     */
+    public leaveRoom(): void {
+        console.log(`[${this.gameType}RoomClient] Leaving room`);
+
+        // 清理游戏桌客户端
+        if (this.tableClient) {
+            this.tableClient.dispose();
+            this.tableClient = null;
+        }
+
+        this.updateState({
+            currentRoom: null,
+            tables: [],
+            selectedTableId: null
+        });
+    }
+
+    /**
+     * 获取游戏桌列表
+     * @param roomId - 房间ID
+     */
+    public getTableList(roomId: string): void {
+        console.log(`[${this.gameType}RoomClient] Getting table list for room:`, roomId);
+        // 通常游戏桌列表会自动推送，这里可以主动请求
+        const event = `${this.gameType}_get_tables`;
+        this.socket.emit(event, { roomId });
+    }
+
+    /**
+     * 选择游戏桌
+     * @param tableId - 游戏桌ID
+     */
+    public selectTable(tableId: string): void {
+        console.log(`[${this.gameType}RoomClient] Selecting table:`, tableId);
+
+        if (!this.state.currentRoom) {
+            console.error(`[${this.gameType}RoomClient] No room selected`);
+            return;
+        }
+
+        // 创建游戏桌客户端
+        if (!this.tableClient) {
+            this.tableClient = new this.TableClientClass(this.socket);
+            this.tableClient.init((tableState) => {
+                // 将游戏桌状态合并到房间状态
+                this.updateState({ ...tableState });
+            });
+        }
+
+        // 加入游戏桌
+        const roomId = this.state.currentRoom.id;
+        this.tableClient.joinTable(roomId, tableId);
+
+        this.updateState({ selectedTableId: tableId });
+    }
+
+    /**
+     * 取消选择游戏桌
+     */
+    public deselectTable(): void {
+        console.log(`[${this.gameType}RoomClient] Deselecting table`);
+
+        // 离开游戏桌
+        if (this.tableClient) {
+            this.tableClient.leaveTable();
+            this.tableClient.dispose();
+            this.tableClient = null;
+        }
+
+        this.updateState({ selectedTableId: null });
+
+        // 刷新游戏桌列表
+        if (this.state.currentRoom) {
+            this.getTableList(this.state.currentRoom.id);
+        }
+    }
+
+    /**
+     * 更新状态并通知UI
+     */
+    protected updateState(newState: Partial<GameRoomState>): void {
+        this.state = { ...this.state, ...newState };
+        if (this.onStateUpdate) {
+            this.onStateUpdate(this.state);
+        }
+    }
+
+    /**
+     * 获取当前状态
+     */
+    public getState(): GameRoomState {
+        return { ...this.state };
+    }
+
+    /**
+     * 获取游戏桌客户端
+     */
+    public getTableClient(): GameTableClient | null {
+        return this.tableClient;
+    }
+
+    /**
+     * 清理资源
+     */
+    public dispose(): void {
+        console.log(`[${this.gameType}RoomClient] Disposing`);
+
+        // 清理游戏桌客户端
+        if (this.tableClient) {
+            this.tableClient.dispose();
+            this.tableClient = null;
+        }
+
+        this.removeCommonListeners();
+        this.removeRoomListeners();
+        this.onStateUpdate = null;
+    }
+
+    /**
+     * 移除通用事件监听
+     */
+    protected removeCommonListeners(): void {
+        this.socket.off('room_list');
+        this.socket.off('table_list');
+    }
+
+    /**
+     * 移除游戏特定的事件监听
+     * 子类可以重写此方法
+     */
+    protected removeRoomListeners(): void {
+        // 默认实现为空，子类可以重写
+    }
+}

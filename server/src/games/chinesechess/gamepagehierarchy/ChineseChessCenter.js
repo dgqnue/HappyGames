@@ -1,4 +1,4 @@
-const GameCenter = require('../../../core/hierarchy/GameCenter');
+const GameCenter = require('../../../gamecore/hierarchy/GameCenter');
 const ChineseChessTable = require('./ChineseChessTable');
 const ChineseChessRoom = require('./ChineseChessRoom');
 
@@ -71,11 +71,10 @@ class ChineseChessCenter extends GameCenter {
     }
 
     /**
-     * 重写处理玩家加入的逻辑
-     * 添加中国象棋特有的事件监听
+     * 玩家进入中国象棋游戏中心
      */
-    onPlayerJoin(socket) {
-        console.log(`[${this.gameType}] 玩家进入游戏大厅: ${socket.user.username}`);
+    playerJoinGameCenter(socket) {
+        console.log(`[${this.gameType}] 玩家进入游戏中心: ${socket.user.username}`);
 
         // 1. 监听获取房间列表请求
         socket.on('get_rooms', ({ tier, roomType }) => {
@@ -83,8 +82,28 @@ class ChineseChessCenter extends GameCenter {
         });
 
         // 2. 监听加入游戏桌请求 (手动加入)
-        socket.on(`${this.gameType}_join`, (data) => {
-            this.handleJoinTable(socket, data);
+        socket.on(`${this.gameType}_join`, async (data) => {
+            const { tier, roomType, roomId: tableId } = data;
+            const type = roomType || tier;
+
+            try {
+                const gameRoom = this.gameRooms.get(type);
+                if (!gameRoom) {
+                    return socket.emit('error', { message: '游戏房间不存在' });
+                }
+
+                // 完全委托给 GameRoom 处理
+                const result = await gameRoom.assignPlayerToTable(socket, tableId);
+
+                if (result.success) {
+                    socket.currentRoomId = result.tableId;
+                    socket.currentGameId = this.gameType;
+                    this.broadcastRoomList(type);
+                }
+            } catch (err) {
+                console.error(`[${this.gameType}] 加入游戏失败:`, err);
+                socket.emit('error', { message: '加入游戏失败: ' + err.message });
+            }
         });
 
         // 3. 监听自动匹配请求
@@ -98,15 +117,12 @@ class ChineseChessCenter extends GameCenter {
         });
 
         // 5. 添加中国象棋特有的事件监听
-        socket.on('request_undo', () => {
-            // TODO: 实现悔棋逻辑
-            console.log('[ChineseChess] 玩家请求悔棋');
-        });
-
-        socket.on('request_draw', () => {
-            // TODO: 实现求和逻辑
-            console.log('[ChineseChess] 玩家请求求和');
-        });
+        // 注意：悔棋和求和现在由 GameTable 处理，这里只需要保留未进入桌子时的监听（如果有的话）
+        // 或者如果客户端在进入桌子前就发送这些事件（不太可能），则需要保留。
+        // 但通常这些是在游戏进行中发送的，所以应该由 GameTable 处理。
+        // 为了兼容性，如果 GameTable 还没有接管，这里可以保留，但我们已经移到了 GameTable。
+        // 所以这里可以移除，或者保留作为 fallback (但不建议)。
+        // 我们移除它们，因为 GameTable 已经处理了。
     }
 
     /**
@@ -114,91 +130,17 @@ class ChineseChessCenter extends GameCenter {
      */
     handleGetRooms(socket, roomType) {
         console.log(`[ChineseChessCenter] handleGetRooms called with roomType: ${roomType}`);
-        console.log(`[ChineseChessCenter] Available game rooms:`, Array.from(this.gameRooms.keys()));
 
         const gameRoom = this.gameRooms.get(roomType);
         if (!gameRoom) {
-            console.error(`[ChineseChessCenter] Game room not found for roomType: ${roomType}`);
             return socket.emit('error', { message: '无效的游戏房间' });
         }
 
-        // 加入广播房间，以便接收列表更新
+        // 加入广播房间
         const broadcastRoom = `${this.gameType}_${roomType}`;
         socket.join(broadcastRoom);
-        console.log(`[ChineseChessCenter] Socket joined broadcast room: ${broadcastRoom}`);
 
-        const tableList = gameRoom.getTableList();
-        console.log(`[ChineseChessCenter] Sending table list:`, tableList);
-        socket.emit('room_list', tableList);
-    }
-
-    /**
-     * 处理加入游戏桌
-     */
-    async handleJoinTable(socket, { tier, roomType, roomId: tableId }) {
-        // 兼容旧参数 tier
-        const type = roomType || tier;
-        console.log(`[ChineseChessCenter] handleJoinTable: roomType=${type}, table=${tableId}, user=${socket.user.username}`);
-
-        try {
-            const gameRoom = this.gameRooms.get(type);
-            if (!gameRoom) {
-                console.error(`[ChineseChessCenter] 游戏房间不存在: ${type}`);
-                return socket.emit('error', { message: '游戏房间不存在' });
-            }
-
-            // 检查权限
-            console.log(`[ChineseChessCenter] 获取用户数据: ${socket.user._id}`);
-            const stats = await this.getUserStats(socket.user._id);
-            console.log(`[ChineseChessCenter] 用户评分: ${stats.rating}`);
-
-            if (!gameRoom.canAccess(stats.rating)) {
-                console.warn(`[ChineseChessCenter] 权限不足: ${stats.rating}`);
-                return socket.emit('error', { code: 'TIER_RESTRICTED', message: '等级分不满足要求' });
-            }
-
-            // 查找游戏桌
-            let table = gameRoom.findTable(tableId);
-
-            // 如果指定了ID但没找到，报错
-            if (tableId && !table) {
-                console.error(`[ChineseChessCenter] 游戏桌不存在: ${tableId}`);
-                return socket.emit('error', { message: '游戏桌不存在' });
-            }
-
-            // 如果没指定ID，找一个空闲的
-            if (!table) {
-                table = gameRoom.findAvailableTable();
-            }
-
-            // 如果还是没有，创建新的
-            if (!table) {
-                console.log(`[ChineseChessCenter] 创建新桌子`);
-                table = gameRoom.addTable();
-            }
-
-            // 尝试加入
-            console.log(`[ChineseChessCenter] 尝试加入桌子: ${table.tableId}`);
-            const success = await table.join(socket);
-            if (success) {
-                console.log(`[ChineseChessCenter] 加入成功`);
-                socket.currentRoomId = table.tableId;
-                socket.currentGameId = this.gameType;
-                this.setupTableListeners(socket, table);
-
-                // 广播房间列表更新
-                this.broadcastRoomList(type);
-
-                // 发送当前桌子状态给该玩家
-                table.sendState(socket);
-            } else {
-                console.warn(`[ChineseChessCenter] 加入失败`);
-                socket.emit('error', { message: '加入失败，房间已满' });
-            }
-        } catch (err) {
-            console.error(`[ChineseChessCenter] handleJoinTable 出错:`, err);
-            socket.emit('error', { message: '加入游戏失败: ' + err.message });
-        }
+        socket.emit('room_list', gameRoom.getTableList());
     }
 
     /**
@@ -277,46 +219,15 @@ class ChineseChessCenter extends GameCenter {
                 message: '匹配成功！正在进入游戏...'
             });
 
-            // 执行加入逻辑
-            // 注意：自动匹配进入时，我们通常希望忽略某些严格的准入检查（因为匹配器已经检查过了）
-            // 但这里我们还是走标准流程，如果匹配器逻辑正确，应该能通过
-            await table.join(p.socket);
+            // 执行加入逻辑 - 使用 joinAsPlayer 并自动设置监听器
+            await table.joinAsPlayer(p.socket);
 
             p.socket.currentRoomId = table.tableId;
             p.socket.currentGameId = this.gameType;
-            this.setupTableListeners(p.socket, table);
 
             // 自动准备
             table.playerReady(p.socket);
         }
-    }
-
-    /**
-     * 设置游戏桌相关的Socket监听
-     */
-    setupTableListeners(socket, table) {
-        // 游戏移动
-        socket.on(`${this.gameType}_move`, (move) => {
-            if (table.handleMove) table.handleMove(socket, move);
-        });
-
-        // 离开游戏
-        socket.on(`${this.gameType}_leave`, () => {
-            table.leave(socket);
-            socket.currentRoomId = null;
-            socket.currentGameId = null;
-            this.broadcastRoomList(table.tier);
-        });
-
-        // 准备/取消准备
-        socket.on('player_ready', () => table.playerReady(socket));
-        socket.on('player_unready', () => table.playerUnready(socket));
-
-        // 断线处理
-        socket.removeAllListeners('disconnect');
-        socket.on('disconnect', () => {
-            this.onPlayerDisconnect(socket);
-        });
     }
 
     /**
@@ -328,22 +239,7 @@ class ChineseChessCenter extends GameCenter {
             this.matchMaker.leaveQueue(this.gameType, socket.user._id.toString());
         }
 
-        // 如果在游戏中，通知桌子
-        if (socket.currentRoomId) {
-            // tableId 格式: roomType_index (例如: beginner_1)
-            const parts = socket.currentRoomId.split('_');
-            if (parts.length >= 2) {
-                const roomType = parts[0];
-                const gameRoom = this.gameRooms.get(roomType);
-                if (gameRoom) {
-                    const table = gameRoom.findTable(socket.currentRoomId);
-                    if (table) {
-                        table.leave(socket);
-                        this.broadcastRoomList(roomType);
-                    }
-                }
-            }
-        }
+        // 注意：游戏中的断线现在由 GameTable 自己处理
     }
 }
 

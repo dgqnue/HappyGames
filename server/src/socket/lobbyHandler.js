@@ -1,6 +1,6 @@
 // RoomManager 已被移除，加入游戏桌的逻辑现在由各个 GameCenter 处理
 // const RoomManager = require('../game/RoomManager');
-const MatchPlayers = require('../core/matching/MatchPlayers');
+const MatchPlayers = require('../gamecore/matching/MatchPlayers');
 const MatchingRules = MatchPlayers.MatchingRules;
 const WalletService = require('../services/WalletService');
 

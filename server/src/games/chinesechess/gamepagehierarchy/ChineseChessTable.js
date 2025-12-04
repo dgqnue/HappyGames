@@ -1,6 +1,6 @@
-const GameTable = require('../../../core/hierarchy/GameTable');
-const MatchPlayers = require('../../../core/matching/MatchPlayers');
-const XiangqiRules = require('../logic/XiangqiRules');
+const GameTable = require('../../../gamecore/hierarchy/GameTable');
+const MatchPlayers = require('../../../gamecore/matching/MatchPlayers');
+const ChineseChessRules = require('../logic/ChineseChessRules');
 const EloService = require('../../../gamecore/EloService');
 const axios = require('axios');
 const crypto = require('crypto');
@@ -55,18 +55,8 @@ class ChineseChessTable extends GameTable {
         return await this.matchPlayers.playerJoin(socket, matchSettings);
     }
 
-    // join 方法别名，用于兼容 GameCenter 的调用
-    async join(socket, matchSettings) {
-        return await this.playerJoin(socket, matchSettings);
-    }
-
     playerLeave(socket) {
         return this.matchPlayers.playerLeave(socket);
-    }
-
-    // leave 方法别名
-    leave(socket) {
-        return this.playerLeave(socket);
     }
 
     handlePlayerDisconnect(socket) {
@@ -165,7 +155,7 @@ class ChineseChessTable extends GameTable {
         if (side !== this.turn) return; // 不是你的回合
 
         // 验证移动逻辑
-        if (!XiangqiRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn)) {
+        if (!ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn)) {
             socket.emit('error', { message: '非法移动' });
             return;
         }
@@ -359,8 +349,142 @@ class ChineseChessTable extends GameTable {
     /**
      * 广播消息
      */
+    /**
+     * 广播消息
+     */
     broadcast(event, data) {
         this.io.to(this.tableId).emit(event, data);
+    }
+
+    /**
+     * 处理玩家加入游戏桌
+     * @param {Object} socket - Socket 实例
+     * @param {Boolean} canPlay - 是否可以作为玩家入座（由 GameRoom 判断）
+     */
+    async joinTable(socket, canPlay) {
+        if (!socket.user) {
+            socket.emit('error', { message: '未认证' });
+            return { success: false };
+        }
+
+        if (!canPlay) {
+            // 不符合积分条件，作为观众加入
+            return await this.joinAsSpectator(socket);
+        }
+
+        // 符合条件，作为玩家加入
+        return await this.joinAsPlayer(socket);
+    }
+
+    /**
+     * 作为玩家加入
+     */
+    async joinAsPlayer(socket) {
+        const success = await this.playerJoin(socket);
+
+        if (success) {
+            socket.join(this.tableId);
+            this.setupSocketListeners(socket, false); // 玩家模式
+            this.sendState(socket);
+            return { success: true, asSpectator: false };
+        } else {
+            socket.emit('error', { message: '加入失败，房间已满' });
+            return { success: false };
+        }
+    }
+
+    /**
+     * 作为观众加入
+     */
+    async joinAsSpectator(socket) {
+        const spectatorData = {
+            userId: socket.user._id.toString(),
+            socketId: socket.id,
+            nickname: socket.user.nickname || socket.user.username
+        };
+
+        const result = this.matchPlayers.matchState.addSpectator(spectatorData);
+
+        if (result.success) {
+            socket.join(this.tableId);
+            this.setupSocketListeners(socket, true); // 观众模式
+            this.sendState(socket);
+
+            socket.emit('joined_as_spectator', {
+                message: '您的积分不足，已作为观众加入'
+            });
+
+            return { success: true, asSpectator: true };
+        } else {
+            socket.emit('error', { message: result.error });
+            return { success: false };
+        }
+    }
+
+    /**
+     * 设置 Socket 监听器
+     */
+    setupSocketListeners(socket, isSpectator = false) {
+        if (!isSpectator) {
+            // 玩家模式
+            socket.on(`${this.gameType}_move`, (move) => {
+                this.handleMove(socket, move);
+            });
+            socket.on('player_ready', () => this.playerReady(socket));
+            socket.on('player_unready', () => this.playerUnready(socket));
+
+            // 悔棋和求和
+            socket.on('request_undo', () => {
+                console.log('[ChineseChess] 玩家请求悔棋');
+            });
+            socket.on('request_draw', () => {
+                console.log('[ChineseChess] 玩家请求求和');
+            });
+        }
+
+        // 通用监听
+        socket.on(`${this.gameType}_leave`, () => {
+            if (isSpectator) {
+                this.matchPlayers.matchState.removeSpectator(socket.user._id.toString());
+            } else {
+                this.playerLeave(socket);
+            }
+            socket.currentRoomId = null;
+            socket.currentGameId = null;
+        });
+
+        // 断线处理
+        // 注意：SocketServer 可能会统一处理 disconnect，这里仅作补充或特定逻辑
+        socket.on('disconnect', () => {
+            if (isSpectator) {
+                this.matchPlayers.matchState.removeSpectator(socket.user._id.toString());
+            } else {
+                this.handlePlayerDisconnect(socket);
+            }
+        });
+    }
+
+    /**
+     * 发送桌子状态
+     */
+    sendState(socket) {
+        const state = this.matchPlayers.matchState.getRoomInfo();
+        state.status = this.status;
+
+        socket.emit('table_state', {
+            ...state,
+            players: this.players.map(p => ({
+                userId: p.userId,
+                nickname: p.nickname,
+                ready: p.ready,
+                title: p.title,
+                winRate: p.winRate
+            })),
+            spectators: this.spectators.map(s => ({
+                userId: s.userId,
+                nickname: s.nickname
+            }))
+        });
     }
 }
 

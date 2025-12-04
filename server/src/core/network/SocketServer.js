@@ -123,7 +123,7 @@ class SocketServer {
         }
 
         // 转发给对应的游戏中心
-        center.onPlayerJoin(socket);
+        center.playerJoinGameCenter(socket);
     }
 
     /**

@@ -1,0 +1,411 @@
+/**
+ * 钱包管理组件 (WalletManager)
+ * 
+ * 这是一个综合性的钱包管理组件，用于处理用户的资产充值、提现和交易记录查询。
+ * 
+ * 主要功能：
+ * 1. 资产展示：
+ *    - 显示欢乐豆余额
+ *    - 显示佣金余额
+ * 
+ * 2. 充值功能 (Deposit)：
+ *    - 显示专属充值地址 (模拟生成)
+ *    - 提供"检查充值"按钮，模拟充值检测流程
+ *    - 充值成功后显示成功弹窗并更新余额
+ * 
+ * 3. 提现功能 (Withdraw)：
+ *    - 提供提现表单（金额、目标地址）
+ *    - 处理提现请求并更新余额
+ * 
+ * 4. 交易记录 (Transactions)：
+ *    - 显示最近的充值、提现和游戏盈亏记录
+ *    - 实时更新交易列表
+ * 
+ * 5. 实时通知：
+ *    - 使用 Socket.io 向大厅广播充值和提现事件（用于大厅动态Feed）
+ */
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+import { useLanguage } from '@/lib/i18n';
+
+/**
+ * 组件Props接口
+ */
+interface WalletManagerProps {
+    /** 用户ID */
+    userId: string;
+    /** 用户昵称（用于广播通知） */
+    nickname: string;
+}
+
+/**
+ * 钱包管理主组件
+ */
+export default function WalletManager({ userId, nickname }: WalletManagerProps) {
+    // ========== 状态管理 ==========
+
+    /** 钱包数据（包含余额等） */
+    const [wallet, setWallet] = useState<any>(null);
+
+    /** 交易记录列表 */
+    const [transactions, setTransactions] = useState<any[]>([]);
+
+    /** 加载状态（用于按钮禁用等） */
+    const [loading, setLoading] = useState(false);
+
+    /** 错误信息 */
+    const [error, setError] = useState<string | null>(null);
+
+    /** 交易金额输入框状态 */
+    const [exchangeAmount, setExchangeAmount] = useState('');
+
+    /** 当前激活的标签页：'deposit'(充值) 或 'withdraw'(提现) */
+    const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
+
+    /** 国际化工具 */
+    const { t } = useLanguage();
+
+    /** Socket连接实例 */
+    const [socket, setSocket] = useState<any>(null);
+
+    // 提现表单状态
+    /** 提现目标地址 */
+    const [withdrawAddress, setWithdrawAddress] = useState('');
+
+    // 充值成功弹窗状态
+    /** 是否显示成功弹窗 */
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    /** 成功弹窗的数据（金额、订单号） */
+    const [successData, setSuccessData] = useState<{ amount: number; orderId?: string } | null>(null);
+
+    // ========== 副作用：Socket连接 ==========
+    useEffect(() => {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+        const newSocket = io(apiUrl);
+        setSocket(newSocket);
+        return () => {
+            newSocket.disconnect();
+        };
+    }, []);
+
+    // ========== API 方法 ==========
+
+    /**
+     * 获取钱包余额信息
+     */
+    const fetchWallet = async () => {
+        try {
+            setError(null);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+            const res = await fetch(`${apiUrl}/api/wallet/${userId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setWallet(data);
+            } else {
+                const errText = await res.text();
+                setError(`Failed to load wallet: ${res.status} ${res.statusText}`);
+            }
+        } catch (error: any) {
+            setError(`Network Error: ${error.message}`);
+        }
+    };
+
+    /**
+     * 获取交易记录
+     */
+    const fetchTransactions = async () => {
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+            const res = await fetch(`${apiUrl}/api/wallet/transactions/${userId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setTransactions(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch transactions', error);
+        }
+    };
+
+    // 当 userId 变化时重新获取数据
+    useEffect(() => {
+        if (userId) {
+            fetchWallet();
+            fetchTransactions();
+        }
+    }, [userId]);
+
+    /**
+     * 处理充值或提现操作
+     */
+    const handleExchange = async () => {
+        setLoading(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://happygames-tfdz.onrender.com';
+        try {
+            if (activeTab === 'deposit') {
+                // ========== 处理充值 ==========
+
+                // 模拟扫描延迟
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                const res = await fetch(`${apiUrl}/api/wallet/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setSuccessData({ amount: data.beansReceived, orderId: data.orderId });
+                    setShowSuccessModal(true);
+                    fetchWallet();
+                    fetchTransactions();
+
+                    // 广播充值事件到大厅Feed
+                    if (socket) {
+                        socket.emit('deposit', {
+                            amount: data.beansReceived,
+                            txId: data.orderId,
+                            username: nickname
+                        });
+                    }
+                } else {
+                    const err = await res.json();
+                    alert('Deposit Failed: ' + err.error);
+                }
+            } else {
+                // ========== 处理提现 ==========
+
+                if (!exchangeAmount || isNaN(Number(exchangeAmount))) {
+                    alert('Please enter amount');
+                    setLoading(false);
+                    return;
+                }
+
+                if (!withdrawAddress) {
+                    alert('Please enter a destination address');
+                    setLoading(false);
+                    return;
+                }
+
+                const res = await fetch(`${apiUrl}/api/wallet/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        amountBeans: parseFloat(exchangeAmount),
+                        destinationAddress: withdrawAddress
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(`Withdrawal Successful! TxHash: ${data.txHash}`);
+                    fetchWallet();
+                    fetchTransactions();
+                    setExchangeAmount('');
+                    setWithdrawAddress('');
+
+                    // 广播提现事件到大厅Feed
+                    if (socket) {
+                        socket.emit('withdraw', {
+                            amount: parseFloat(exchangeAmount),
+                            txId: data.txHash,
+                            username: nickname
+                        });
+                    }
+                } else {
+                    const err = await res.json();
+                    alert('Withdrawal Failed: ' + err.error);
+                }
+            }
+        } catch (error) {
+            console.error('Exchange error', error);
+            alert('Exchange Error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ========== 渲染逻辑 ==========
+
+    if (error) return (
+        <div className="p-4 text-center text-red-500 bg-red-50 rounded-xl border border-red-200">
+            <p>{error}</p>
+            <button onClick={fetchWallet} className="mt-2 text-sm underline">Retry</button>
+        </div>
+    );
+
+    if (!wallet) return <div className="p-4 text-center text-amber-800">Loading Wallet...</div>;
+
+    // 生成一个基于用户ID的一致性模拟地址
+    const depositAddress = `G-HAPPY-USER-${userId.substring(0, 6).toUpperCase()}-8888`;
+
+    return (
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/50">
+            {/* 标题 */}
+            <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">💰</span>
+                <h2 className="text-xl font-bold text-amber-900">{t.wallet.title}</h2>
+            </div>
+
+            {/* 余额展示卡片 */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* 欢乐豆余额 */}
+                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                    <div className="text-xs font-bold text-orange-400 uppercase tracking-wider mb-1">{t.wallet.beans}</div>
+                    <div className="text-2xl font-bold text-amber-900">{wallet.happyBeans?.toLocaleString() || '0'}</div>
+                </div>
+                {/* 佣金余额 */}
+                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                    <div className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-1">{t.wallet.commission}</div>
+                    <div className="text-2xl font-bold text-purple-900">{wallet.totalCommissionEarned?.toLocaleString() || '0'}</div>
+                </div>
+            </div>
+
+            {/* 提示信息 */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
+                <div className="text-blue-500 text-xl">ℹ️</div>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                    {t.wallet.alert}
+                </p>
+            </div>
+
+            {/* 充值/提现 标签页切换 */}
+            <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
+                <button
+                    onClick={() => setActiveTab('deposit')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'deposit' ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    {t.wallet.tab_deposit}
+                </button>
+                <button
+                    onClick={() => setActiveTab('withdraw')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'withdraw' ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    {t.wallet.tab_withdraw}
+                </button>
+            </div>
+
+            {/* 操作区域 */}
+            <div className="bg-amber-50/50 rounded-xl p-6 border border-amber-100 mb-6">
+                {activeTab === 'deposit' ? (
+                    // 充值界面
+                    <div className="text-center">
+                        <h3 className="text-amber-900 font-bold mb-4">{t.wallet.deposit_addr}</h3>
+
+                        {/* 二维码占位符 */}
+                        <div className="w-48 h-48 bg-white mx-auto rounded-xl border-2 border-dashed border-amber-200 flex items-center justify-center mb-4 shadow-sm">
+                            <span className="text-gray-400 text-sm">[Unique QR]</span>
+                        </div>
+
+                        {/* 充值地址显示 */}
+                        <div className="bg-white p-3 rounded-lg border border-amber-200 inline-block mb-4 shadow-sm">
+                            <code className="text-amber-800 font-mono font-bold text-lg tracking-wide">
+                                {depositAddress}
+                            </code>
+                        </div>
+
+                        {/* Memo 提示 */}
+                        <div className="flex items-center justify-center gap-2 text-xs text-green-700 font-medium bg-green-50 py-2 px-4 rounded-full mx-auto w-fit mb-6 border border-green-100">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {t.wallet.no_memo}
+                        </div>
+
+                        {/* 检查充值按钮 */}
+                        <button
+                            onClick={handleExchange}
+                            disabled={loading}
+                            className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50"
+                        >
+                            {loading ? 'Checking...' : t.wallet.check_deposit}
+                        </button>
+                    </div>
+                ) : (
+                    // 提现界面
+                    <div>
+                        <h3 className="text-amber-900 font-bold mb-4">提现表单</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.amount_beans}</label>
+                                <input
+                                    type="number"
+                                    value={exchangeAmount}
+                                    onChange={(e) => setExchangeAmount(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                    placeholder="0"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.wallet.withdraw_addr}</label>
+                                <input
+                                    type="text"
+                                    value={withdrawAddress}
+                                    onChange={(e) => setWithdrawAddress(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                    placeholder="G-..."
+                                />
+                            </div>
+                            <button
+                                onClick={handleExchange}
+                                disabled={loading}
+                                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 mt-2"
+                            >
+                                {loading ? 'Processing...' : t.wallet.withdraw_btn}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* 交易记录列表 */}
+            <div>
+                <h3 className="text-lg font-bold text-amber-900 mb-4">{t.wallet.history}</h3>
+                <div className="space-y-3">
+                    {transactions.length === 0 ? (
+                        <div className="text-center text-gray-500 py-4 text-sm bg-gray-50 rounded-lg">No transactions yet</div>
+                    ) : (
+                        transactions.map((tx) => (
+                            <div key={tx._id} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
+                                <div>
+                                    <div className="font-bold text-gray-800 capitalize">{tx.type}</div>
+                                    <div className="text-xs text-gray-500">{new Date(tx.createdAt).toLocaleString()}</div>
+                                </div>
+                                <div className={`font-bold ${tx.type === 'deposit' || tx.type === 'win' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {tx.type === 'deposit' || tx.type === 'win' ? '+' : '-'}{tx.amount}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* 充值成功弹窗 */}
+            {showSuccessModal && successData && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl transform scale-100 transition-transform">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Deposit Successful!</h3>
+                        <p className="text-gray-600 mb-6">
+                            You have received <span className="font-bold text-amber-600">{successData.amount}</span> Happy Beans.
+                        </p>
+                        <button
+                            onClick={() => setShowSuccessModal(false)}
+                            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-colors"
+                        >
+                            Awesome!
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

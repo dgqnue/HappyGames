@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const MatchPlayers = require('../matching/MatchPlayers');
+const MatchPlayers = require('../../gamecore/matching/MatchPlayers');
 const MatchingRules = MatchPlayers.MatchingRules;
 
 /**

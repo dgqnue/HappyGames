@@ -1,6 +1,7 @@
-const GameRoom = require('../../../core/hierarchy/GameRoom');
-const MatchPlayers = require('../../../core/matching/MatchPlayers');
+const GameRoom = require('../../../gamecore/hierarchy/GameRoom');
+const MatchPlayers = require('../../../gamecore/matching/MatchPlayers');
 const MatchingRules = MatchPlayers.MatchingRules;
+const UserGameStats = require('../../../models/UserGameStats');
 
 /**
  * 中国象棋游戏房间 (ChineseChessRoom)
@@ -184,6 +185,93 @@ class ChineseChessRoom extends GameRoom {
         // }
 
         return true;
+    }
+
+    /**
+     * 分配玩家到游戏桌
+     * @param {Object} socket - Socket 实例
+     * @param {String} tableId - 指定的桌子ID（可选）
+     */
+    async assignPlayerToTable(socket, tableId) {
+        // 1. 获取或创建游戏桌
+        const table = this.getOrCreateTable(tableId);
+
+        // 2. 获取玩家统计数据
+        const stats = await this.getUserStats(socket.user._id);
+
+        // 3. 判断玩家是否可以入座（检查积分、欢乐豆等）
+        const canPlay = this.canPlayerJoin(stats);
+
+        // 4. 调用 GameTable 的 joinTable 方法处理实际加入
+        const result = await table.joinTable(socket, canPlay);
+
+        // 5. 返回结果
+        return {
+            ...result,
+            tableId: table.tableId
+        };
+    }
+
+    /**
+     * 判断玩家是否可以入座
+     * @param {Object} stats - 玩家统计数据
+     */
+    canPlayerJoin(stats) {
+        // 检查积分
+        if (!this.canAccess(stats.rating)) {
+            return false;
+        }
+
+        // 检查欢乐豆（如果房间有要求）
+        // if (this.requiredBeans && stats.beans < this.requiredBeans) {
+        //     return false;
+        // }
+
+        return true;
+    }
+
+    /**
+     * 获取或创建游戏桌
+     * @param {String} tableId - 指定的桌子ID（可选）
+     */
+    getOrCreateTable(tableId) {
+        // 如果指定了 tableId，查找指定的桌子
+        if (tableId) {
+            const table = this.findTable(tableId);
+            if (!table) {
+                throw new Error('游戏桌不存在');
+            }
+            return table;
+        }
+
+        // 没有指定，查找可用的桌子
+        let table = this.findAvailableTable();
+
+        // 如果没有可用的，创建新桌子
+        if (!table) {
+            table = this.addTable();
+        }
+
+        return table;
+    }
+
+    /**
+     * 获取用户统计数据
+     * @param {String} userId - 用户ID
+     */
+    async getUserStats(userId) {
+        const stats = await UserGameStats.findOne({
+            userId: userId,
+            gameType: this.gameType
+        });
+
+        return {
+            rating: stats?.rating || 1200,
+            gamesPlayed: stats?.gamesPlayed || 0,
+            wins: stats?.wins || 0,
+            disconnects: stats?.disconnects || 0,
+            beans: stats?.beans || 0  // 欢乐豆
+        };
     }
 }
 
