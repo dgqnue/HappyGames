@@ -1,20 +1,9 @@
 // 文件：server/src/routes/settle.js
 const express = require('express');
 const router = express.Router();
-const queue = require('../gamecore/queue'); // 消息队列服务
-const GameTable = require('../gamecore/hierarchy/GameTable');
-// Note: BaseGameTable is a class. We need a static helper or instance. 
-// The user's code imported { sign } from BaseGameTable. 
-// My BaseGameTable implementation has `sign` as a method. 
-// I should make it static or export it separately.
-// Let's modify BaseGameTable.js to export sign as well, or just duplicate/import crypto here.
-// For "faithfully implement", I should export it.
-// But BaseGameTable.js exports the class. 
-// I will modify BaseGameTable.js to export the class AND the sign function if possible, 
-// or just instantiate a dummy table to sign? No that's inefficient.
-// I'll use a helper in BaseGameTable.js.
-
+const WalletService = require('../services/WalletService');
 const crypto = require('crypto');
+
 const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';
 
 function sign(data) {
@@ -44,11 +33,34 @@ function verifySettlementSignature(req, res, next) {
 }
 
 router.post('/settle', verifySettlementSignature, async (req, res) => {
-    // 任务入队
-    queue.add('settle', req.body);
+    try {
+        const { batchId, result } = req.body;
+        const { winner, loser, amount } = result;
 
-    // 立即返回 202 Accepted 告知任务已受理
-    res.status(202).json({ message: '结算任务已受理' });
+        // 直接处理结算，不使用队列
+        await WalletService.transferBeans(winner, loser, amount, batchId);
+
+        res.status(200).json({
+            success: true,
+            message: '结算成功'
+        });
+    } catch (error) {
+        console.error('[Settle] 结算失败:', error);
+
+        // 处理重复批次ID错误（幂等性）
+        if (error.message && error.message.includes('W002')) {
+            return res.status(200).json({
+                success: true,
+                message: '结算已处理（幂等）'
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            code: 'W001',
+            message: '结算失败: ' + error.message
+        });
+    }
 });
 
 module.exports = router;
