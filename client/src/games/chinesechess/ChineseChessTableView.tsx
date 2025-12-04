@@ -131,56 +131,54 @@ export function ChineseChessTableView({ table, roomClient, isMyTable }: ChineseC
             </div>
 
             {/* 底部：操作区域 */}
-            <div className="mt-auto w-full">
-                {isMyTable ? (
-                    <div className="flex gap-3 justify-center w-full">
-                        <button
-                            onClick={handleLeave}
-                            className="flex-1 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm"
-                        >
-                            离开
-                        </button>
+            <div className="mt-auto w-full flex items-end justify-between">
+                {/* 左下角：人数 */}
+                <div className="flex items-center gap-1 text-gray-400 text-sm mb-1 flex-shrink-0">
+                    <span>👤</span>
+                    <span>{playerCount}/{maxPlayers}</span>
+                </div>
 
-                        {/* 开始/就绪按钮 */}
-                        <button
-                            onClick={handleReady}
-                            disabled={isReady} // 就绪后不可取消（根据需求：玩家就绪后不能返回开始状态）
-                            className={`flex-1 py-2 rounded-lg font-bold transition-colors shadow-sm ${isReady
-                                    ? 'bg-green-100 text-green-700 cursor-default'
-                                    : 'bg-red-100 text-red-600 hover:bg-red-200'
-                                }`}
-                        >
-                            {isReady ? '就绪' : '开始'}
-                        </button>
-                    </div>
-                ) : (
-                    <div className="flex items-end justify-between w-full">
-                        {/* 左下角：人数 */}
-                        <div className="flex items-center gap-1 text-gray-400 text-sm mb-2">
-                            <span>👤</span>
-                            <span>{playerCount}/{maxPlayers}</span>
+                {/* 中央操作区 (Flex-1 占据剩余空间并居中，但限制最大宽度) */}
+                <div className="flex-1 flex justify-center pl-2">
+                    {isMyTable ? (
+                        <div className="flex gap-2 w-full max-w-[160px]">
+                            <button
+                                onClick={handleLeave}
+                                className="flex-1 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm text-xs"
+                            >
+                                离开
+                            </button>
+
+                            {/* 开始/就绪按钮 */}
+                            <button
+                                onClick={handleReady}
+                                disabled={isReady}
+                                className={`flex-1 py-1.5 rounded-lg font-bold transition-colors shadow-sm text-xs ${isReady
+                                        ? 'bg-green-100 text-green-700 cursor-default'
+                                        : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                    }`}
+                            >
+                                {isReady ? '就绪' : '开始'}
+                            </button>
                         </div>
+                    ) : (
+                        canJoin ? (
+                            <button
+                                onClick={handleJoin}
+                                className="w-20 py-1.5 bg-white text-black border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm text-xs"
+                            >
+                                入座
+                            </button>
+                        ) : (
+                            <span className="text-gray-400 font-medium px-2 py-1 text-xs">
+                                {isPlaying ? '观战' : '已满'}
+                            </span>
+                        )
+                    )}
+                </div>
 
-                        {/* 底部中央：入座按钮 */}
-                        <div className="flex-1 flex justify-center">
-                            {canJoin ? (
-                                <button
-                                    onClick={handleJoin}
-                                    className="px-8 py-2 bg-white text-black border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm"
-                                >
-                                    入座
-                                </button>
-                            ) : (
-                                <span className="text-gray-400 font-medium px-4 py-2">
-                                    {isPlaying ? '观战' : '已满'}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* 右下角占位，保持中间按钮视觉居中 */}
-                        <div className="w-12"></div>
-                    </div>
-                )}
+                {/* 右下角占位 (与左侧人数宽度大致相当，保持视觉平衡) */}
+                <div className="w-8 flex-shrink-0"></div>
             </div>
         </div>
     );
