@@ -58,6 +58,27 @@ class GameRoom {
         };
     }
 
+    /**
+     * 设置房间层的 Socket 事件监听
+     * @param {Object} socket - Socket 实例
+     * @param {String} gameType - 游戏类型
+     */
+    setupRoomListeners(socket, gameType) {
+        // 监听获取游戏桌列表请求
+        socket.on(`${gameType}_get_tables`, (data = {}) => {
+            const { roomId } = data;
+
+            // 验证是否是当前房间
+            if (roomId !== this.id) {
+                return;
+            }
+
+            // 返回游戏桌列表
+            const tableList = this.getTableList ? this.getTableList() : [];
+            socket.emit('table_list', tableList);
+        });
+    }
+
     // 以下方法应该在子类中实现
     // initTables(count) - 初始化游戏桌
     // addTable() - 添加新游戏桌

@@ -76,6 +76,14 @@ class ChineseChessCenter extends GameCenter {
     playerJoinGameCenter(socket) {
         console.log(`[${this.gameType}] 玩家进入游戏中心: ${socket.user.username}`);
 
+        // ========== GameRoom 层事件监听 ==========
+        // 为所有房间设置监听器
+        for (const room of this.gameRooms.values()) {
+            room.setupRoomListeners(socket, this.gameType);
+        }
+
+        // ========== GameCenter 层事件监听 ==========
+
         // 1. 监听获取房间列表请求
         socket.on(`${this.gameType}_get_rooms`, (data = {}) => {
             const { tier, roomType } = data;
