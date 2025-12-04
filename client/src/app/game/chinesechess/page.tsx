@@ -1,32 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { ChineseChessCenterClient, ChineseChessCenterState } from '@/games/chinesechess/gamepagehierarchy/ChineseChessCenterClient';
-import { ChineseChessRoomClient } from '@/games/chinesechess/gamepagehierarchy/ChineseChessRoomClient';
-import { useLanguage } from '@/lib/i18n';
-
-// Define extended interface for UI display
-interface ExtendedRoomInfo {
-    id: string;
-    name: string;
-    minRating?: number;
-    maxRating?: number;
-    tableCount?: number;
-    status?: string;
-    playerCount?: number;
-}
+import { ChineseChessCenterClient } from '@/games/chinesechess/gamepagehierarchy/ChineseChessCenterClient';
+import { ChineseChessCenterView } from '@/games/chinesechess/ChineseChessCenterView';
 
 export default function ChineseChessPage() {
     const router = useRouter();
-    const { t } = useLanguage();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [centerClient, setCenterClient] = useState<ChineseChessCenterClient | null>(null);
-    const [centerState, setCenterState] = useState<ChineseChessCenterState | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Initialize Socket and Game Center Client
+    // 初始化 Socket 和 Game Center Client
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -42,38 +28,17 @@ export default function ChineseChessPage() {
 
         setSocket(newSocket);
         setCenterClient(client);
-
-        // Initialize client and subscribe to state updates
-        client.init((state) => {
-            setCenterState(state);
-            setLoading(false);
-        });
-
-        // Join the game center
-        client.joinGameCenter();
+        setLoading(false);
 
         return () => {
-            client.leaveGameCenter();
-            client.dispose();
+            if (client) {
+                client.dispose();
+            }
             newSocket.disconnect();
         };
     }, [router]);
 
-    // Handle Room Selection
-    const handleRoomSelect = (roomId: string) => {
-        if (centerClient) {
-            centerClient.selectRoom(roomId);
-        }
-    };
-
-    // Handle Back to Room List
-    const handleBackToCenter = () => {
-        if (centerClient) {
-            centerClient.deselectRoom();
-        }
-    };
-
-    if (loading || !centerState) {
+    if (loading || !centerClient) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-amber-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
@@ -81,304 +46,10 @@ export default function ChineseChessPage() {
         );
     }
 
-    // If a room is selected, show the Room View
-    if (centerState.selectedRoomId) {
-        const roomClient = centerClient?.getRoomClient();
-
-        if (!roomClient) {
-            // Room client is still being created, show loading
-            return (
-                <div className="min-h-screen flex flex-col items-center justify-center bg-amber-50">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mb-4"></div>
-                    <p className="text-amber-800">Loading Room...</p>
-                </div>
-            );
-        }
-
-        return (
-            <RoomView
-                roomClient={roomClient as ChineseChessRoomClient}
-                onBack={handleBackToCenter}
-            />
-        );
-    }
-
-    // Default: Show Game Center (Room List)
     return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => router.push('/lobby')}
-                            className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                        >
-                            <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </button>
-                        <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
-                            <span className="text-4xl">🏮</span> 中国象棋大厅
-                        </h1>
-                    </div>
-
-                    {/* User Stats */}
-                    {centerState.userStats && (
-                        <div className="bg-white px-6 py-3 rounded-xl shadow-sm border border-amber-100 flex gap-6">
-                            <div className="text-center">
-                                <div className="text-xs text-gray-500">等级分</div>
-                                <div className="font-bold text-amber-600">{centerState.userStats.rating || 1000}</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-xs text-gray-500">胜/负</div>
-                                <div className="font-bold text-gray-700">
-                                    <span className="text-green-600">{centerState.userStats.wins || 0}</span>
-                                    /
-                                    <span className="text-red-500">{centerState.userStats.losses || 0}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Room List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {(centerState.rooms as unknown as ExtendedRoomInfo[]).map((room) => (
-                        <div
-                            key={room.id}
-                            onClick={() => handleRoomSelect(room.id)}
-                            className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all group"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-2xl group-hover:bg-amber-200 transition-colors">
-                                    {getRoomIcon(room.id)}
-                                </div>
-                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${getRoomStatusColor(room.status || 'active')}`}>
-                                    {room.status === 'full' ? '已满' : '进行中'}
-                                </div>
-                            </div>
-
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">{room.name}</h3>
-                            <p className="text-gray-500 text-sm mb-4">{getRoomDescription(room.id)}</p>
-
-                            <div className="flex items-center justify-between text-sm text-gray-400 border-t border-gray-100 pt-4">
-                                <div className="flex items-center gap-1">
-                                    <span>👥</span>
-                                    <span>{room.playerCount || 0} 在线</span>
-                                </div>
-                                <div className="text-amber-600 font-medium group-hover:translate-x-1 transition-transform">
-                                    进入房间 &rarr;
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {centerState.rooms.length === 0 && (
-                    <div className="text-center py-20 text-gray-400">
-                        <div className="text-6xl mb-4">📭</div>
-                        <p>暂无可用房间，请稍后再试</p>
-                    </div>
-                )}
-            </div>
-        </main>
+        <ChineseChessCenterView
+            centerClient={centerClient}
+            onBack={() => router.push('/lobby')}
+        />
     );
 }
-
-// Helper Components & Functions
-
-function RoomView({ roomClient, onBack }: { roomClient: ChineseChessRoomClient, onBack: () => void }) {
-    const [roomState, setRoomState] = useState<any>(roomClient.getState());
-
-    useEffect(() => {
-        // 设置状态更新回调（注意：roomClient 可能已经被初始化过）
-        // 我们需要重新设置回调以更新 RoomView 的状态
-        roomClient.init((state) => {
-            console.log('[RoomView] Room state updated:', state);
-            setRoomState(state);
-        });
-
-        // 获取当前状态
-        const currentState = roomClient.getState();
-        console.log('[RoomView] Initial state:', currentState);
-        setRoomState(currentState);
-    }, [roomClient]);
-
-    console.log('[RoomView] Rendering with state:', roomState);
-
-    if (!roomState || !roomState.currentRoom) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-amber-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mb-4"></div>
-                <p className="text-amber-800">Loading Room...</p>
-            </div>
-        );
-    }
-
-    // 如果选择了游戏桌，显示游戏桌视图
-    if (roomState.selectedTableId) {
-        return (
-            <TableView
-                roomClient={roomClient}
-                tableId={roomState.selectedTableId}
-                onBack={() => roomClient.deselectTable()}
-            />
-        );
-    }
-
-    return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex items-center gap-4 mb-8">
-                    <button
-                        onClick={onBack}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                    >
-                        <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                    </button>
-                    <h1 className="text-2xl font-bold text-amber-900">
-                        {roomState.currentRoom?.name || '游戏房间'}
-                    </h1>
-                </div>
-
-                <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-                    <h2 className="text-xl text-gray-600 mb-4">选择游戏桌</h2>
-                    <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {roomState.tables && roomState.tables.length > 0 ? (
-                            roomState.tables.map((table: any) => (
-                                <div
-                                    key={table.tableId}
-                                    onClick={() => roomClient.selectTable(table.tableId)}
-                                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${table.status === 'playing'
-                                        ? 'border-red-300 bg-red-50 hover:border-red-400'
-                                        : 'border-gray-300 hover:border-amber-400 hover:bg-amber-50'
-                                        }`}
-                                >
-                                    <div className="text-4xl">
-                                        {table.status === 'playing' ? '⚔️' : '♟️'}
-                                    </div>
-                                    <div className="font-medium text-gray-700">
-                                        {table.tableId}
-                                    </div>
-                                    <div className={`text-xs px-2 py-1 rounded-full ${table.status === 'playing' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                                        }`}>
-                                        {table.status === 'playing' ? '游戏中' : '空闲'}
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                        {table.playerCount}/{table.maxPlayers} 人
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="col-span-full text-gray-400 py-8">
-                                暂无游戏桌，请稍候...
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </main>
-    );
-}
-
-function getRoomIcon(id: string) {
-    if (id.includes('beginner')) return '🌱';
-    if (id.includes('intermediate')) return '⚔️';
-    if (id.includes('advanced')) return '🏆';
-    return '🎲';
-}
-
-function getRoomDescription(id: string) {
-    if (id.includes('beginner')) return '适合新手练习，低倍率';
-    if (id.includes('intermediate')) return '高手过招，中等倍率';
-    if (id.includes('advanced')) return '大师对决，高倍率';
-    return '标准游戏房间';
-}
-
-function getRoomStatusColor(status: string) {
-    switch (status) {
-        case 'active': return 'bg-green-100 text-green-700';
-        case 'full': return 'bg-red-100 text-red-700';
-        default: return 'bg-gray-100 text-gray-600';
-    }
-}
-
-function TableView({ roomClient, tableId, onBack }: { roomClient: ChineseChessRoomClient, tableId: string, onBack: () => void }) {
-    const [tableState, setTableState] = useState<any>(null);
-    const tableClient = roomClient.getChessTableClient();
-
-    useEffect(() => {
-        if (tableClient) {
-            // 初始化并订阅状态
-            tableClient.init((state) => {
-                console.log('[TableView] Table state updated:', state);
-                setTableState(state);
-            });
-            // 获取初始状态
-            setTableState(tableClient.getState());
-        }
-    }, [tableClient]);
-
-    if (!tableState) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-amber-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mb-4"></div>
-                <p className="text-amber-800">Loading Table...</p>
-            </div>
-        );
-    }
-
-    return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex items-center gap-4 mb-8">
-                    <button
-                        onClick={onBack}
-                        className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                    >
-                        <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                    </button>
-                    <h1 className="text-2xl font-bold text-amber-900">
-                        游戏桌 {tableId}
-                    </h1>
-                </div>
-
-                <div className="bg-white rounded-2xl p-8 shadow-lg min-h-[600px] flex flex-col items-center justify-center">
-                    <div className="text-6xl mb-4">♟️</div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">中国象棋对战</h2>
-                    <p className="text-gray-500 mb-8">等待玩家加入...</p>
-
-                    <div className="flex gap-8">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl">
-                                🔴
-                            </div>
-                            <span className="font-medium">红方 (空)</span>
-                            <button className="px-4 py-1 bg-red-100 text-red-600 rounded-full text-sm hover:bg-red-200">
-                                入座
-                            </button>
-                        </div>
-
-                        <div className="w-px bg-gray-200 h-32"></div>
-
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl">
-                                ⚫
-                            </div>
-                            <span className="font-medium">黑方 (空)</span>
-                            <button className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm hover:bg-gray-700">
-                                入座
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    );
-}
-
