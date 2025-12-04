@@ -35,10 +35,19 @@ export interface Player {
 
 export interface GameTableState {
     tableId: string | null;
+    status: 'idle' | 'waiting' | 'matching' | 'playing';
+    baseBet: number;
     players: Player[];
     maxPlayers: number;
     isReady: boolean;
     canStart: boolean;
+    countdown?: {
+        type: 'ready' | 'start' | 'rematch';
+        timeout?: number;
+        start?: number;
+        count?: number;
+        message?: string;
+    } | null;
     [key: string]: any;
 }
 
@@ -62,6 +71,8 @@ export abstract class GameTableClient {
         this.MatchClientClass = MatchClientClass;
         this.state = {
             tableId: null,
+            status: 'idle',
+            baseBet: 0,
             players: [],
             maxPlayers: 2,
             isReady: false,
@@ -112,6 +123,41 @@ export abstract class GameTableClient {
         this.socket.on('game_start', (data: any) => {
             console.log(`[${this.gameType}TableClient] Game starting:`, data);
             this.handleGameStart(data);
+        });
+
+        // 准备倒计时开始
+        this.socket.on('ready_check_start', (data: any) => {
+            this.updateState({
+                status: 'matching',
+                countdown: { type: 'ready', timeout: data.timeout, start: Date.now() }
+            });
+        });
+
+        // 准备倒计时取消
+        this.socket.on('ready_check_cancelled', (data: any) => {
+            this.updateState({ countdown: null });
+        });
+
+        // 游戏开始倒计时
+        this.socket.on('game_countdown', (data: any) => {
+            this.updateState({
+                countdown: { type: 'start', count: data.count, message: data.message }
+            });
+        });
+
+        // 游戏结束（再来一局倒计时）
+        this.socket.on('game_ended', (data: any) => {
+            this.updateState({
+                status: 'matching',
+                countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
+            });
+        });
+
+        // 被踢出
+        this.socket.on('kicked', (data: any) => {
+            console.warn(`[${this.gameType}TableClient] Kicked:`, data);
+            this.leaveTable(); // 清理本地状态
+            alert(`您已被移出游戏桌: ${data.reason}`);
         });
     }
 
@@ -181,7 +227,7 @@ export abstract class GameTableClient {
             this.matchClient = new this.MatchClientClass(this.socket);
             this.matchClient.init((matchState) => {
                 // 将对局状态合并到游戏桌状态
-                this.updateState({ ...matchState });
+                this.updateState({ ...(matchState as any) });
             });
         }
 

@@ -1,275 +1,184 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChineseChessTableClient } from './gamepagehierarchy/ChineseChessTableClient';
-import { ChineseChessMatchView } from './ChineseChessMatchView';
+import { ChineseChessRoomClient } from './gamepagehierarchy/ChineseChessRoomClient';
 
 interface ChineseChessTableViewProps {
-    tableClient: ChineseChessTableClient;
-    onBack: () => void;
+    table: any;
+    roomClient: ChineseChessRoomClient;
+    isMyTable: boolean;
 }
 
-export function ChineseChessTableView({ tableClient, onBack }: ChineseChessTableViewProps) {
-    const [tableState, setTableState] = useState(tableClient.getState());
-    const [countdown, setCountdown] = useState<number | null>(null);
+export function ChineseChessTableView({ table, roomClient, isMyTable }: ChineseChessTableViewProps) {
+    // 提取纯数字桌号 (例如 "beginner_1" -> "1")
+    const displayId = table.tableId.split('_').pop();
 
+    // 状态定义
+    const status = table.status || 'idle';
+    const isIdle = status === 'idle';
+    const isWaiting = status === 'waiting';
+    const isMatching = status === 'matching';
+    const isPlaying = status === 'playing';
+
+    const playerCount = table.playerCount || 0;
+    const maxPlayers = table.maxPlayers || 2;
+    const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
+
+    // 如果是我所在的桌子，获取 TableClient 来操作
+    const tableClient = isMyTable ? roomClient.getChessTableClient() : null;
+    const [localState, setLocalState] = useState<any>({});
+    const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+    // 同步 TableClient 状态
     useEffect(() => {
-        // 订阅状态更新
-        tableClient.init((state) => {
-            setTableState(state);
-        });
+        if (tableClient) {
+            const updateState = (s: any) => {
+                setLocalState(s);
 
-        // 获取初始状态
-        setTableState(tableClient.getState());
+                // 处理倒计时逻辑
+                if (s.countdown) {
+                    if (s.countdown.type === 'start') {
+                        // 3-2-1 倒计时直接显示数字
+                        setTimeLeft(s.countdown.count);
+                    } else if (s.countdown.start && s.countdown.timeout) {
+                        // 计算剩余时间
+                        const elapsed = Date.now() - s.countdown.start;
+                        const remaining = Math.max(0, Math.ceil((s.countdown.timeout - elapsed) / 1000));
+                        setTimeLeft(remaining);
+                    }
+                } else {
+                    setTimeLeft(null);
+                }
+            };
 
-        // 监听倒计时事件
-        const handleCountdown = (data: any) => {
-            setCountdown(data.remaining);
-        };
+            updateState(tableClient.getState());
+            tableClient.init(updateState);
 
-        // 这里需要从 socket 监听倒计时事件
-        // tableClient.socket.on('ready_countdown', handleCountdown);
+            // 倒计时定时器
+            const timer = setInterval(() => {
+                const s = tableClient.getState();
+                if (s.countdown && s.countdown.start && s.countdown.timeout) {
+                    const elapsed = Date.now() - s.countdown.start;
+                    const remaining = Math.max(0, Math.ceil((s.countdown.timeout - elapsed) / 1000));
+                    setTimeLeft(remaining);
+                }
+            }, 1000);
 
-        return () => {
-            // tableClient.socket.off('ready_countdown', handleCountdown);
-        };
+            return () => clearInterval(timer);
+        }
     }, [tableClient]);
 
-    // 如果对局已开始，显示对局视图
-    const matchClient = tableClient.getChessMatchClient();
-    if (matchClient) {
-        return (
-            <ChineseChessMatchView
-                matchClient={matchClient}
-                onBack={() => {
-                    // 离开对局，返回游戏桌
-                    tableClient.leaveTable();
-                    onBack();
-                }}
-            />
-        );
-    }
+    const isReady = localState.isReady || false;
 
-    // 检查当前用户是否已准备
-    const isReady = tableState.isReady || false;
-    const players = tableState.players || [];
-    const maxPlayers = 2; // 中国象棋固定2人
-    const isFull = players.length === maxPlayers;
-    const allReady = players.length === maxPlayers && players.every((p: any) => p.ready);
+    const handleJoin = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (canJoin) {
+            roomClient.selectTable(table.tableId);
+        }
+    };
+
+    const handleReady = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (tableClient) {
+            // 点击开始，发送准备指令
+            tableClient.setReady(true);
+        }
+    };
+
+    const handleLeave = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (tableClient) {
+            tableClient.leaveTable();
+            roomClient.deselectTable();
+        }
+    };
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-4 md:p-8">
-            <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={onBack}
-                            className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                        >
-                            <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </button>
-                        <h1 className="text-2xl font-bold text-amber-900">
-                            游戏桌 {tableState.tableId || ''}
-                        </h1>
-                    </div>
+        <div className={`bg-white rounded-2xl p-6 shadow-lg transition-all relative overflow-hidden flex flex-col h-full ${isMyTable ? 'border-2 border-amber-400' : 'border border-amber-100'
+            }`}>
+            {/* 顶部：桌号 + 状态 */}
+            <div className="flex justify-between items-start mb-4">
+                <h3 className="text-3xl font-bold text-gray-800">
+                    {displayId}
+                </h3>
 
-                    {/* 倒计时提示 */}
-                    {countdown !== null && countdown > 0 && (
-                        <div className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold text-lg animate-pulse">
-                            ⏰ {countdown}秒
-                        </div>
-                    )}
-                </div>
-
-                {/* 游戏桌内容 */}
-                <div className="bg-white rounded-2xl p-8 shadow-xl">
-                    <div className="max-w-3xl mx-auto">
-                        {/* 标题区域 */}
-                        <div className="text-center mb-8">
-                            <div className="text-7xl mb-4">♟️</div>
-                            <h2 className="text-3xl font-bold text-gray-800 mb-2">中国象棋对战</h2>
-                            <p className="text-gray-500 text-lg">
-                                {isFull
-                                    ? allReady
-                                        ? '所有玩家已就绪，游戏即将开始...'
-                                        : '等待所有玩家就绪...'
-                                    : '等待玩家加入...'}
-                            </p>
-                        </div>
-
-                        {/* 座位区域 */}
-                        <div className="flex gap-8 justify-center items-center mb-8">
-                            {/* 红方座位 */}
-                            <PlayerSeat
-                                player={players[0]}
-                                side="red"
-                                sideLabel="红方"
-                                icon="🔴"
-                            />
-
-                            <div className="text-5xl text-gray-300 font-bold">VS</div>
-
-                            {/* 黑方座位 */}
-                            <PlayerSeat
-                                player={players[1]}
-                                side="black"
-                                sideLabel="黑方"
-                                icon="⚫"
-                            />
-                        </div>
-
-                        {/* 准备状态提示 */}
-                        {isFull && !allReady && countdown !== null && countdown > 0 && (
-                            <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-xl text-center">
-                                <p className="text-yellow-800 font-medium">
-                                    ⚠️ 满座后所有玩家需在 <span className="font-bold text-red-600">{countdown}秒</span> 内点击"开始"按钮
-                                </p>
-                                <p className="text-yellow-700 text-sm mt-1">
-                                    未点击的玩家将被强制下座
-                                </p>
-                            </div>
-                        )}
-
-                        {/* 准备按钮 */}
-                        <div className="text-center space-y-4">
-                            {players.length > 0 && (
-                                <>
-                                    <button
-                                        onClick={() => tableClient.setReady(!isReady)}
-                                        disabled={allReady}
-                                        className={`px-12 py-4 rounded-xl font-bold text-lg transition-all ${allReady
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : isReady
-                                                    ? 'bg-green-500 text-white hover:bg-green-600 shadow-lg'
-                                                    : 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg hover:shadow-xl'
-                                            }`}
-                                    >
-                                        {allReady ? '✓ 所有玩家已就绪' : isReady ? '✓ 就绪' : '开始'}
-                                    </button>
-
-                                    {/* 状态说明 */}
-                                    <div className="text-sm text-gray-500">
-                                        {isReady
-                                            ? '您已准备就绪，等待其他玩家...'
-                                            : '点击"开始"按钮准备游戏'}
-                                    </div>
-
-                                    {/* 离座按钮 */}
-                                    {!allReady && (
-                                        <button
-                                            onClick={() => {
-                                                tableClient.leaveTable();
-                                                onBack();
-                                            }}
-                                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-                                        >
-                                            离座
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        {/* 底豆信息 */}
-                        {tableState.baseBet && (
-                            <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
-                                <div className="text-sm text-gray-600 mb-1">本局底豆</div>
-                                <div className="text-2xl font-bold text-amber-600">
-                                    {tableState.baseBet} 豆
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 提示信息 */}
-                        {tableState.canStart && (
-                            <div className="mt-6 text-center">
-                                <div className="inline-block px-6 py-3 bg-green-50 border-2 border-green-300 rounded-xl text-green-700 font-medium">
-                                    ✓ 所有玩家已准备，游戏即将开始...
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold ${isPlaying ? 'bg-red-100 text-red-700' :
+                        isMatching ? 'bg-purple-100 text-purple-700' :
+                            (isWaiting || isMyTable) ? 'bg-amber-100 text-amber-700' :
+                                'bg-green-100 text-green-700'
+                    }`}>
+                    {isPlaying ? '游戏中' : isMatching ? '匹配中' : (isWaiting || isMyTable) ? '等待中' : '空闲'}
                 </div>
             </div>
-        </main>
-    );
-}
 
-// 玩家座位组件
-function PlayerSeat({ player, side, sideLabel, icon }: {
-    player: any;
-    side: 'red' | 'black';
-    sideLabel: string;
-    icon: string;
-}) {
-    const bgColor = side === 'red' ? 'bg-red-50' : 'bg-gray-50';
-    const borderColor = side === 'red' ? 'border-red-200' : 'border-gray-300';
-    const avatarBg = side === 'red' ? 'bg-red-500' : 'bg-gray-700';
+            {/* 中间：底豆信息 + 倒计时提示 */}
+            <div className="mb-8 flex-1">
+                <p className="text-gray-500 text-sm">
+                    {table.baseBet ? `底豆: ${table.baseBet}` : '标准对局'}
+                </p>
 
-    return (
-        <div className={`flex flex-col items-center gap-4 p-6 ${bgColor} rounded-2xl border-2 ${borderColor} min-w-[240px] shadow-md`}>
-            {/* 头像 */}
-            <div className={`w-20 h-20 rounded-full ${avatarBg} flex items-center justify-center text-4xl shadow-lg`}>
-                {player ? (
-                    <span className="text-white font-bold">
-                        {(player.nickname || player.userId || '?')[0].toUpperCase()}
-                    </span>
-                ) : (
-                    icon
+                {/* 倒计时显示 */}
+                {isMyTable && timeLeft !== null && (
+                    <div className="mt-4 text-center animate-pulse">
+                        <p className="text-red-500 font-bold text-xl">
+                            {localState.countdown?.message || (
+                                localState.countdown?.type === 'ready' ? '准备倒计时' :
+                                    localState.countdown?.type === 'start' ? '游戏即将开始' : '等待确认'
+                            )}: {timeLeft}s
+                        </p>
+                    </div>
                 )}
             </div>
 
-            {/* 玩家信息 */}
-            <div className="text-center w-full">
-                <div className="font-bold text-lg mb-1">{sideLabel}</div>
+            {/* 底部：操作区域 */}
+            <div className="mt-auto w-full">
+                {isMyTable ? (
+                    <div className="flex gap-3 justify-center w-full">
+                        <button
+                            onClick={handleLeave}
+                            className="flex-1 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            离开
+                        </button>
 
-                {player ? (
-                    <>
-                        {/* 昵称 */}
-                        <div className="text-sm text-gray-700 font-medium mb-1 truncate">
-                            {player.nickname || player.userId}
-                        </div>
-
-                        {/* 称号 */}
-                        {player.title && (
-                            <div
-                                className="text-xs px-2 py-1 rounded-full mb-2 inline-block"
-                                style={{
-                                    backgroundColor: player.titleColor ? `${player.titleColor}20` : '#f0f0f0',
-                                    color: player.titleColor || '#666'
-                                }}
-                            >
-                                {player.title}
-                            </div>
-                        )}
-
-                        {/* 统计信息 */}
-                        <div className="flex justify-center gap-3 text-xs text-gray-500 mb-2">
-                            {player.winRate !== undefined && (
-                                <span>胜率 {player.winRate}%</span>
-                            )}
-                            {player.disconnectRate !== undefined && (
-                                <span>掉线 {player.disconnectRate}%</span>
-                            )}
-                        </div>
-
-                        {/* 准备状态 */}
-                        {player.ready ? (
-                            <div className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold">
-                                ✓ 已就绪
-                            </div>
-                        ) : (
-                            <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm">
-                                等待中...
-                            </div>
-                        )}
-                    </>
+                        {/* 开始/就绪按钮 */}
+                        <button
+                            onClick={handleReady}
+                            disabled={isReady} // 就绪后不可取消（根据需求：玩家就绪后不能返回开始状态）
+                            className={`flex-1 py-2 rounded-lg font-bold transition-colors shadow-sm ${isReady
+                                    ? 'bg-green-100 text-green-700 cursor-default'
+                                    : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                }`}
+                        >
+                            {isReady ? '就绪' : '开始'}
+                        </button>
+                    </div>
                 ) : (
-                    <div className="text-gray-400 text-sm py-2">
-                        等待玩家入座
+                    <div className="flex items-end justify-between w-full">
+                        {/* 左下角：人数 */}
+                        <div className="flex items-center gap-1 text-gray-400 text-sm mb-2">
+                            <span>👤</span>
+                            <span>{playerCount}/{maxPlayers}</span>
+                        </div>
+
+                        {/* 底部中央：入座按钮 */}
+                        <div className="flex-1 flex justify-center">
+                            {canJoin ? (
+                                <button
+                                    onClick={handleJoin}
+                                    className="px-8 py-2 bg-white text-black border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm"
+                                >
+                                    入座
+                                </button>
+                            ) : (
+                                <span className="text-gray-400 font-medium px-4 py-2">
+                                    {isPlaying ? '观战' : '已满'}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* 右下角占位，保持中间按钮视觉居中 */}
+                        <div className="w-12"></div>
                     </div>
                 )}
             </div>
