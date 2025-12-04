@@ -34,7 +34,7 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
     }
 
     return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
+        <main className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
@@ -52,52 +52,89 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
                 </div>
 
                 {/* 游戏桌列表 */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg">
-                    <h2 className="text-xl text-gray-600 mb-6 text-center">选择游戏桌</h2>
+                <div className="bg-white rounded-2xl p-8 shadow-xl">
+                    <h2 className="text-xl text-gray-600 mb-6 text-center font-medium">选择游戏桌</h2>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {roomState.tables && roomState.tables.length > 0 ? (
-                            roomState.tables.map((table: any) => (
-                                <div
-                                    key={table.tableId}
-                                    onClick={() => roomClient.selectTable(table.tableId)}
-                                    className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${table.status === 'playing'
-                                            ? 'border-red-300 bg-red-50 hover:border-red-400 hover:shadow-md'
-                                            : table.playerCount > 0
-                                                ? 'border-amber-300 bg-amber-50 hover:border-amber-400 hover:shadow-md'
-                                                : 'border-gray-300 hover:border-amber-400 hover:bg-amber-50 hover:shadow-md'
-                                        }`}
-                                >
-                                    {/* 图标 */}
-                                    <div className="text-4xl">
-                                        {table.status === 'playing' ? '⚔️' : table.playerCount > 0 ? '👥' : '♟️'}
-                                    </div>
+                            roomState.tables.map((table: any) => {
+                                // 根据 MatchPlayers.js 中的 TABLE_STATUS 定义
+                                const status = table.status || 'idle';
+                                const isIdle = status === 'idle';
+                                const isWaiting = status === 'waiting';
+                                const isMatching = status === 'matching';
+                                const isPlaying = status === 'playing';
 
-                                    {/* 桌号 */}
-                                    <div className="font-bold text-gray-800">
-                                        {table.tableId}
-                                    </div>
+                                // 确定是否可以加入（只有空闲或等待中的桌子可以加入）
+                                const playerCount = table.playerCount || 0;
+                                const maxPlayers = table.maxPlayers || 2;
+                                const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
 
-                                    {/* 状态标签 */}
-                                    <div className={`text-xs px-3 py-1 rounded-full font-medium ${table.status === 'playing'
-                                            ? 'bg-red-100 text-red-600'
-                                            : table.playerCount > 0
-                                                ? 'bg-amber-100 text-amber-700'
-                                                : 'bg-green-100 text-green-600'
-                                        }`}>
-                                        {table.status === 'playing' ? '游戏中' : table.playerCount > 0 ? '等待中' : '空闲'}
-                                    </div>
+                                return (
+                                    <div
+                                        key={table.tableId}
+                                        onClick={() => canJoin && roomClient.selectTable(table.tableId)}
+                                        className={`relative border-2 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all ${!canJoin
+                                                ? 'border-gray-300 bg-gray-50 cursor-not-allowed opacity-70'
+                                                : 'cursor-pointer hover:shadow-lg hover:scale-105'
+                                            } ${isPlaying
+                                                ? 'border-red-400 bg-gradient-to-br from-red-50 to-red-100'
+                                                : isMatching
+                                                    ? 'border-purple-400 bg-gradient-to-br from-purple-50 to-purple-100'
+                                                    : isWaiting
+                                                        ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-amber-100'
+                                                        : 'border-green-400 bg-gradient-to-br from-green-50 to-green-100'
+                                            }`}
+                                    >
+                                        {/* 图标 */}
+                                        <div className="text-5xl mb-2">
+                                            {isPlaying ? '⚔️' : isMatching ? '⏳' : isWaiting ? '👥' : '♟️'}
+                                        </div>
 
-                                    {/* 人数 */}
-                                    <div className="text-xs text-gray-500">
-                                        {table.playerCount || 0}/{table.maxPlayers || 2} 人
+                                        {/* 桌号 */}
+                                        <div className="font-bold text-lg text-gray-800">
+                                            {table.tableId}
+                                        </div>
+
+                                        {/* 状态标签 */}
+                                        <div className={`text-xs px-3 py-1 rounded-full font-bold ${isPlaying
+                                                ? 'bg-red-200 text-red-700'
+                                                : isMatching
+                                                    ? 'bg-purple-200 text-purple-700'
+                                                    : isWaiting
+                                                        ? 'bg-amber-200 text-amber-700'
+                                                        : 'bg-green-200 text-green-700'
+                                            }`}>
+                                            {isPlaying ? '游戏中' : isMatching ? '匹配中' : isWaiting ? '等待中' : '空闲'}
+                                        </div>
+
+                                        {/* 人数 */}
+                                        <div className="text-sm font-medium text-gray-600">
+                                            {playerCount}/{maxPlayers} 人
+                                        </div>
+
+                                        {/* 底豆信息（如果有） */}
+                                        {table.baseBet && (
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                底豆: {table.baseBet}
+                                            </div>
+                                        )}
+
+                                        {/* 不可加入提示 */}
+                                        {!canJoin && (isPlaying || isMatching) && (
+                                            <div className="absolute top-2 right-2">
+                                                <div className="bg-gray-700 text-white text-xs px-2 py-1 rounded">
+                                                    🔒
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
-                            <div className="col-span-full text-center py-12 text-gray-400">
-                                <div className="text-5xl mb-3">📭</div>
-                                <p>暂无游戏桌，请稍候...</p>
+                            <div className="col-span-full text-center py-16 text-gray-400">
+                                <div className="text-6xl mb-4">📭</div>
+                                <p className="text-lg">暂无游戏桌，请稍候...</p>
                             </div>
                         )}
                     </div>
