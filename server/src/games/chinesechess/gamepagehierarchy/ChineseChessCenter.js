@@ -77,7 +77,8 @@ class ChineseChessCenter extends GameCenter {
         console.log(`[${this.gameType}] 玩家进入游戏中心: ${socket.user.username}`);
 
         // 1. 监听获取房间列表请求
-        socket.on(`${this.gameType}_get_rooms`, ({ tier, roomType }) => {
+        socket.on(`${this.gameType}_get_rooms`, (data = {}) => {
+            const { tier, roomType } = data;
             this.handleGetRooms(socket, roomType || tier);
         });
 
