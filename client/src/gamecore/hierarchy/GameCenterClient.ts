@@ -215,6 +215,16 @@ export abstract class GameCenterClient {
     }
 
     /**
+     * 快速开始（自动匹配）
+     * @param settings - 匹配设置
+     */
+    public quickStart(settings: any = {}): void {
+        console.log(`[${this.gameType}CenterClient] Quick start:`, settings);
+        this.socket.emit('auto_match', settings);
+    }
+
+
+    /**
      * 更新状态并通知UI
      */
     protected updateState(newState: Partial<GameCenterState>): void {
