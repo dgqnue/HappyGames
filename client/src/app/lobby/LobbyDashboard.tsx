@@ -194,74 +194,105 @@ export default function LobbyDashboard() {
                 <div className="lg:col-span-2 space-y-8">
 
                     {/* ---------- 统计面板 ---------- */}
-                    {lobbyData && (
-                        <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-3 md:p-6 relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-3 md:p-6 relative overflow-hidden">
 
-                            {/* 统计数据网格 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10">
+                        {lobbyData ? (
+                            <>
+                                {/* 统计数据网格 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10">
 
-                                {/* 总豆子数 */}
-                                <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center text-3xl">
-                                        💰
+                                    {/* 总豆子数 */}
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center text-3xl">
+                                            💰
+                                        </div>
+                                        <div>
+                                            <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.total_beans}</p>
+                                            <p className="text-mobile-lg font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.total_beans}</p>
-                                        <p className="text-mobile-lg font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
+
+                                    {/* 生态池储备 */}
+                                    <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
+                                        <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-3xl">
+                                            🌱
+                                        </div>
+                                        <div>
+                                            <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool_min_reserve}</p>
+                                            <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)} / {lobbyData.ecoPool.minReserve.toFixed(2)}</p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* 生态池储备 */}
-                                <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
-                                    <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-3xl">
-                                        🌱
+                                {/* 官方钱包地址区域 */}
+                                <div className="mt-6 pt-4 border-t border-amber-200/50">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3">
+
+                                        {/* 钱包地址显示 */}
+                                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-sm text-amber-800/80 w-full">
+                                            <span className="font-bold whitespace-nowrap">🏦 {t.official_wallet}:</span>
+                                            <span className="font-mono bg-white/50 px-2 py-1 rounded border border-amber-100 text-xs md:text-sm break-all">
+                                                {lobbyData.ecoPool.officialWallet}
+                                            </span>
+                                        </div>
+
+                                        {/* 复制按钮 */}
+                                        <button
+                                            className="w-full md:w-auto text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-2 md:py-1 rounded-full font-bold transition-colors"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(lobbyData.ecoPool.officialWallet);
+                                                alert(t.copied);
+                                            }}
+                                        >
+                                            📋
+                                        </button>
                                     </div>
-                                    <div>
-                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool_min_reserve}</p>
-                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)} / {lobbyData.ecoPool.minReserve.toFixed(2)}</p>
+
+                                    {/* 区块链浏览器链接 */}
+                                    <div className="flex gap-4 text-lg">
+                                        <a
+                                            href={`https://minepi.com/blockexplorer/account/${lobbyData.ecoPool.officialWallet}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-amber-700 hover:text-amber-900 hover:scale-110 transition-transform"
+                                            title={t.wallet_query}
+                                        >
+                                            🔍
+                                        </a>
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* 官方钱包地址区域 */}
-                            <div className="mt-6 pt-4 border-t border-amber-200/50">
-                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3">
-
-                                    {/* 钱包地址显示 */}
-                                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-sm text-amber-800/80 w-full">
-                                        <span className="font-bold whitespace-nowrap">🏦 {t.official_wallet}:</span>
-                                        <span className="font-mono bg-white/50 px-2 py-1 rounded border border-amber-100 text-xs md:text-sm break-all">
-                                            {lobbyData.ecoPool.officialWallet}
-                                        </span>
+                            </>
+                        ) : (
+                            <>
+                                {/* 骨架屏 - 加载状态 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10 animate-pulse">
+                                    {/* 总豆子数骨架 */}
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 bg-amber-500/20 rounded-full"></div>
+                                        <div className="flex-1">
+                                            <div className="h-4 bg-amber-300/30 rounded w-24 mb-2"></div>
+                                            <div className="h-6 bg-amber-400/30 rounded w-32"></div>
+                                        </div>
                                     </div>
 
-                                    {/* 复制按钮 */}
-                                    <button
-                                        className="w-full md:w-auto text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-2 md:py-1 rounded-full font-bold transition-colors"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(lobbyData.ecoPool.officialWallet);
-                                            alert(t.copied);
-                                        }}
-                                    >
-                                        📋
-                                    </button>
+                                    {/* 生态池储备骨架 */}
+                                    <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
+                                        <div className="w-16 h-16 bg-green-500/20 rounded-full"></div>
+                                        <div className="flex-1">
+                                            <div className="h-4 bg-amber-300/30 rounded w-28 mb-2"></div>
+                                            <div className="h-6 bg-green-400/30 rounded w-36"></div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* 区块链浏览器链接 */}
-                                <div className="flex gap-4 text-lg">
-                                    <a
-                                        href={`https://minepi.com/blockexplorer/account/${lobbyData.ecoPool.officialWallet}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-amber-700 hover:text-amber-900 hover:scale-110 transition-transform"
-                                        title={t.wallet_query}
-                                    >
-                                        🔍
-                                    </a>
+                                {/* 钱包地址骨架 */}
+                                <div className="mt-6 pt-4 border-t border-amber-200/50 animate-pulse">
+                                    <div className="h-4 bg-amber-300/30 rounded w-full mb-2"></div>
+                                    <div className="h-4 bg-amber-300/30 rounded w-3/4"></div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
+                    </div>
 
                     {/* ---------- 游戏列表 ---------- */}
 
