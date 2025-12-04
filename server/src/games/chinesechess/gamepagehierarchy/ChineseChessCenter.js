@@ -20,7 +20,6 @@ class ChineseChessCenter extends GameCenter {
         // 调用父类构造函数
         // 参数：io, 游戏类型标识, 游戏桌类, 匹配器
         super(io, 'chinesechess', ChineseChessTable, matchMaker);
-
         console.log('[ChineseChessCenter] 中国象棋游戏中心已初始化');
     }
 

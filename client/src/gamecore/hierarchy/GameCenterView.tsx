@@ -59,7 +59,7 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
     };
 
     return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
+        <main className="min-h-screen bg-amber-50 p-2 md:p-4">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -128,9 +128,9 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
                                 {/* Room Icon & Status */}
                                 <div className="flex justify-between items-start mb-4">
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-colors ${room.tier === 'free' ? 'bg-green-100' :
-                                            room.tier === 'beginner' ? 'bg-blue-100' :
-                                                room.tier === 'intermediate' ? 'bg-purple-100' :
-                                                    'bg-amber-100'
+                                        room.tier === 'beginner' ? 'bg-blue-100' :
+                                            room.tier === 'intermediate' ? 'bg-purple-100' :
+                                                'bg-amber-100'
                                         }`}>
                                         {room.tier === 'free' ? '🆓' :
                                             room.tier === 'beginner' ? '🌱' :

@@ -15,7 +15,7 @@ import LobbyDashboard from './LobbyDashboard';
 
 export default function LobbyPage() {
     return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8 relative">
+        <main className="min-h-screen bg-amber-50 p-2 md:p-4 relative">
             <LobbyDashboard />
         </main>
     );
