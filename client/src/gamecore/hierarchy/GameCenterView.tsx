@@ -27,11 +27,16 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
     const [centerState, setCenterState] = useState(centerClient.getState());
     const [showSettings, setShowSettings] = useState(false);
     const [settings, setSettings] = useState<MatchSettings>(DEFAULT_SETTINGS);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // 订阅状态更新
         centerClient.init((state) => {
             setCenterState(state);
+            // 当收到房间列表时，标记为加载完成
+            if (state.rooms && state.rooms.length >= 0) {
+                setIsLoading(false);
+            }
         });
 
         // 加入游戏中心
@@ -118,7 +123,11 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
 
                 {/* Room List */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {centerState.rooms && centerState.rooms.length > 0 ? (
+                    {isLoading ? (
+                        <div className="col-span-full flex justify-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-800"></div>
+                        </div>
+                    ) : centerState.rooms && centerState.rooms.length > 0 ? (
                         centerState.rooms.map((room: any) => (
                             <div
                                 key={room.roomId}
@@ -157,8 +166,8 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
                             </div>
                         ))
                     ) : (
-                        <div className="col-span-full flex justify-center py-20">
-                            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-800"></div>
+                        <div className="col-span-full text-center py-20 text-gray-500">
+                            <p className="text-lg">暂无可用房间</p>
                         </div>
                     )}
                 </div>

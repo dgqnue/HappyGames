@@ -12,11 +12,16 @@ interface GameRoomViewProps {
 
 export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProps) {
     const [roomState, setRoomState] = useState(roomClient.getState());
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // 订阅状态更新
         roomClient.init((state) => {
             setRoomState(state);
+            // 当收到游戏桌列表时，标记为加载完成
+            if (state.tables && state.tables.length >= 0) {
+                setIsLoading(false);
+            }
         });
 
         // 获取初始状态
@@ -64,7 +69,11 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
 
                 {/* 游戏桌列表 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {roomState.tables && roomState.tables.length > 0 ? (
+                    {isLoading ? (
+                        <div className="col-span-full flex justify-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-800"></div>
+                        </div>
+                    ) : roomState.tables && roomState.tables.length > 0 ? (
                         roomState.tables.map((table: any) => (
                             <GameTableView
                                 key={table.tableId}
@@ -74,8 +83,8 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
                             />
                         ))
                     ) : (
-                        <div className="col-span-full flex justify-center py-20">
-                            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-800"></div>
+                        <div className="col-span-full text-center py-20 text-gray-500">
+                            <p className="text-lg">暂无游戏桌</p>
                         </div>
                     )}
                 </div>
