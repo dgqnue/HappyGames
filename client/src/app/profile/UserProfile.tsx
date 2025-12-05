@@ -261,6 +261,10 @@ export default function UserProfile() {
                                         src={profile.avatar || '/images/default-avatar.png'}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = '/images/default-avatar.png';
+                                        }}
                                     />
                                 </div>
                                 <label className="absolute bottom-0 right-0 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-amber-600 transition-colors shadow-lg transform group-hover:scale-110">
