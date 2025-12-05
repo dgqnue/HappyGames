@@ -364,15 +364,28 @@ router.put('/gender', async (req, res) => {
  */
 router.post('/avatar', upload.single('avatar'), async (req, res) => {
     try {
+        console.log('[Avatar Upload] 收到头像上传请求');
         if (!req.file) {
+            console.error('[Avatar Upload] 未接收到文件');
             return res.status(400).json({
                 success: false,
                 message: '请选择要上传的图片'
             });
         }
 
+        console.log('[Avatar Upload] 文件信息:', req.file);
+
         // 获取相对路径
         const avatarPath = `/uploads/avatars/${req.file.filename}`;
+        console.log('[Avatar Upload] 生成的相对路径:', avatarPath);
+
+        // 验证文件是否真实存在
+        const fullPath = req.file.path;
+        if (fs.existsSync(fullPath)) {
+            console.log('[Avatar Upload] 文件已成功写入磁盘:', fullPath);
+        } else {
+            console.error('[Avatar Upload] 警告：文件未找到于磁盘:', fullPath);
+        }
 
         // 更新用户头像
         const user = await User.findByIdAndUpdate(
@@ -381,9 +394,12 @@ router.post('/avatar', upload.single('avatar'), async (req, res) => {
             { new: true }
         ).select('-__v');
 
+        console.log('[Avatar Upload] 数据库更新成功, user.avatar:', user.avatar);
+
         // 转换头像为完整 URL
         const userData = user.toObject();
         userData.avatar = getFullAvatarUrl(userData.avatar);
+        console.log('[Avatar Upload] 返回给前端的完整 URL:', userData.avatar);
 
         res.json({
             success: true,
