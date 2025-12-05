@@ -161,22 +161,23 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         );
     };
 
-    const borderColor = isMyTable ? '#2563eb' : '#f59e0b'; // blue-600, amber-500
-    const borderWidth = '4px';
+    const borderColor = isMyTable ? '#60a5fa' : '#f59e0b'; // blue-400 (淡蓝), amber-500 (金色)
+    const borderWidth = '1px';
+    const componentHeight = '280px'; // 再降低一点高度
     
     return (
         <div 
-            className="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 relative overflow-hidden flex flex-col"
+            className="bg-white rounded-xl p-3 shadow-sm transition-all duration-300 relative overflow-hidden flex flex-col"
             style={{ 
-                height: '460px',
-                minHeight: '460px',
-                maxHeight: '460px',
+                height: componentHeight,
+                minHeight: componentHeight,
+                maxHeight: componentHeight,
                 borderWidth: borderWidth,
                 borderStyle: 'solid',
                 borderColor: borderColor,
                 boxShadow: isMyTable 
-                    ? '0 10px 25px -5px rgba(37, 99, 235, 0.3), 0 10px 10px -5px rgba(37, 99, 235, 0.2)'
-                    : '0 10px 25px -5px rgba(245, 158, 11, 0.3), 0 10px 10px -5px rgba(245, 158, 11, 0.2)'
+                    ? '0 1px 6px -1px rgba(96, 165, 250, 0.2), 0 1px 3px -1px rgba(96, 165, 250, 0.1)'
+                    : '0 1px 6px -1px rgba(245, 158, 11, 0.2), 0 1px 3px -1px rgba(245, 158, 11, 0.1)'
             }}
         >
             {/* 顶部：桌号 + 状态 */}
