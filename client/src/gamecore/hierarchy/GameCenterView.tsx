@@ -157,9 +157,8 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
                             </div>
                         ))
                     ) : (
-                        <div className="col-span-full text-center py-20 text-gray-400">
-                            <div className="text-6xl mb-4">📭</div>
-                            <p>暂无房间，请稍候...</p>
+                        <div className="col-span-full flex justify-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-600"></div>
                         </div>
                     )}
                 </div>
