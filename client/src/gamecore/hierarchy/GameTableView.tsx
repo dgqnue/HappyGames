@@ -254,8 +254,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             />
 
             {/* 顶部：桌号 + 状态 */}
-            <div className="flex justify-between items-start mb-6">
-                <h3 className="text-sm text-black font-normal">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-sm text-black font-normal pt-1">
                     游戏桌：{String(displayId).padStart(2, '0')}
                 </h3>
 
@@ -295,7 +295,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             </div>
 
             {/* 左下角玩家计数 */}
-            <div className="absolute left-4 bottom-4 flex items-center gap-1 text-sm text-black">
+            <div className="absolute left-4 bottom-2 flex items-center gap-1 text-sm text-black">
                 <span>👤</span>
                 <span>{playerCount}/{maxPlayers}</span>
             </div>

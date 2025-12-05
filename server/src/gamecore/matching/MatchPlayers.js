@@ -896,16 +896,29 @@ class MatchPlayers {
 
         const userId = socket.user._id.toString();
         this.matchState.setPlayerReady(userId, false);
-        this.matchState.cancelReadyCheck();
 
+        // 如果桌子满座且处于匹配中（准备倒计时），则保持倒计时，不取消
+        const isFullAndMatching = this.matchState.players.length === this.maxPlayers &&
+                                  this.matchState.status === MatchingRules.TABLE_STATUS.MATCHING;
+
+        // 取消游戏开始倒计时（如果存在）
         if (this.countdownTimer) {
             this.cancelGameCountdown();
         }
 
-        this.table.broadcast('ready_check_cancelled', {
-            reason: '玩家取消准备',
-            remainingPlayers: this.matchState.players.length
-        });
+        if (!isFullAndMatching) {
+            this.matchState.cancelReadyCheck();
+
+            this.table.broadcast('ready_check_cancelled', {
+                reason: '玩家取消准备',
+                remainingPlayers: this.matchState.players.length
+            });
+        } else {
+            // 桌子满座且处于匹配中，检查是否需要重新启动30秒倒计时
+            if (!this.matchState.readyTimer) {
+                this.startReadyCheck();
+            }
+        }
 
         this.table.broadcastRoomState();
     }
@@ -914,6 +927,12 @@ class MatchPlayers {
      * 开始准备检查（30秒倒计时）
      */
     startReadyCheck() {
+        // 清除之前的定时器（如果存在）
+        if (this.matchState.readyTimer) {
+            clearTimeout(this.matchState.readyTimer);
+            this.matchState.readyTimer = null;
+        }
+
         const result = this.matchState.startReadyCheck();
         if (!result) return;
 
@@ -964,6 +983,12 @@ class MatchPlayers {
      */
     startGameCountdown() {
         this.isLocked = true;
+
+        // 取消30秒准备倒计时，因为所有玩家已准备，即将开始游戏
+        if (this.matchState.readyTimer) {
+            clearTimeout(this.matchState.readyTimer);
+            this.matchState.readyTimer = null;
+        }
 
         this.table.broadcast('game_locked', {
             message: '所有玩家已就绪，游戏即将开始',
