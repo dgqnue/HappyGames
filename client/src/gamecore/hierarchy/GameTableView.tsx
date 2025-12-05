@@ -57,14 +57,14 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         // 这确保被踢出后isMyTable能正确变为false
         const handleRoomStateUpdate = () => {
             // 强制更新本地状态
-            const s = currentTableClient!.getState();
+            const s = currentTableClient.getState();
             setLocalState(s);
         };
         
         // 假设roomClient有状态更新回调，如果没有，我们可以使用轮询或事件
         // 这里我们使用一个简单的间隔检查，确保及时更新
         const interval = setInterval(() => {
-            const s = currentTableClient!.getState();
+            const s = currentTableClient.getState();
             // 如果tableClient状态显示没有桌子了，但isMyTable仍然为true，强制更新
             if (!s.tableId && isMyTable) {
                 handleRoomStateUpdate();
@@ -109,8 +109,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     const s = tableClient.getState();
                     setLocalState(s);
                     // 额外强制刷新游戏桌列表，确保其他玩家能看到
-                    if (roomClient.getState().currentRoom) {
-                        roomClient.getTableList(roomClient.getState().currentRoom.id);
+                    const roomState = roomClient.getState();
+                    if (roomState.currentRoom?.id) {
+                        roomClient.getTableList(roomState.currentRoom.id);
                     }
                 }, 0);
                 
