@@ -15,6 +15,23 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 调试日志
     console.log('[GameTableView] Rendering with table:', table);
     console.log('[GameTableView] Players:', table.players);
+    console.log('[GameTableView] Player details:');
+    if (table.players && table.players.length > 0) {
+        table.players.forEach((p: any, i: number) => {
+            console.log(`  Player ${i}:`, {
+                nickname: p.nickname,
+                username: p.username,
+                piUsername: p.piUsername,
+                title: p.title,
+                avatar: p.avatar,
+                titleColor: p.titleColor,
+                ready: p.ready,
+                isReady: p.isReady,
+                seatIndex: p.seatIndex,
+                user: p.user
+            });
+        });
+    }
     console.log('[GameTableView] isMyTable:', isMyTable);
     console.log('[GameTableView] table.tableId:', table.tableId);
     console.log('[GameTableView] roomClient selectedTableId:', roomClient.getState().selectedTableId);
@@ -33,11 +50,24 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const maxPlayers = table.maxPlayers || 2;
     const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
 
-    // 玩家信息 - 根据座位索引分配
-    const players = table.players || [];
-    // 左座玩家: seatIndex === 0, 右座玩家: seatIndex === 1
-    const leftPlayer = players.find((p: any) => p.seatIndex === 0) || null;
-    const rightPlayer = players.find((p: any) => p.seatIndex === 1) || null;
+    // 玩家信息 - 支持多种数据结构
+    // 数据源：优先使用playerList，其次使用players
+    const playerList = table.playerList || table.players || [];
+    // 检查是否有seatIndex字段
+    const hasSeatIndex = playerList.length > 0 && playerList[0].seatIndex !== undefined;
+    
+    let leftPlayer = null;
+    let rightPlayer = null;
+    
+    if (hasSeatIndex) {
+        // 按座位索引分配
+        leftPlayer = playerList.find((p: any) => p.seatIndex === 0) || null;
+        rightPlayer = playerList.find((p: any) => p.seatIndex === 1) || null;
+    } else {
+        // 按数组顺序：第一个玩家在左，第二个在右
+        leftPlayer = playerList[0] || null;
+        rightPlayer = playerList[1] || null;
+    }
     
     // 本地跟踪选中的桌子ID，确保被踢出后立即更新
     const [selectedTableId, setSelectedTableId] = useState(roomClient.getState().selectedTableId);
@@ -173,50 +203,68 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
     // 渲染玩家信息
     const renderPlayer = (player: any, position: 'left' | 'right') => {
-        const displayName = player ? (player.nickname || player.username || player.piUsername || '玩家') : '';
-        const displayTitle = player ? (player.title || '初出茅庐') : '';
-        const avatarUrl = player ? (player.avatar || '/images/default-avatar.png') : '/images/default-avatar.png';
-        const titleColor = player ? (player.titleColor || '#666') : '#666';
+        if (!player) {
+            // 无玩家时的占位符
+            return (
+                <div className="flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center h-[32px] mb-2">
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-base truncate max-w-[100px] text-center leading-tight text-transparent">
+                                {' '}
+                            </span>
+                            <span className="text-xs whitespace-nowrap leading-tight text-transparent">
+                                {' '}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="relative w-16 h-16">
+                        <div className="w-full h-full rounded-full border-2 border-amber-200 opacity-0"></div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 从不同层级获取玩家信息
+        const userObj = player.user || {};
+        const displayName = player.nickname || userObj.nickname || player.username || userObj.username || player.piUsername || userObj.piUsername || '玩家';
+        const displayTitle = player.title || '初出茅庐';
+        const avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
+        const titleColor = player.titleColor || '#666';
+        const isReady = player.ready || player.isReady || false;
 
         return (
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（分行显示在头像上方） */}
                 <div className="flex flex-col items-center justify-center h-[32px] mb-2">
-                <div className="flex flex-col items-center gap-0.5">
-                    <span className={`text-base truncate max-w-[100px] text-center leading-tight ${player ? 'text-gray-800' : 'text-transparent'}`}>
-                        {displayName || ''}
-                    </span>
-                    <span
-                        className={`text-xs whitespace-nowrap leading-tight ${player ? '' : 'text-transparent'}`}
-                        style={{ color: player ? titleColor : 'transparent' }}
-                    >
-                        {displayTitle || ''}
-                    </span>
-                </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
+                            {displayName}
+                        </span>
+                        <span
+                            className="text-xs whitespace-nowrap leading-tight"
+                            style={{ color: titleColor }}
+                        >
+                            {displayTitle}
+                        </span>
+                    </div>
                 </div>
 
                 {/* 头像 */}
                 <div className="relative w-16 h-16">
-                    {player ? (
-                        <>
-                            <Image
-                                src={avatarUrl}
-                                alt={displayName}
-                                fill
-                                className="rounded-full object-cover border-2 border-amber-200"
-                                onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = '/images/default-avatar.png';
-                                }}
-                            />
-                            {player.isReady && (
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                                    <span className="text-white text-xs">✓</span>
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        <div className="w-full h-full rounded-full border-2 border-amber-200 opacity-0"></div>
+                    <Image
+                        src={avatarUrl}
+                        alt={displayName}
+                        fill
+                        className="rounded-full object-cover border-2 border-amber-200"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/images/default-avatar.png';
+                        }}
+                    />
+                    {isReady && (
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                            <span className="text-white text-xs">✓</span>
+                        </div>
                     )}
                 </div>
             </div>
