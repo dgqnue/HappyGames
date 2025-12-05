@@ -143,9 +143,10 @@ export abstract class GameTableClient {
             });
         });
 
-        // 准备倒计时取消
+        // 准备倒计时取消 - 忽略，保持倒计时显示
         this.socket.on('ready_check_cancelled', (data: any) => {
-            this.updateState({ countdown: null });
+            console.log(`[${this.gameType}TableClient] Ready check cancelled ignored, keeping countdown`);
+            // 不更新状态，保持倒计时显示
         });
 
         // 游戏开始倒计时
@@ -188,7 +189,15 @@ export abstract class GameTableClient {
      * 处理状态更新
      */
     protected handleStateUpdate(data: any): void {
-        this.updateState(data);
+        // 如果尝试清除倒计时，但桌子已满座且当前有倒计时，则忽略清除操作
+        if (data.countdown === null && this.state.countdown && this.state.players.length === this.state.maxPlayers) {
+            console.log(`[${this.gameType}TableClient] Ignoring countdown clear because table is full`);
+            // 复制data但不包含countdown字段
+            const { countdown, ...restData } = data;
+            this.updateState(restData);
+        } else {
+            this.updateState(data);
+        }
     }
 
     /**
