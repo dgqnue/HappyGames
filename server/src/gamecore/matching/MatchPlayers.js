@@ -753,18 +753,35 @@ class MatchPlayers {
             ? (playerStats.disconnects / playerStats.gamesPlayed) * 100
             : 0;
 
+        // 获取最新的用户数据 (确保头像等信息是最新的)
+        const User = require('../../models/User');
+        const userDoc = await User.findById(socket.user._id);
+
+        // 处理头像 URL (转换为绝对路径)
+        let avatarUrl = userDoc?.avatar || socket.user.avatar;
+        if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:') && !avatarUrl.includes('default-avatar')) {
+            // 检查是否在 Render 环境中
+            if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+                const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
+                avatarUrl = `${baseUrl}${avatarUrl}`;
+            } else {
+                avatarUrl = `http://localhost:5000${avatarUrl}`;
+            }
+        }
+
         // 准备玩家数据
         const playerData = {
             userId,
             socketId: socket.id,
             user: {
                 _id: socket.user._id,
-                username: socket.user.username,
-                nickname: socket.user.nickname,
+                username: userDoc?.username || socket.user.username,
+                nickname: userDoc?.nickname || socket.user.nickname,
                 piUsername: socket.user.piUsername,
-                avatar: socket.user.avatar
+                avatar: avatarUrl
             },
-            nickname: socket.user.nickname || socket.user.username,
+            nickname: userDoc?.nickname || socket.user.nickname || socket.user.username,
+            avatar: avatarUrl, // 确保顶层也有 avatar 字段
             title: stats?.title || '初出茅庐',
             titleColor: stats?.titleColor || '#666',
             winRate: Math.round(winRate),
