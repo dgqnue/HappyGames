@@ -259,12 +259,12 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     游戏桌：{String(displayId).padStart(2, '0')}
                 </h3>
 
-                <div className={`px-3 py-1 rounded-full text-xs font-bold ${isPlaying ? 'bg-red-100 text-red-700' :
-                    isMatching ? 'bg-purple-100 text-purple-700' :
-                    (isWaiting || isMyTableLocal) ? 'bg-amber-100 text-amber-700' :
-                            'bg-green-100 text-green-700'
+                <div className={`px-3 py-1 rounded-full text-xs ${isPlaying ? 'text-red-500' :
+                    isMatching ? 'text-orange-500' :
+                    (isWaiting || isMyTableLocal) ? 'text-green-500' :
+                            'text-black'
                     }`}>
-            {isPlaying ? '游戏中' : isMatching ? '匹配中' : (isWaiting || isMyTableLocal) ? '等待中' : '空闲'}
+            {isPlaying ? '游戏' : isMatching ? '匹配' : (isWaiting || isMyTableLocal) ? '等待' : '空闲'}
                 </div>
             </div>
 
@@ -277,7 +277,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
             {isMyTableLocal && timeLeft !== null ? (
                         <div className="text-center animate-pulse">
-                            <p className="text-red-500 font-bold text-2xl">
+                            <p className="text-red-500 text-2xl">
                                 {timeLeft}
                             </p>
                             <p className="text-xs text-red-500 mt-1">
@@ -305,7 +305,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     <>
                         <button
                             onClick={handleLeave}
-                            className="px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm text-sm"
+                            className="px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm"
                         >
                             离开
                         </button>
@@ -313,7 +313,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         {/* 开始/就绪按钮 - 允许切换 */}
                         <button
                             onClick={handleReady}
-                            className={`px-6 py-2 rounded-lg font-bold transition-colors shadow-sm text-sm ${isReady
+                            className={`px-6 py-2 rounded-lg transition-colors shadow-sm text-sm ${isReady
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'bg-red-100 text-red-600 hover:bg-red-200'
                                 }`}
@@ -326,7 +326,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         <button
                             onClick={handleJoin}
                             disabled={hasSeatedAtOtherTable}
-                            className={`px-8 py-2 rounded-lg font-bold transition-all shadow-sm text-sm ${hasSeatedAtOtherTable
+                            className={`px-8 py-2 rounded-lg transition-all shadow-sm text-sm ${hasSeatedAtOtherTable
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg'
                                 }`}
@@ -334,7 +334,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             入座
                         </button>
                     ) : (
-                        <span className="text-gray-400 font-medium px-4 py-2 text-sm">
+                        <span className="text-gray-400 px-4 py-2 text-sm">
                             {isPlaying ? '观战' : '已满'}
                         </span>
                     )
