@@ -108,9 +108,16 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
     // 渲染玩家信息
     const renderPlayer = (player: any, position: 'left' | 'right') => {
-        // 无玩家时返回空白
+        // 无玩家时返回占位元素，保持高度一致
         if (!player) {
-            return <div className="w-24"></div>;
+            return (
+                <div className="flex flex-col items-center justify-center">
+                    {/* 占位：昵称+称号区域 */}
+                    <div className="h-6 mb-2"></div>
+                    {/* 占位：头像区域 */}
+                    <div className="w-16 h-16"></div>
+                </div>
+            );
         }
 
         const displayName = player.nickname || player.username || player.piUsername || '玩家';
