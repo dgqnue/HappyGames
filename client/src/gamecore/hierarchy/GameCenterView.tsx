@@ -139,8 +139,8 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
                     ) : centerState.rooms && centerState.rooms.length > 0 ? (
                         centerState.rooms.map((room: any) => (
                             <div
-                                key={room.roomId}
-                                onClick={() => centerClient.selectRoom(room.roomId)}
+                                key={room.id}
+                                onClick={() => centerClient.selectRoom(room.id)}
                                 className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all group relative overflow-hidden"
                             >
                                 {/* Room Icon & Status */}
