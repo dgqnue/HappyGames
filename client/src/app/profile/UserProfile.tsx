@@ -258,7 +258,7 @@ export default function UserProfile() {
                             <div className="relative group">
                                 <div className="w-24 h-24 bg-gradient-to-br from-amber-200 to-orange-200 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                                     <img
-                                        src={profile.avatar || 'https://happygames-tfdz.onrender.com/images/default-avatar.svg'}
+                                        src={profile.avatar || '/images/default-avatar.svg'}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
                                     />

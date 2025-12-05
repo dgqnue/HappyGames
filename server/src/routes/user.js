@@ -31,7 +31,16 @@ try {
 const getFullAvatarUrl = (avatarPath) => {
     if (!avatarPath || avatarPath.includes('default-avatar')) return DEFAULT_AVATAR_BASE64;
     if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
-    return `https://happygames-tfdz.onrender.com${avatarPath}`;
+
+    // 检查是否在 Render 环境中 (Render 会自动设置 RENDER 环境变量)
+    // 或者如果有明确的 API_BASE_URL 环境变量
+    if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+        const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
+        return `${baseUrl}${avatarPath}`;
+    }
+
+    // 本地开发环境
+    return `http://localhost:5000${avatarPath}`;
 };
 
 // ========== 公开路由 (无需认证) ==========
