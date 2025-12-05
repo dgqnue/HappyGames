@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { GameRoomClient } from './GameRoomClient';
 import Image from 'next/image';
 import SystemDialog from '@/components/SystemDialog';
@@ -48,6 +48,32 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 检查玩家是否已在其他桌子入座
     const hasSeatedAtOtherTable = !isMyTable && roomClient.getState().selectedTableId !== null;
 
+    // 监听roomClient状态变化，确保isMyTable正确更新
+    useEffect(() => {
+        const currentTableClient = tableClient;
+        if (!currentTableClient) return;
+        
+        // 当roomClient状态变化时，强制重新渲染组件
+        // 这确保被踢出后isMyTable能正确变为false
+        const handleRoomStateUpdate = () => {
+            // 强制更新本地状态
+            const s = currentTableClient!.getState();
+            setLocalState(s);
+        };
+        
+        // 假设roomClient有状态更新回调，如果没有，我们可以使用轮询或事件
+        // 这里我们使用一个简单的间隔检查，确保及时更新
+        const interval = setInterval(() => {
+            const s = currentTableClient!.getState();
+            // 如果tableClient状态显示没有桌子了，但isMyTable仍然为true，强制更新
+            if (!s.tableId && isMyTable) {
+                handleRoomStateUpdate();
+            }
+        }, 500);
+        
+        return () => clearInterval(interval);
+    }, [tableClient, isMyTable, roomClient]);
+
     // 同步 TableClient 状态
     useEffect(() => {
         if (tableClient) {
@@ -75,6 +101,19 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
             // 设置被踢出回调
             tableClient.setOnKickedCallback((data: any) => {
+                console.log('[GameTableView] Kicked callback triggered:', data);
+                // 清除房间客户端的选择，确保UI恢复到入座状态
+                roomClient.deselectTable();
+                // 强制触发一次状态更新，确保按钮状态刷新
+                setTimeout(() => {
+                    const s = tableClient.getState();
+                    setLocalState(s);
+                    // 额外强制刷新游戏桌列表，确保其他玩家能看到
+                    if (roomClient.getState().currentRoom) {
+                        roomClient.getTableList(roomClient.getState().currentRoom.id);
+                    }
+                }, 0);
+                
                 setDialogData({
                     title: '已被移出游戏桌',
                     message: `原因: ${data.reason}`,

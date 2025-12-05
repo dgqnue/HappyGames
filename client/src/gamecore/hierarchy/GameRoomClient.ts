@@ -223,10 +223,14 @@ export abstract class GameRoomClient {
 
         this.updateState({ selectedTableId: null });
 
-        // 刷新游戏桌列表
-        if (this.state.currentRoom) {
-            this.getTableList(this.state.currentRoom.id);
-        }
+        // 延迟刷新游戏桌列表，确保服务器已更新状态
+        setTimeout(() => {
+            if (this.state.currentRoom) {
+                this.getTableList(this.state.currentRoom.id);
+                // 额外触发一次房间更新，确保其他玩家看到正确状态
+                this.socket.emit(`${this.gameType}_refresh_room`, { roomId: this.state.currentRoom.id });
+            }
+        }, 200);
     }
 
     /**
