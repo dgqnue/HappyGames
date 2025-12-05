@@ -41,13 +41,13 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
     // 状态定义
     const status = table.status || 'idle';
-    const isIdle = status === 'idle';
-    const isWaiting = status === 'waiting';
-    const isMatching = status === 'matching';
-    const isPlaying = status === 'playing';
-
     const playerCount = table.playerCount || 0;
     const maxPlayers = table.maxPlayers || 2;
+    
+    const isIdle = status === 'idle';
+    const isWaiting = status === 'waiting';
+    const isMatching = status === 'matching' || (status === 'waiting' && playerCount === maxPlayers);
+    const isPlaying = status === 'playing';
     const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
 
     // 玩家信息 - 支持多种数据结构
