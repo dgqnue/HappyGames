@@ -30,11 +30,14 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let hasReceivedData = false;
+
         // 订阅状态更新
         centerClient.init((state) => {
             setCenterState(state);
-            // 当收到房间列表时，标记为加载完成
-            if (state.rooms && state.rooms.length >= 0) {
+            // 只在第一次收到数据时设置为加载完成
+            if (!hasReceivedData) {
+                hasReceivedData = true;
                 setIsLoading(false);
             }
         });
@@ -42,7 +45,13 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
         // 加入游戏中心
         centerClient.joinGameCenter();
 
+        // 设置超时，最多加载3秒
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+        }, 3000);
+
         return () => {
+            clearTimeout(timeout);
             centerClient.leaveGameCenter();
         };
     }, [centerClient]);

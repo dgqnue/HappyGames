@@ -15,17 +15,29 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let hasReceivedData = false;
+
         // 订阅状态更新
         roomClient.init((state) => {
             setRoomState(state);
-            // 当收到游戏桌列表时，标记为加载完成
-            if (state.tables && state.tables.length >= 0) {
+            // 只在第一次收到数据时设置为加载完成
+            if (!hasReceivedData) {
+                hasReceivedData = true;
                 setIsLoading(false);
             }
         });
 
         // 获取初始状态
         setRoomState(roomClient.getState());
+
+        // 设置超时，最多加载3秒
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+        }, 3000);
+
+        return () => {
+            clearTimeout(timeout);
+        };
     }, [roomClient]);
 
     // 检查是否正在游戏中（已入座且游戏已开始）
