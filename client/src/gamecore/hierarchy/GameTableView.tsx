@@ -117,7 +117,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 
                 setDialogData({
                     title: '已被移出游戏桌',
-                    message: `原因: ${data.reason}`,
+                    message: '已被移出游戏桌\n原因: 未在规定时间内开始游戏',
                     type: 'warning'
                 });
                 setDialogOpen(true);
@@ -280,8 +280,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             <p className="text-red-500 font-bold text-2xl">
                                 {timeLeft}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                {localState.countdown?.message || '倒计时'}
+                            <p className="text-xs text-red-500 mt-1">
+                                请在30秒内开始游戏
                             </p>
                         </div>
                     ) : (
