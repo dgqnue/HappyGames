@@ -112,8 +112,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         if (!player) {
             return (
                 <div className="flex flex-col items-center justify-center">
-                    {/* 占位：昵称+称号区域 */}
-                    <div className="h-6 mb-2"></div>
+                    {/* 占位：昵称+称号区域 (调整高度以匹配两行文本) */}
+                    <div className="h-10 mb-2"></div>
                     {/* 占位：头像区域 */}
                     <div className="w-16 h-16"></div>
                 </div>
@@ -126,13 +126,13 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
         return (
             <div className="flex flex-col items-center justify-center">
-                {/* 昵称 + 称号（并排显示在头像上方） */}
-                <div className="flex items-center gap-1 mb-2">
-                    <span className="text-sm font-medium text-gray-800 truncate max-w-[100px]">
+                {/* 昵称 + 称号（分行显示在头像上方） */}
+                <div className="flex flex-col items-center gap-0.5 mb-2">
+                    <span className="text-sm font-medium text-gray-800 truncate max-w-[100px] text-center leading-tight">
                         {displayName}
                     </span>
                     <span
-                        className="text-xs font-bold whitespace-nowrap"
+                        className="text-[10px] font-bold whitespace-nowrap leading-tight"
                         style={{ color: player.titleColor || '#666' }}
                     >
                         {displayTitle}
