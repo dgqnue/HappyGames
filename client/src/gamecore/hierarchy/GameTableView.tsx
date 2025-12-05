@@ -119,13 +119,13 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 <div className="flex flex-col items-center justify-center h-[32px] mb-2">
                     <div className="flex flex-col items-center gap-0.5">
                         <span className={`text-[10px] font-medium truncate max-w-[100px] text-center leading-tight ${player ? 'text-gray-800' : 'text-transparent'}`}>
-                            {displayName || '占位'}
+                            {displayName || ''}
                         </span>
                         <span
                             className={`text-sm font-medium whitespace-nowrap leading-tight ${player ? '' : 'text-transparent'}`}
                             style={{ color: player ? titleColor : 'transparent' }}
                         >
-                            {displayTitle || '占位'}
+                            {displayTitle || ''}
                         </span>
                     </div>
                 </div>
@@ -159,7 +159,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     };
 
     return (
-        <div className={`bg-white rounded-2xl p-6 shadow-lg transition-all relative overflow-hidden flex flex-col h-[320px] ${isMyTable ? 'border-2 border-sky-300' : 'border-2 border-amber-400'
+        <div className={`bg-white rounded-2xl p-6 shadow-lg transition-all relative overflow-hidden flex flex-col h-[460px] ${isMyTable ? 'border-4 border-blue-600 shadow-lg shadow-blue-300' : 'border-4 border-amber-500 shadow-lg shadow-amber-300'
             }`}>
             {/* 顶部：桌号 + 状态 */}
             <div className="flex justify-between items-start mb-6">
