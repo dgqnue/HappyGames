@@ -15,6 +15,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 调试日志
     console.log('[GameTableView] Rendering with table:', table);
     console.log('[GameTableView] Players:', table.players);
+    console.log('[GameTableView] PlayerList:', table.playerList);
     console.log('[GameTableView] Player details:');
     if (table.players && table.players.length > 0) {
         table.players.forEach((p: any, i: number) => {
@@ -29,6 +30,20 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 isReady: p.isReady,
                 seatIndex: p.seatIndex,
                 user: p.user
+            });
+        });
+    }
+    if (table.playerList && table.playerList.length > 0) {
+        console.log('[GameTableView] PlayerList details:');
+        table.playerList.forEach((p: any, i: number) => {
+            console.log(`  PlayerList ${i}:`, {
+                nickname: p.nickname,
+                title: p.title,
+                winRate: p.winRate,
+                disconnectRate: p.disconnectRate,
+                ready: p.ready,
+                wantsRematch: p.wantsRematch,
+                seatIndex: p.seatIndex
             });
         });
     }
@@ -53,20 +68,50 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 玩家信息 - 支持多种数据结构
     // 数据源：优先使用playerList，其次使用players
     const playerList = table.playerList || table.players || [];
-    // 检查是否有seatIndex字段
-    const hasSeatIndex = playerList.length > 0 && playerList[0].seatIndex !== undefined;
+    
+    // 检查是否有seatIndex字段：检查所有玩家，确保至少有一个玩家有seatIndex字段
+    const hasSeatIndex = playerList.length > 0 && playerList.some((p: any) => p.seatIndex !== undefined);
     
     let leftPlayer = null;
     let rightPlayer = null;
     
     if (hasSeatIndex) {
-        // 按座位索引分配
+        // 按座位索引分配：座位0显示在左，座位1显示在右
+        // 支持更多座位，但当前UI只显示左右两个位置
         leftPlayer = playerList.find((p: any) => p.seatIndex === 0) || null;
         rightPlayer = playerList.find((p: any) => p.seatIndex === 1) || null;
+        
+        console.log('[GameTableView] Seat-based allocation:', {
+            hasSeatIndex,
+            leftPlayer: leftPlayer ? { nickname: leftPlayer.nickname, seatIndex: leftPlayer.seatIndex } : null,
+            rightPlayer: rightPlayer ? { nickname: rightPlayer.nickname, seatIndex: rightPlayer.seatIndex } : null,
+            playerList: playerList.map((p: any) => ({ 
+                nickname: p.nickname, 
+                seatIndex: p.seatIndex,
+                hasSeatIndex: p.seatIndex !== undefined 
+            }))
+        });
+        
+        // 调试：如果只有一个玩家，检查其座位索引
+        if (playerList.length === 1) {
+            const singlePlayer = playerList[0];
+            console.log('[GameTableView] Single player with seatIndex:', {
+                nickname: singlePlayer.nickname,
+                seatIndex: singlePlayer.seatIndex,
+                shouldDisplayLeft: singlePlayer.seatIndex === 0,
+                shouldDisplayRight: singlePlayer.seatIndex === 1
+            });
+        }
     } else {
-        // 按数组顺序：第一个玩家在左，第二个在右
+        // 按数组顺序：第一个玩家在左，第二个在右（兼容旧逻辑）
         leftPlayer = playerList[0] || null;
         rightPlayer = playerList[1] || null;
+        console.log('[GameTableView] Array-order allocation (no seatIndex):', {
+            hasSeatIndex,
+            leftPlayer: leftPlayer ? { nickname: leftPlayer.nickname } : null,
+            rightPlayer: rightPlayer ? { nickname: rightPlayer.nickname } : null,
+            playerListLength: playerList.length
+        });
     }
     
     // 本地跟踪选中的桌子ID，确保被踢出后立即更新
