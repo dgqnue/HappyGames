@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { piAuth } = require('../middleware/auth');
+const { piAuth } = require('../gamecore/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
