@@ -56,6 +56,9 @@ export abstract class GameTableClient {
     protected gameType: string;
     protected state: GameTableState;
     protected onStateUpdate: ((state: GameTableState) => void) | null = null;
+    
+    // 被踢出回调
+    protected onKicked: ((data: any) => void) | null = null;
 
     // 对局客户端（游戏开始后创建）
     protected matchClient: GameMatchClient | null = null;
@@ -78,6 +81,13 @@ export abstract class GameTableClient {
             isReady: false,
             canStart: false
         };
+    }
+    
+    /**
+     * 设置被踢出回调
+     */
+    public setOnKickedCallback(callback: (data: any) => void): void {
+        this.onKicked = callback;
     }
 
     /**
@@ -157,7 +167,12 @@ export abstract class GameTableClient {
         this.socket.on('kicked', (data: any) => {
             console.warn(`[${this.gameType}TableClient] Kicked:`, data);
             this.leaveTable(); // 清理本地状态
-            alert(`您已被移出游戏桌: ${data.reason}`);
+            if (this.onKicked) {
+                this.onKicked(data);
+            } else {
+                // 如果没有设置回调，使用默认的alert
+                alert(`您已被移出游戏桌: ${data.reason}`);
+            }
         });
     }
 

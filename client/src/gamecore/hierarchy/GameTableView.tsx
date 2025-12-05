@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { GameRoomClient } from './GameRoomClient';
 import Image from 'next/image';
+import SystemDialog from '@/components/SystemDialog';
 
 interface GameTableViewProps {
     table: any;
@@ -41,6 +42,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const tableClient = isMyTable ? roomClient.getTableClient() : null;
     const [localState, setLocalState] = useState<any>({});
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogData, setDialogData] = useState<any>(null);
 
     // 检查玩家是否已在其他桌子入座
     const hasSeatedAtOtherTable = !isMyTable && roomClient.getState().selectedTableId !== null;
@@ -70,6 +73,16 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             updateState(tableClient.getState());
             tableClient.init(updateState);
 
+            // 设置被踢出回调
+            tableClient.setOnKickedCallback((data: any) => {
+                setDialogData({
+                    title: '已被移出游戏桌',
+                    message: `原因: ${data.reason}`,
+                    type: 'warning'
+                });
+                setDialogOpen(true);
+            });
+
             // 倒计时定时器
             const timer = setInterval(() => {
                 const s = tableClient.getState();
@@ -80,7 +93,11 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 }
             }, 1000);
 
-            return () => clearInterval(timer);
+            return () => {
+                clearInterval(timer);
+                // 清理回调
+                tableClient.setOnKickedCallback(() => {});
+            };
         }
     }, [tableClient]);
 
@@ -107,6 +124,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             tableClient.leaveTable();
             roomClient.deselectTable();
         }
+    };
+
+    const handleDialogClose = () => {
+        setDialogOpen(false);
     };
 
     // 渲染玩家信息
@@ -180,6 +201,18 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     : '0 1px 6px -1px rgba(245, 158, 11, 0.2), 0 1px 3px -1px rgba(245, 158, 11, 0.1)'
             }}
         >
+            {/* 对话框组件 */}
+            <SystemDialog
+                isOpen={dialogOpen}
+                onClose={handleDialogClose}
+                title={dialogData?.title || ''}
+                message={dialogData?.message || ''}
+                type={dialogData?.type || 'warning'}
+                confirmText="知道了"
+                onConfirm={handleDialogClose}
+                showCancel={false}
+            />
+
             {/* 顶部：桌号 + 状态 */}
             <div className="flex justify-between items-start mb-6">
                 <h3 className="text-sm text-gray-600">
