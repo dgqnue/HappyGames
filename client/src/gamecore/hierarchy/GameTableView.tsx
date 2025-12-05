@@ -113,7 +113,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             return (
                 <div className="flex flex-col items-center justify-center">
                     {/* 占位：昵称+称号区域 (调整高度以匹配两行文本) */}
-                    <div className="h-10 mb-2"></div>
+                    <div className="h-[32px] mb-2"></div>
                     {/* 占位：头像区域 */}
                     <div className="w-16 h-16"></div>
                 </div>
@@ -127,16 +127,18 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         return (
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（分行显示在头像上方） */}
-                <div className="flex flex-col items-center gap-0.5 mb-2">
-                    <span className="text-[10px] font-medium text-gray-800 truncate max-w-[100px] text-center leading-tight">
-                        {displayName}
-                    </span>
-                    <span
-                        className="text-sm font-medium whitespace-nowrap leading-tight"
-                        style={{ color: player.titleColor || '#666' }}
-                    >
-                        {displayTitle}
-                    </span>
+                <div className="flex flex-col items-center justify-center h-[32px] mb-2">
+                    <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-[10px] font-medium text-gray-800 truncate max-w-[100px] text-center leading-tight">
+                            {displayName}
+                        </span>
+                        <span
+                            className="text-sm font-medium whitespace-nowrap leading-tight"
+                            style={{ color: player.titleColor || '#666' }}
+                        >
+                            {displayTitle}
+                        </span>
+                    </div>
                 </div>
 
                 {/* 头像 */}
@@ -185,7 +187,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 {renderPlayer(player1, 'left')}
 
                 {/* 中间：VS 或倒计时 */}
-                <div className="flex flex-col items-center justify-center mx-4">
+                <div className="flex flex-col items-center justify-center mx-4 h-16">
                     {isMyTable && timeLeft !== null ? (
                         <div className="text-center animate-pulse">
                             <p className="text-red-500 font-bold text-2xl">
@@ -195,7 +197,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                                 {localState.countdown?.message || '倒计时'}
                             </p>
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className="invisible h-full w-full"></div>
+                    )}
                 </div>
 
                 {/* 右侧玩家 */}
