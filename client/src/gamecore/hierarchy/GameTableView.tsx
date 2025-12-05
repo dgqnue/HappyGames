@@ -128,11 +128,11 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（分行显示在头像上方） */}
                 <div className="flex flex-col items-center gap-0.5 mb-2">
-                    <span className="text-sm font-medium text-gray-800 truncate max-w-[100px] text-center leading-tight">
+                    <span className="text-[10px] font-medium text-gray-800 truncate max-w-[100px] text-center leading-tight">
                         {displayName}
                     </span>
                     <span
-                        className="text-[10px] font-bold whitespace-nowrap leading-tight"
+                        className="text-sm font-medium whitespace-nowrap leading-tight"
                         style={{ color: player.titleColor || '#666' }}
                     >
                         {displayTitle}
