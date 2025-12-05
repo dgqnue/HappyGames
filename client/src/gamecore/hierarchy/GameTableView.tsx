@@ -255,16 +255,17 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
             {/* 顶部：桌号 + 状态 */}
             <div className="flex justify-between items-start mb-6">
-                <h3 className="text-sm text-gray-600">
+                <h3 className="text-sm text-gray-600 font-normal">
                     游戏桌：{String(displayId).padStart(2, '0')}
                 </h3>
 
-                <div className={`px-3 py-1 rounded-full text-xs ${isPlaying ? 'text-red-500' :
+                <div className={`px-3 py-1 rounded-full text-sm font-normal ${isPlaying ? 'text-red-500' :
                     isMatching ? 'text-orange-500' :
-                    (isWaiting || isMyTableLocal) ? 'text-green-500' :
-                            'text-black'
+                    isWaiting ? 'text-green-500' :
+                    isMyTableLocal ? 'text-green-500' :
+                    'text-black'
                     }`}>
-            {isPlaying ? '游戏' : isMatching ? '匹配' : (isWaiting || isMyTableLocal) ? '等待' : '空闲'}
+            {isPlaying ? '游戏' : isMatching ? '匹配' : isWaiting ? '等待' : isMyTableLocal ? '等待' : '空闲'}
                 </div>
             </div>
 
@@ -294,7 +295,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             </div>
 
             {/* 左下角玩家计数 */}
-            <div className="absolute left-4 bottom-4 flex items-center gap-1 text-xs text-gray-600">
+            <div className="absolute left-4 bottom-4 flex items-center gap-1 text-sm text-gray-600">
                 <span>👤</span>
                 <span>{playerCount}/{maxPlayers}</span>
             </div>
