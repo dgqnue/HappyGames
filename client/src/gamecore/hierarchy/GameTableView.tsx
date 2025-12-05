@@ -14,6 +14,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 调试日志
     console.log('[GameTableView] Rendering with table:', table);
     console.log('[GameTableView] Players:', table.players);
+    console.log('[GameTableView] isMyTable:', isMyTable);
+    console.log('[GameTableView] table.tableId:', table.tableId);
+    console.log('[GameTableView] roomClient selectedTableId:', roomClient.getState().selectedTableId);
 
     // 提取纯数字桌号 (例如 "beginner_1" -> "1")
     const displayId = table.tableId.split('_').pop();
@@ -158,9 +161,24 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         );
     };
 
+    const borderColor = isMyTable ? '#2563eb' : '#f59e0b'; // blue-600, amber-500
+    const borderWidth = '4px';
+    
     return (
-        <div className={`bg-white rounded-2xl p-6 shadow-lg transition-all relative overflow-hidden flex flex-col h-[460px] ${isMyTable ? 'border-4 border-blue-600 shadow-lg shadow-blue-300' : 'border-4 border-amber-500 shadow-lg shadow-amber-300'
-            }`}>
+        <div 
+            className="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 relative overflow-hidden flex flex-col"
+            style={{ 
+                height: '460px',
+                minHeight: '460px',
+                maxHeight: '460px',
+                borderWidth: borderWidth,
+                borderStyle: 'solid',
+                borderColor: borderColor,
+                boxShadow: isMyTable 
+                    ? '0 10px 25px -5px rgba(37, 99, 235, 0.3), 0 10px 10px -5px rgba(37, 99, 235, 0.2)'
+                    : '0 10px 25px -5px rgba(245, 158, 11, 0.3), 0 10px 10px -5px rgba(245, 158, 11, 0.2)'
+            }}
+        >
             {/* 顶部：桌号 + 状态 */}
             <div className="flex justify-between items-start mb-6">
                 <h3 className="text-sm text-gray-600">
