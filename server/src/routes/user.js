@@ -29,7 +29,7 @@ try {
 
 // 辅助函数：将相对路径的头像转换为完整 URL
 const getFullAvatarUrl = (avatarPath) => {
-    if (!avatarPath || avatarPath.includes('default-avatar')) return DEFAULT_AVATAR_BASE64;
+    if (!avatarPath || avatarPath.includes('default-avatar')) return '/images/default-avatar.png';
     if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
 
     // 检查是否在 Render 环境中 (Render 会自动设置 RENDER 环境变量)
@@ -91,7 +91,7 @@ router.post('/register', async (req, res) => {
             password: hashedPassword,
             nickname: username, // 默认昵称
             gender: Math.random() > 0.5 ? 'male' : 'female', // 随机性别
-            avatar: '/images/default-avatar.svg'
+            avatar: '/images/default-avatar.png'
         });
 
         await newUser.save();

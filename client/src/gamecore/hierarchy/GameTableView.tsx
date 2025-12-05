@@ -122,7 +122,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
         const displayName = player.nickname || player.username || player.piUsername || '玩家';
         const displayTitle = player.title || '初出茅庐';
-        const avatarUrl = player.avatar || '/images/default-avatar.svg';
+        const avatarUrl = player.avatar || '/images/default-avatar.png';
 
         return (
             <div className="flex flex-col items-center justify-center">
@@ -148,7 +148,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         className="rounded-full object-cover border-2 border-amber-200"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = '/images/default-avatar.svg';
+                            target.src = '/images/default-avatar.png';
                         }}
                     />
                     {player.isReady && (

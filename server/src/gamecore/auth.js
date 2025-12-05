@@ -4,7 +4,7 @@ const User = require('../models/User');
 // 辅助函数：处理头像 URL
 const processAvatarUrl = (avatarPath) => {
     // 如果是默认头像路径，返回前端本地路径
-    if (!avatarPath || avatarPath.includes('default-avatar')) return '/images/default-avatar.svg';
+    if (!avatarPath || avatarPath.includes('default-avatar')) return '/images/default-avatar.png';
 
     // 如果已经是绝对路径或 Base64，直接返回
     if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
