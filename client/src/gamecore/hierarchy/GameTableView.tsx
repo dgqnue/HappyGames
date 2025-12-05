@@ -33,10 +33,11 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const maxPlayers = table.maxPlayers || 2;
     const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
 
-    // 玩家信息
+    // 玩家信息 - 根据座位索引分配
     const players = table.players || [];
-    const player1 = players[0] || null;
-    const player2 = players[1] || null;
+    // 左座玩家: seatIndex === 0, 右座玩家: seatIndex === 1
+    const leftPlayer = players.find((p: any) => p.seatIndex === 0) || null;
+    const rightPlayer = players.find((p: any) => p.seatIndex === 1) || null;
     
     // 本地跟踪选中的桌子ID，确保被踢出后立即更新
     const [selectedTableId, setSelectedTableId] = useState(roomClient.getState().selectedTableId);
@@ -272,7 +273,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             {/* 中间：玩家区域 */}
             <div className="flex-1 flex items-center justify-between mb-6 px-4">
                 {/* 左侧玩家 */}
-                {renderPlayer(player1, 'left')}
+                {renderPlayer(leftPlayer, 'left')}
 
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
@@ -291,11 +292,11 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 </div>
 
                 {/* 右侧玩家 */}
-                {renderPlayer(player2, 'right')}
+                {renderPlayer(rightPlayer, 'right')}
             </div>
 
             {/* 左下角玩家计数 */}
-            <div className="absolute left-4 bottom-2 flex items-center gap-1 text-sm text-black">
+            <div className="absolute left-4 bottom-4 flex items-center gap-1 text-sm text-black">
                 <span>👤</span>
                 <span>{playerCount}/{maxPlayers}</span>
             </div>

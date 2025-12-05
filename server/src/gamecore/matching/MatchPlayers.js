@@ -500,11 +500,16 @@ class MatchRoomState {
             return { success: false, error: '已在房间中' };
         }
 
-        this.players.push({
+        // 分配座位索引：0表示左座，1表示右座
+        const seatIndex = this.players.length === 0 ? 0 : 1;
+        const playerWithSeat = {
             ...playerData,
             ready: false,
-            joinedAt: Date.now()
-        });
+            joinedAt: Date.now(),
+            seatIndex: seatIndex
+        };
+
+        this.players.push(playerWithSeat);
 
         const newState = MatchingRules.getStateAfterPlayerJoin(this.players.length, this.maxPlayers);
         if (newState) {
@@ -519,7 +524,7 @@ class MatchRoomState {
             }
         }
 
-        return { success: true };
+        return { success: true, seatIndex };
     }
 
     removePlayer(userId) {
@@ -639,7 +644,8 @@ class MatchRoomState {
                 winRate: p.winRate,
                 disconnectRate: p.disconnectRate,
                 ready: p.ready,
-                wantsRematch: this.rematchRequests.has(p.userId)
+                wantsRematch: this.rematchRequests.has(p.userId),
+                seatIndex: p.seatIndex
             }))
         };
     }
