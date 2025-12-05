@@ -76,6 +76,11 @@ class GameRoom {
                 return;
             }
 
+            // 加入广播房间，以便接收桌子列表更新
+            const broadcastRoom = `${gameType}_${this.id}`;
+            socket.join(broadcastRoom);
+            console.log(`[GameRoom] Socket ${socket.id} joined broadcast room: ${broadcastRoom}`);
+
             // 返回游戏桌列表
             const tableList = this.getTableList ? this.getTableList() : [];
             socket.emit('table_list', tableList);

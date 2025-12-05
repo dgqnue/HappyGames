@@ -757,12 +757,20 @@ class MatchPlayers {
         const playerData = {
             userId,
             socketId: socket.id,
+            user: {
+                _id: socket.user._id,
+                username: socket.user.username,
+                nickname: socket.user.nickname,
+                piUsername: socket.user.piUsername,
+                avatar: socket.user.avatar
+            },
             nickname: socket.user.nickname || socket.user.username,
             title: stats?.title || '初出茅庐',
-            titleColor: stats?.titleColor || '#000',
+            titleColor: stats?.titleColor || '#666',
             winRate: Math.round(winRate),
             disconnectRate: Math.round(disconnectRate),
-            matchSettings: matchSettings
+            matchSettings: matchSettings,
+            isReady: false
         };
 
         // 尝试入座

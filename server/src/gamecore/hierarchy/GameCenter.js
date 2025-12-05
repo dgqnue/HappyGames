@@ -82,7 +82,7 @@ class GameCenter {
         const gameRoom = this.gameRooms.get(roomType);
         if (gameRoom) {
             const broadcastRoom = `${this.gameType}_${roomType}`;
-            this.io.to(broadcastRoom).emit('room_list', gameRoom.getTableList());
+            this.io.to(broadcastRoom).emit('table_list', gameRoom.getTableList());
         }
     }
 

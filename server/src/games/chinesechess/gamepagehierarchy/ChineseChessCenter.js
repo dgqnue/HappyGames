@@ -167,7 +167,7 @@ class ChineseChessCenter extends GameCenter {
         const broadcastRoom = `${this.gameType}_${roomType}`;
         socket.join(broadcastRoom);
 
-        socket.emit('room_list', gameRoom.getTableList());
+        socket.emit('table_list', gameRoom.getTableList());
     }
 
     /**

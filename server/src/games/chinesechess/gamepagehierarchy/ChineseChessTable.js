@@ -332,11 +332,11 @@ class ChineseChessTable extends GameTable {
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
 
-        // 这里的逻辑可能需要调整：
-        // 原始 MatchableGameTable 中，broadcastRoomState 似乎也用于更新大厅列表？
-        // 不，大厅列表是通过 GameRoom.getTableList() 获取的。
-        // GameRoom.getTableList() 使用 table.status, table.players.length 等属性。
-        // 因为我们委托了 getter，所以 GameRoom 应该能获取到正确的数据。
+        // 通知 GameCenter 广播更新的桌子列表到房间
+        // 这样房间中的其他玩家可以看到桌子状态的变化
+        if (this.gameCenter) {
+            this.gameCenter.broadcastRoomList(this.tier);
+        }
     }
 
     /**

@@ -121,13 +121,26 @@ class ChineseChessRoom extends GameRoom {
      * @returns {Array} 桌子列表
      */
     getTableList() {
-        return this.tables.map(table => ({
+        const tableList = this.tables.map(table => ({
             tableId: table.tableId,
             status: table.status,
             playerCount: table.players.length,
             spectators: table.spectators.length,
-            maxPlayers: table.maxPlayers
+            maxPlayers: table.maxPlayers,
+            players: table.players.map(p => ({
+                userId: p.user?._id?.toString(),
+                username: p.user?.username,
+                nickname: p.user?.nickname,
+                piUsername: p.user?.piUsername,
+                avatar: p.user?.avatar,
+                title: p.title || '初出茅庐',
+                titleColor: p.titleColor || '#666',
+                isReady: p.isReady || false
+            }))
         }));
+
+        console.log('[ChineseChessRoom] getTableList returning:', JSON.stringify(tableList, null, 2));
+        return tableList;
     }
 
     /**
