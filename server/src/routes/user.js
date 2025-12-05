@@ -286,10 +286,10 @@ router.put('/nickname', async (req, res) => {
             });
         }
 
-        if (nickname.length > 20) {
+        if (nickname.length > 14) {
             return res.status(400).json({
                 success: false,
-                message: '昵称长度不能超过20个字符'
+                message: '昵称长度不能超过14个字符'
             });
         }
 

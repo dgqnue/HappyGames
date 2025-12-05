@@ -540,11 +540,11 @@ export default function UserProfile() {
                             onChange={(e) => setEditNickname(e.target.value)}
                             className="w-full p-3 border border-gray-200 rounded-xl mb-4 focus:ring-2 focus:ring-amber-500 outline-none transition-shadow"
                             placeholder="输入新昵称"
-                            maxLength={20}
+                            maxLength={14}
                             autoFocus
                         />
                         <p className="text-sm text-gray-500 mb-6 bg-gray-50 p-3 rounded-lg">
-                            💡 昵称不能与其他用户重复，最多20个字符。
+                            💡 昵称不能与其他用户重复，最多14个字符。
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button

@@ -128,7 +128,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（并排显示在头像上方） */}
                 <div className="flex items-center gap-1 mb-2">
-                    <span className="text-sm font-medium text-gray-800 truncate max-w-[80px]">
+                    <span className="text-sm font-medium text-gray-800 truncate max-w-[100px]">
                         {displayName}
                     </span>
                     <span
@@ -171,9 +171,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 </h3>
 
                 <div className={`px-3 py-1 rounded-full text-xs font-bold ${isPlaying ? 'bg-red-100 text-red-700' :
-                        isMatching ? 'bg-purple-100 text-purple-700' :
-                            (isWaiting || isMyTable) ? 'bg-amber-100 text-amber-700' :
-                                'bg-green-100 text-green-700'
+                    isMatching ? 'bg-purple-100 text-purple-700' :
+                        (isWaiting || isMyTable) ? 'bg-amber-100 text-amber-700' :
+                            'bg-green-100 text-green-700'
                     }`}>
                     {isPlaying ? '游戏中' : isMatching ? '匹配中' : (isWaiting || isMyTable) ? '等待中' : '空闲'}
                 </div>
@@ -219,8 +219,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         <button
                             onClick={handleReady}
                             className={`px-6 py-2 rounded-lg font-bold transition-colors shadow-sm text-sm ${isReady
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-red-100 text-red-600 hover:bg-red-200'
                                 }`}
                         >
                             {isReady ? '就绪' : '开始'}
@@ -232,8 +232,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             onClick={handleJoin}
                             disabled={hasSeatedAtOtherTable}
                             className={`px-8 py-2 rounded-lg font-bold transition-all shadow-sm text-sm ${hasSeatedAtOtherTable
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg'
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg'
                                 }`}
                         >
                             入座
