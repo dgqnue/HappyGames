@@ -108,55 +108,50 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
     // 渲染玩家信息
     const renderPlayer = (player: any, position: 'left' | 'right') => {
-        // 无玩家时返回占位元素，保持高度一致
-        if (!player) {
-            return (
-                <div className="flex flex-col items-center justify-center">
-                    {/* 占位：昵称+称号区域 (调整高度以匹配两行文本) */}
-                    <div className="h-[32px] mb-2"></div>
-                    {/* 占位：头像区域 */}
-                    <div className="w-16 h-16"></div>
-                </div>
-            );
-        }
-
-        const displayName = player.nickname || player.username || player.piUsername || '玩家';
-        const displayTitle = player.title || '初出茅庐';
-        const avatarUrl = player.avatar || '/images/default-avatar.png';
+        const displayName = player ? (player.nickname || player.username || player.piUsername || '玩家') : '';
+        const displayTitle = player ? (player.title || '初出茅庐') : '';
+        const avatarUrl = player ? (player.avatar || '/images/default-avatar.png') : '/images/default-avatar.png';
+        const titleColor = player ? (player.titleColor || '#666') : '#666';
 
         return (
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（分行显示在头像上方） */}
                 <div className="flex flex-col items-center justify-center h-[32px] mb-2">
                     <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-[10px] font-medium text-gray-800 truncate max-w-[100px] text-center leading-tight">
-                            {displayName}
+                        <span className={`text-[10px] font-medium truncate max-w-[100px] text-center leading-tight ${player ? 'text-gray-800' : 'text-transparent'}`}>
+                            {displayName || '占位'}
                         </span>
                         <span
-                            className="text-sm font-medium whitespace-nowrap leading-tight"
-                            style={{ color: player.titleColor || '#666' }}
+                            className={`text-sm font-medium whitespace-nowrap leading-tight ${player ? '' : 'text-transparent'}`}
+                            style={{ color: player ? titleColor : 'transparent' }}
                         >
-                            {displayTitle}
+                            {displayTitle || '占位'}
                         </span>
                     </div>
                 </div>
 
                 {/* 头像 */}
                 <div className="relative w-16 h-16">
-                    <Image
-                        src={avatarUrl}
-                        alt={displayName}
-                        fill
-                        className="rounded-full object-cover border-2 border-amber-200"
-                        onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/images/default-avatar.png';
-                        }}
-                    />
-                    {player.isReady && (
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                            <span className="text-white text-xs">✓</span>
-                        </div>
+                    {player ? (
+                        <>
+                            <Image
+                                src={avatarUrl}
+                                alt={displayName}
+                                fill
+                                className="rounded-full object-cover border-2 border-amber-200"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = '/images/default-avatar.png';
+                                }}
+                            />
+                            {player.isReady && (
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                                    <span className="text-white text-xs">✓</span>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="w-full h-full rounded-full border-2 border-amber-200 opacity-0"></div>
                     )}
                 </div>
             </div>
@@ -164,7 +159,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     };
 
     return (
-        <div className={`bg-white rounded-2xl p-6 shadow-lg transition-all relative overflow-hidden flex flex-col h-[320px] ${isMyTable ? 'border-2 border-amber-400' : 'border-2 border-amber-100'
+        <div className={`bg-white rounded-2xl p-6 shadow-lg transition-all relative overflow-hidden flex flex-col h-[320px] ${isMyTable ? 'border-2 border-sky-300' : 'border-2 border-amber-400'
             }`}>
             {/* 顶部：桌号 + 状态 */}
             <div className="flex justify-between items-start mb-6">
