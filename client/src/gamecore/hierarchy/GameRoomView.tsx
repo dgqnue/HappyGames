@@ -53,9 +53,11 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
 
         const handleStateUpdate = (state: any) => {
             console.log('[GameRoomView] tableClient state update:', state.status);
+            // 当状态变为playing时，强制重新渲染整个组件
             if (state.status === 'playing') {
                 console.log('[GameRoomView] Direct state update detected playing, forcing re-render');
-                setRoomState(prev => ({ ...prev }));
+                // 通过更新一个时间戳来确保重新渲染
+                setRoomState(prev => ({ ...prev, _timestamp: Date.now() }));
             }
         };
 
@@ -63,31 +65,28 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
         const initialState = tableClient.getState();
         if (initialState.status === 'playing') {
             console.log('[GameRoomView] Initial table state is playing, forcing re-render');
-            setRoomState(prev => ({ ...prev }));
+            setRoomState(prev => ({ ...prev, _timestamp: Date.now() }));
         }
 
         // 订阅tableClient的状态更新
         tableClient.init(handleStateUpdate);
 
-        // 同时保留interval作为后备检查
-        const checkTableStatus = () => {
-            const currentTableClient = roomClient.getTableClient();
-            if (currentTableClient) {
-                const state = currentTableClient.getState();
-                console.log('[GameRoomView] Interval check - table state:', state.status);
-                if (state.status === 'playing') {
-                    console.log('[GameRoomView] Interval detected playing, forcing re-render');
-                    setRoomState(prev => ({ ...prev }));
-                }
-            }
-        };
-
-        const interval = setInterval(checkTableStatus, 500);
         return () => {
-            clearInterval(interval);
-            // 注意：tableClient.init会替换之前的回调，这里我们无法直接移除，但tableClient内部会处理
+            // 清理：当tableClient变化或组件卸载时，tableClient内部会处理回调的清理
         };
-    }, [roomClient, tableClient, roomState.selectedTableId]);
+    }, [tableClient]);
+
+    // 额外的检查：当myTableId变化时，确保tableClient被正确设置
+    useEffect(() => {
+        if (myTableId && tableClient) {
+            const tableState = tableClient.getState();
+            console.log('[GameRoomView] Table state after myTableId change:', tableState);
+            if (tableState.status === 'playing') {
+                console.log('[GameRoomView] Table is already playing, forcing re-render');
+                setRoomState(prev => ({ ...prev }));
+            }
+        }
+    }, [myTableId, tableClient]);
 
     // 调试日志
     console.log('[GameRoomView] 当前状态:', {
@@ -198,13 +197,13 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
                 );
             }
         } else {
-            console.log('[GameRoomView] 游戏尚未开始，当前状态:', tableState.status);
+            console.log('[GameRoomView] 游戏尚未开始，当前状态:', tableState.status, '等待状态变为playing...');
         }
-    } else if (myTableId) {
+    } else {
         console.log('[GameRoomView] 缺少跳转条件:', {
+            myTableId,
             hasTableClient: !!tableClient,
             hasMatchView: !!MatchView,
-            myTableId
         });
     }
 

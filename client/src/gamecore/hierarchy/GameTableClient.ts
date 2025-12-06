@@ -209,22 +209,40 @@ export abstract class GameTableClient {
         const players = data.playerList || data.players || [];
         const canStart = this.checkCanStart(players);
 
-        // 如果状态变为 playing 且没有 matchClient，尝试创建
-        if (data.status === 'playing' && !this.matchClient) {
-            console.log(`[${this.gameType}TableClient] Status is playing but no matchClient, creating one`);
-            this.matchClient = new this.MatchClientClass(this.socket);
-            this.matchClient.init((matchState) => {
-                console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
-                // 将对局状态合并到游戏桌状态
-                this.updateState({ ...(matchState as any) });
+        // 如果状态变为 playing
+        if (data.status === 'playing') {
+            console.log(`[${this.gameType}TableClient] Status changed to playing via table_update`);
+            
+            // 如果没有 matchClient，创建
+            if (!this.matchClient) {
+                console.log(`[${this.gameType}TableClient] Creating match client in handleTableUpdate`);
+                this.matchClient = new this.MatchClientClass(this.socket);
+                this.matchClient.init((matchState) => {
+                    console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
+                    // 将对局状态合并到游戏桌状态
+                    this.updateState({ ...(matchState as any) });
+                });
+            }
+            
+            // 更新状态为 playing，并确保其他相关字段也更新
+            this.updateState({
+                status: 'playing',
+                players: players,
+                canStart: false, // 游戏开始后不能再开始
+                ready: false, // 重置准备状态
+                countdown: null // 清除倒计时
+            });
+            
+            // 额外广播一次状态更新，确保所有客户端收到
+            this.socket.emit('request_table_state');
+        } else {
+            // 非playing状态，正常更新
+            this.updateState({
+                status: data.status,
+                players: players,
+                canStart: canStart
             });
         }
-
-        this.updateState({
-            status: data.status,
-            players: players,
-            canStart: canStart
-        });
     }
 
     /**
@@ -238,7 +256,7 @@ export abstract class GameTableClient {
      * 处理游戏开始
      */
     protected handleGameStart(data: any): void {
-        console.log(`[${this.gameType}TableClient] Game starting:`, data);
+        console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
 
         // 创建对局客户端
         if (!this.matchClient) {
@@ -249,13 +267,23 @@ export abstract class GameTableClient {
                 // 将对局状态合并到游戏桌状态
                 this.updateState({ ...(matchState as any) });
             });
+        } else {
+            console.log(`[${this.gameType}TableClient] Match client already exists`);
         }
 
+        // 更新状态为 playing，并确保其他相关字段也更新
         this.updateState({
             status: 'playing',
-            ...data
+            ...data,
+            canStart: false, // 游戏开始后不能再开始
+            ready: false, // 重置准备状态
+            countdown: null // 清除倒计时
         });
+        
         console.log(`[${this.gameType}TableClient] State updated to playing, current state:`, this.state);
+        
+        // 额外广播一次状态更新，确保所有客户端收到
+        this.socket.emit('request_table_state');
     }
 
     /**
@@ -314,12 +342,26 @@ export abstract class GameTableClient {
      */
     protected updateState(newState: Partial<GameTableState>): void {
         const oldStatus = this.state.status;
+        const oldState = { ...this.state };
         this.state = { ...this.state, ...newState };
+        
+        console.log(`[${this.gameType}TableClient] updateState called:`, {
+            oldStatus,
+            newStatus: this.state.status,
+            oldState,
+            newState: this.state,
+            hasOnStateUpdate: !!this.onStateUpdate
+        });
+        
         if (oldStatus !== this.state.status) {
             console.log(`[${this.gameType}TableClient] Status changed from ${oldStatus} to ${this.state.status}`);
         }
+        
         if (this.onStateUpdate) {
+            console.log(`[${this.gameType}TableClient] Calling onStateUpdate callback`);
             this.onStateUpdate(this.state);
+        } else {
+            console.warn(`[${this.gameType}TableClient] onStateUpdate is null, cannot notify UI`);
         }
     }
 
