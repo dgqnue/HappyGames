@@ -80,19 +80,20 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
     }
 
     // 如果游戏已开始且我在桌上，显示全屏对局视图
-    if (myTableId && tableClient && MatchView) {
+    if (myTableId && tableClient) {
         const tableState = tableClient.getState();
         console.log('[GameRoomView] 检查跳转条件:', {
             tableStateStatus: tableState.status,
             hasMatchClient: !!tableState.matchClient,
             myTableId,
-            hasMatchView: !!MatchView
+            hasMatchView: !!MatchView,
+            MatchViewType: typeof MatchView
         });
 
         if (tableState.status === 'playing') {
             const matchClient = tableClient.getMatchClient();
             console.log('[GameRoomView] 游戏开始，跳转到对局页面，matchClient:', matchClient);
-            if (matchClient) {
+            if (matchClient && MatchView) {
                 console.log('[GameRoomView] Rendering MatchView...');
                 return (
                     <MatchView
@@ -104,7 +105,7 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
                     />
                 );
             } else {
-                console.log('[GameRoomView] matchClient为null，无法跳转');
+                console.log('[GameRoomView] matchClient or MatchView is null/undefined', { matchClient: !!matchClient, MatchView: !!MatchView });
             }
         } else {
             console.log('[GameRoomView] 游戏尚未开始，当前状态:', tableState.status);
