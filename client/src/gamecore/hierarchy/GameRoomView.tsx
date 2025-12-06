@@ -120,13 +120,14 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
             tableState
         });
 
+        // 检查游戏是否已开始（状态为playing）
         if (tableState.status === 'playing') {
-            const matchClient = tableClient.getMatchClient();
-            console.log('[GameRoomView] 游戏开始，跳转到对局页面，matchClient:', matchClient);
-            console.log('[GameRoomView] matchClient exists?', !!matchClient);
-            console.log('[GameRoomView] MatchView exists?', !!MatchView);
+            console.log('[GameRoomView] 游戏状态为playing，准备跳转');
             
-            // 如果游戏已开始，无论matchClient是否准备好，都显示MatchView或加载界面
+            // 强制等待一小段时间，确保matchClient已创建
+            const matchClient = tableClient.getMatchClient();
+            console.log('[GameRoomView] matchClient:', matchClient);
+            
             if (MatchView) {
                 if (matchClient) {
                     console.log('[GameRoomView] Rendering MatchView with matchClient...');
