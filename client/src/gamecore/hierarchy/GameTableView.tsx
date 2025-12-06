@@ -280,6 +280,40 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         }
     }, [tableClient]);
 
+    // 处理页面卸载或组件卸载时的自动离座
+    useEffect(() => {
+        // 标记是否已经执行过离座，避免重复执行
+        let hasLeft = false;
+
+        const leaveSeat = () => {
+            if (hasLeft) return;
+            if (tableClient && isMyTableLocal) {
+                console.log('[GameTableView] Auto leaving seat due to page/component unload');
+                tableClient.leaveTable();
+                roomClient.deselectTable();
+                hasLeft = true;
+            }
+        };
+
+        // 页面卸载事件（刷新、关闭标签页、导航到其他网站）
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            // 注意：在 beforeunload 事件中，不能进行异步操作，但 leaveTable 是同步函数（发送 socket 消息）
+            leaveSeat();
+            // 可选：显示确认离开对话框（但可能会干扰用户体验）
+            // event.preventDefault();
+            // event.returnValue = '';
+        };
+
+        // 添加 beforeunload 事件监听
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        // 组件卸载时也执行离座（例如路由切换）
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            leaveSeat();
+        };
+    }, [tableClient, isMyTableLocal, roomClient]);
+
     const isReady = localState.ready === true;
 
     const handleJoin = (e: React.MouseEvent) => {
