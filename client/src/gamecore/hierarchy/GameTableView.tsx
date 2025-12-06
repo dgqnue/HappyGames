@@ -426,7 +426,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             离开
                         </button>
 
-                        {/* 开始/就绪按钮 - 允许切换 */}
+                        {/* 开始/取消按钮 - 允许切换 */}
                         <button
                             onClick={handleReady}
                             className={`px-6 py-2 rounded-lg transition-colors shadow-sm text-sm ${isReady
@@ -434,7 +434,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                                 : 'bg-red-100 text-red-600 hover:bg-red-200'
                                 }`}
                         >
-                            {isReady ? '就绪' : '开始'}
+                            {isReady ? '取消' : '开始'}
                         </button>
                     </>
                 ) : (
