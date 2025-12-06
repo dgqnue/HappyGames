@@ -517,13 +517,13 @@ class MatchRoomState {
             while (usedSeatIndices.includes(seatIndex) && seatIndex < this.maxPlayers) {
                 seatIndex++;
             }
-            
+
             if (seatIndex >= this.maxPlayers) {
                 console.error(`[MatchRoom] No available seat index for player ${playerData.userId}, used indices:`, usedSeatIndices);
                 return { success: false, error: '没有可用座位' };
             }
         }
-        
+
         const playerWithSeat = {
             ...playerData,
             ready: false,
@@ -546,9 +546,9 @@ class MatchRoomState {
             }
         }
 
-        console.log(`[MatchRoom] Player ${playerData.userId} added with seatIndex ${seatIndex}, current players:`, 
+        console.log(`[MatchRoom] Player ${playerData.userId} added with seatIndex ${seatIndex}, current players:`,
             this.players.map(p => ({ userId: p.userId, seatIndex: p.seatIndex })));
-        
+
         return { success: true, seatIndex };
     }
 
@@ -764,7 +764,7 @@ class MatchPlayers {
         // 执行动作，完成后继续处理队列
         action().finally(() => {
             this.isProcessingQueue = false;
-            
+
             // 延迟一小段时间，确保状态更新已经传播
             setTimeout(() => {
                 this.processQueue();
@@ -1016,7 +1016,7 @@ class MatchPlayers {
 
         // 如果桌子满座且处于匹配中（准备倒计时），则保持倒计时，不取消
         const isFullAndMatching = this.matchState.players.length === this.maxPlayers &&
-                                  this.matchState.status === MatchingRules.TABLE_STATUS.MATCHING;
+            this.matchState.status === MatchingRules.TABLE_STATUS.MATCHING;
 
         // 取消游戏开始倒计时（如果存在）
         if (this.countdownTimer) {
@@ -1174,6 +1174,9 @@ class MatchPlayers {
             clearTimeout(this.matchState.zombieTimer);
             this.matchState.zombieTimer = null;
         }
+
+        // 广播状态更新，确保所有客户端（包括大厅）都知道状态变为 playing
+        this.table.broadcastRoomState();
 
         // 通知游戏桌开始游戏
         if (typeof this.table.startGame === 'function') {
