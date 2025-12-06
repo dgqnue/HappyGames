@@ -49,8 +49,8 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
             const currentTableClient = roomClient.getTableClient();
             if (currentTableClient) {
                 const state = currentTableClient.getState();
-                // 如果状态是 playing 且有 matchClient，强制刷新以触发跳转
-                if (state.status === 'playing' && state.matchClient) {
+                // 如果状态是 playing，强制刷新以触发跳转
+                if (state.status === 'playing') {
                     setRoomState(prev => ({ ...prev }));
                 }
             }
@@ -105,7 +105,30 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
                     />
                 );
             } else {
-                console.log('[GameRoomView] matchClient or MatchView is null/undefined', { matchClient: !!matchClient, MatchView: !!MatchView });
+                // 如果游戏已开始但matchClient未准备好，显示加载界面
+                console.log('[GameRoomView] 游戏已开始，等待matchClient...');
+                return (
+                    <main className="min-h-screen bg-amber-50 p-4 md:p-8">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="flex items-center gap-4 mb-8">
+                                <button
+                                    onClick={onBack}
+                                    className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
+                                >
+                                    <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                </button>
+                                <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
+                                    <span className="text-4xl">🏠</span> 游戏加载中...
+                                </h1>
+                            </div>
+                            <div className="flex justify-center items-center h-96">
+                                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-800"></div>
+                            </div>
+                        </div>
+                    </main>
+                );
             }
         } else {
             console.log('[GameRoomView] 游戏尚未开始，当前状态:', tableState.status);
