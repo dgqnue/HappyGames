@@ -394,7 +394,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
-            {isMyTableLocal && timeLeft !== null ? (
+            {isMyTableLocal && timeLeft !== null && (localState.countdown?.type === 'start' || (localState.countdown?.type === 'ready' && !isReady)) ? (
                         <div className="text-center animate-pulse">
                             <p className="text-red-500 text-lg font-medium">
                                 {timeLeft}
