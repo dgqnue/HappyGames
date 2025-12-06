@@ -301,8 +301,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         return (
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（分行显示在头像上方） */}
-                <div className="flex flex-col items-center justify-center h-[32px] mb-2">
-                <div className="flex flex-col items-center gap-0.5">
+                <div className="flex flex-col items-center justify-center mb-2">
+                <div className="flex flex-col items-center gap-0.5 min-h-[32px]">
                     <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
                         {displayName}
                     </span>
