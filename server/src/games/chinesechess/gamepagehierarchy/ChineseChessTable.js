@@ -487,6 +487,29 @@ class ChineseChessTable extends GameTable {
                 nickname: s.nickname
             }))
         });
+
+        // 如果游戏正在进行中，发送游戏状态
+        if (this.status === 'playing') {
+            const redPlayer = this.players[0];
+            const blackPlayer = this.players[1];
+            const isRed = redPlayer && socket.user._id.toString() === redPlayer.userId;
+
+            socket.emit('game_start', {
+                board: this.board,
+                turn: this.turn,
+                mySide: isRed ? 'r' : 'b',
+                players: {
+                    r: redPlayer ? redPlayer.userId : null,
+                    b: blackPlayer ? blackPlayer.userId : null
+                },
+                playerInfos: this.players.map(p => ({
+                    userId: p.userId,
+                    nickname: p.nickname,
+                    title: p.title || '无',
+                    avatar: p.avatar
+                }))
+            });
+        }
     }
 }
 

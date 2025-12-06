@@ -130,7 +130,7 @@ export abstract class GameTableClient {
             console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
             this.handleGameStart(data);
         });
-        
+
         // 调试：监听所有游戏相关事件
         this.socket.onAny((eventName, ...args) => {
             if (eventName.includes('game') || eventName.includes('start') || eventName.includes('match')) {
@@ -208,6 +208,15 @@ export abstract class GameTableClient {
         const players = data.playerList || data.players || [];
         const canStart = this.checkCanStart(players);
 
+        // 如果状态变为 playing 且没有 matchClient，尝试创建
+        if (data.status === 'playing' && !this.matchClient) {
+            console.log(`[${this.gameType}TableClient] Status is playing but no matchClient, creating one`);
+            this.matchClient = new this.MatchClientClass(this.socket);
+            this.matchClient.init((matchState) => {
+                this.updateState({ ...(matchState as any) });
+            });
+        }
+
         this.updateState({
             status: data.status,
             players: players,
@@ -227,7 +236,7 @@ export abstract class GameTableClient {
      */
     protected handleGameStart(data: any): void {
         console.log(`[${this.gameType}TableClient] Game starting:`, data);
-        
+
         // 创建对局客户端
         if (!this.matchClient) {
             console.log(`[${this.gameType}TableClient] Creating match client`);
