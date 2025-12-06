@@ -397,7 +397,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             {isMyTableLocal && timeLeft !== null ? (
                         <div className="text-center animate-pulse">
                             <p className="text-red-500 text-lg font-medium">
-                                {localState.countdown && localState.countdown.type === 'start' ? `${timeLeft}秒后开始游戏` : `请在${timeLeft}秒内开始游戏`}
+                                {timeLeft}
                             </p>
                         </div>
                     ) : (
