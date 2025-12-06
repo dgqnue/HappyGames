@@ -205,7 +205,7 @@ export abstract class GameTableClient {
      * 处理游戏桌状态更新
      */
     protected handleTableUpdate(data: any): void {
-        console.log(`[${this.gameType}TableClient] handleTableUpdate received status: ${data.status}`);
+        console.log(`[${this.gameType}TableClient] handleTableUpdate received:`, data);
         const players = data.playerList || data.players || [];
         const canStart = this.checkCanStart(players);
 
@@ -214,6 +214,8 @@ export abstract class GameTableClient {
             console.log(`[${this.gameType}TableClient] Status is playing but no matchClient, creating one`);
             this.matchClient = new this.MatchClientClass(this.socket);
             this.matchClient.init((matchState) => {
+                console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
+                // 将对局状态合并到游戏桌状态
                 this.updateState({ ...(matchState as any) });
             });
         }

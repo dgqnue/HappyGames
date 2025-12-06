@@ -1170,7 +1170,9 @@ class MatchPlayers {
         this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
         console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
 
-        this.matchState.cancelReadyCheck();
+        // 注意：不要调用 cancelReadyCheck()，因为它会将状态根据玩家数量覆盖为 WAITING/IDLE
+        // 准备检查已经在 startGameCountdown 中清除了 readyTimer
+        // this.matchState.cancelReadyCheck();
 
         // 停止僵尸桌检查
         if (this.matchState.zombieTimer) {
@@ -1181,6 +1183,18 @@ class MatchPlayers {
         // 广播状态更新，确保所有客户端（包括大厅）都知道状态变为 playing
         console.log(`[MatchPlayers] Broadcasting room state...`);
         this.table.broadcastRoomState();
+
+        // 额外发送 game_start 事件，确保客户端收到
+        console.log(`[MatchPlayers] Emitting game_start event to room ${this.roomId}`);
+        this.table.broadcast('game_start', {
+            roomId: this.roomId,
+            status: 'playing',
+            players: this.matchState.players.map(p => ({
+                userId: p.userId,
+                nickname: p.nickname,
+                seatIndex: p.seatIndex
+            }))
+        });
 
         // 通知游戏桌开始游戏
         if (typeof this.table.startGame === 'function') {
