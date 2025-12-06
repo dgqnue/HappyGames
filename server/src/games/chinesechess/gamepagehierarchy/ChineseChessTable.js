@@ -325,7 +325,8 @@ class ChineseChessTable extends GameTable {
                 ready: p.ready,
                 title: p.title,
                 winRate: p.winRate,
-                disconnectRate: p.disconnectRate
+                disconnectRate: p.disconnectRate,
+                seatIndex: p.seatIndex
             }))
         };
 
@@ -478,7 +479,8 @@ class ChineseChessTable extends GameTable {
                 nickname: p.nickname,
                 ready: p.ready,
                 title: p.title,
-                winRate: p.winRate
+                winRate: p.winRate,
+                seatIndex: p.seatIndex
             })),
             spectators: this.spectators.map(s => ({
                 userId: s.userId,
