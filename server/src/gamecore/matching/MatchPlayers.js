@@ -1076,17 +1076,28 @@ class MatchPlayers {
      * 准备超时处理
      */
     onReadyTimeout() {
+        console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, current status: ${this.status}`);
+        
+        // 检查是否已经进入游戏开始状态，避免在游戏即将开始时踢出玩家
+        if (this.isLocked || this.matchState.status === MatchingRules.TABLE_STATUS.PLAYING) {
+            console.log(`[MatchPlayers] Game is locked or already playing, skipping ready timeout processing`);
+            return;
+        }
+
         const unreadyPlayers = this.matchState.getUnreadyPlayers();
+        console.log(`[MatchPlayers] Unready players:`, unreadyPlayers.map(p => p.userId));
 
         unreadyPlayers.forEach(player => {
             const socket = this.io.sockets.sockets.get(player.socketId);
             if (socket) {
+                console.log(`[MatchPlayers] Kicking player ${player.userId} for ready timeout`);
                 socket.emit('kicked', {
                     reason: '未在规定时间内准备',
                     code: 'READY_TIMEOUT'
                 });
                 this.playerLeave(socket);
             } else {
+                console.log(`[MatchPlayers] Removing player ${player.userId} from match state`);
                 this.matchState.removePlayer(player.userId);
                 this.table.broadcastRoomState();
             }
@@ -1161,24 +1172,34 @@ class MatchPlayers {
      */
     startGame() {
         console.log(`[MatchPlayers] startGame called for room ${this.roomId}`);
+        
+        // 清除所有定时器，确保不会再有状态变更
         this.isLocked = false;
+        
+        // 清除游戏开始倒计时
         if (this.countdownTimer) {
             clearInterval(this.countdownTimer);
             this.countdownTimer = null;
         }
-
-        this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
-        console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
-
-        // 注意：不要调用 cancelReadyCheck()，因为它会将状态根据玩家数量覆盖为 WAITING/IDLE
-        // 准备检查已经在 startGameCountdown 中清除了 readyTimer
-        // this.matchState.cancelReadyCheck();
-
-        // 停止僵尸桌检查
+        
+        // 清除准备倒计时
+        if (this.matchState.readyTimer) {
+            clearTimeout(this.matchState.readyTimer);
+            this.matchState.readyTimer = null;
+        }
+        
+        // 清除僵尸桌检查
         if (this.matchState.zombieTimer) {
             clearTimeout(this.matchState.zombieTimer);
             this.matchState.zombieTimer = null;
         }
+
+        // 设置为游戏进行中状态
+        this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
+        console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
+
+        // 重置所有玩家的准备状态（虽然游戏已开始，但确保状态一致）
+        this.matchState.resetReadyStatus();
 
         // 广播状态更新，确保所有客户端（包括大厅）都知道状态变为 playing
         console.log(`[MatchPlayers] Broadcasting room state...`);

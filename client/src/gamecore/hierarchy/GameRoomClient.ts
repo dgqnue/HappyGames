@@ -99,6 +99,18 @@ export abstract class GameRoomClient {
             console.log(`[${this.gameType}RoomClient] Table list update:`, data);
             this.handleTableListUpdate(data);
         });
+
+        // 游戏桌状态更新 - 当玩家加入桌子时收到（暂时注释，避免TypeScript错误）
+        // this.socket.on('table_state', (data: any) => {
+        //     console.log(`[${this.gameType}RoomClient] Table state received:`, data);
+        //     this.handleTableState(data);
+        // });
+
+        // 游戏开始事件 - 确保在房间客户端也能收到并处理
+        this.socket.on('game_start', (data: any) => {
+            console.log(`[${this.gameType}RoomClient] Game start event received:`, data);
+            this.handleGameStart(data);
+        });
     }
 
     /**
@@ -123,6 +135,36 @@ export abstract class GameRoomClient {
     protected handleTableListUpdate(data: any): void {
         const tables = Array.isArray(data) ? data : [];
         this.updateState({ tables });
+    }
+
+    /**
+     * 处理游戏开始事件
+     */
+    protected handleGameStart(data: any): void {
+        console.log(`[${this.gameType}RoomClient] Handling game start:`, data);
+        // 游戏开始时，确保选中的桌子ID正确设置
+        if (data.roomId) {
+            console.log(`[${this.gameType}RoomClient] Setting selectedTableId to ${data.roomId}`);
+            this.updateState({
+                selectedTableId: data.roomId
+            });
+
+            // 如果tableClient不存在，创建它
+            if (!this.tableClient) {
+                console.log(`[${this.gameType}RoomClient] Creating table client for room ${data.roomId}`);
+                this.tableClient = new this.TableClientClass(this.socket);
+                this.tableClient.init((tableState) => {
+                    // 将游戏桌状态合并到房间状态
+                    this.updateState({ ...tableState });
+                });
+            }
+
+            // 确保tableClient加入游戏桌（如果当前在房间中）
+            if (this.state.currentRoom && this.tableClient) {
+                console.log(`[${this.gameType}RoomClient] Ensuring table client is joined to table ${data.roomId}`);
+                this.tableClient.joinTable(this.state.currentRoom.id, data.roomId);
+            }
+        }
     }
 
     /**
