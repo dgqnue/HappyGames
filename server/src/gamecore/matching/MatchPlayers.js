@@ -699,12 +699,68 @@ class MatchPlayers {
         // 使用匹配状态管理器
         this.matchState = new MatchRoomState(this.roomId, this.maxPlayers);
 
+        // 状态动作队列：确保玩家动作按顺序处理
+        this.actionQueue = [];
+        this.isProcessingQueue = false;
+
         // 倒计时锁定状态
         this.isLocked = false;
         this.countdownTimer = null;
 
         // 启动僵尸桌检查
         this.startZombieCheck();
+    }
+
+    /**
+     * 将动作加入队列并异步处理
+     * @param {Function} actionFn - 返回Promise的动作函数
+     * @returns {Promise} 动作执行结果的Promise
+     */
+    async enqueueAction(actionFn) {
+        return new Promise((resolve, reject) => {
+            // 包装动作，确保完成后继续处理队列
+            const wrappedAction = async () => {
+                try {
+                    const result = await actionFn();
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                } finally {
+                    // 无论成功失败，都继续处理下一个动作
+                    this.processQueue();
+                }
+            };
+
+            // 将包装后的动作加入队列
+            this.actionQueue.push(wrappedAction);
+
+            // 如果没有正在处理，启动队列处理
+            if (!this.isProcessingQueue) {
+                this.processQueue();
+            }
+        });
+    }
+
+    /**
+     * 处理队列中的下一个动作
+     */
+    processQueue() {
+        if (this.isProcessingQueue || this.actionQueue.length === 0) {
+            return;
+        }
+
+        this.isProcessingQueue = true;
+        const action = this.actionQueue.shift();
+
+        // 执行动作，完成后继续处理队列
+        action().finally(() => {
+            this.isProcessingQueue = false;
+            
+            // 延迟一小段时间，确保状态更新已经传播
+            setTimeout(() => {
+                this.processQueue();
+            }, 10);
+        });
     }
 
     /**
@@ -738,9 +794,9 @@ class MatchPlayers {
     }
 
     /**
-     * 玩家尝试入座
+     * 玩家尝试入座 - 内部实现
      */
-    async playerJoin(socket, matchSettings = null) {
+    async _playerJoin(socket, matchSettings = null) {
         console.log(`[MatchPlayers] playerJoin() called for room ${this.roomId}`);
 
         const userId = socket.user._id.toString();
@@ -821,9 +877,16 @@ class MatchPlayers {
     }
 
     /**
-     * 玩家离座
+     * 玩家尝试入座 - 队列包装
      */
-    playerLeave(socket) {
+    async playerJoin(socket, matchSettings = null) {
+        return this.enqueueAction(() => this._playerJoin(socket, matchSettings));
+    }
+
+    /**
+     * 玩家离座 - 内部实现
+     */
+    _playerLeave(socket) {
         const userId = socket.user._id.toString();
         console.log(`[MatchPlayers] playerLeave called for userId: ${userId}, roomId: ${this.roomId}`);
 
@@ -866,6 +929,13 @@ class MatchPlayers {
     }
 
     /**
+     * 玩家离座 - 队列包装
+     */
+    async playerLeave(socket) {
+        return this.enqueueAction(() => this._playerLeave(socket));
+    }
+
+    /**
      * 处理玩家断线
      */
     async handlePlayerDisconnect(socket) {
@@ -898,9 +968,9 @@ class MatchPlayers {
     }
 
     /**
-     * 玩家准备
+     * 玩家准备 - 内部实现
      */
-    playerReady(socket) {
+    _playerReady(socket) {
         if (this.isLocked) {
             socket.emit('error', { message: '游戏即将开始，无法改变状态' });
             return;
@@ -917,9 +987,16 @@ class MatchPlayers {
     }
 
     /**
-     * 玩家取消准备
+     * 玩家准备 - 队列包装
      */
-    playerUnready(socket) {
+    async playerReady(socket) {
+        return this.enqueueAction(() => this._playerReady(socket));
+    }
+
+    /**
+     * 玩家取消准备 - 内部实现
+     */
+    _playerUnready(socket) {
         if (this.isLocked) {
             socket.emit('error', { message: '游戏即将开始，无法改变状态' });
             return;
@@ -952,6 +1029,13 @@ class MatchPlayers {
         }
 
         this.table.broadcastRoomState();
+    }
+
+    /**
+     * 玩家取消准备 - 队列包装
+     */
+    async playerUnready(socket) {
+        return this.enqueueAction(() => this._playerUnready(socket));
     }
 
     /**
