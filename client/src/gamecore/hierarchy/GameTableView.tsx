@@ -65,9 +65,28 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const isPlaying = status === 'playing';
     const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
 
+    // 本地跟踪选中的桌子ID，确保被踢出后立即更新
+    const [selectedTableId, setSelectedTableId] = useState(roomClient.getState().selectedTableId);
+    const isMyTableLocal = selectedTableId === table.tableId;
+    
+    // 检查玩家是否已在其他桌子入座
+    const hasSeatedAtOtherTable = !isMyTableLocal && selectedTableId !== null;
+    
+    // 如果是我所在的桌子，获取 TableClient 来操作
+    const tableClient = isMyTableLocal ? roomClient.getTableClient() : null;
+    const [localState, setLocalState] = useState<any>({});
+    const [timeLeft, setTimeLeft] = useState<number | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogData, setDialogData] = useState<any>(null);
+
     // 玩家信息 - 支持多种数据结构
-    // 数据源：优先使用playerList，其次使用players
-    const playerList = table.playerList || table.players || [];
+    // 数据源：如果是我所在的桌子，优先使用localState.players；否则使用table.playerList或table.players
+    let playerList = table.playerList || table.players || [];
+    if (isMyTableLocal && localState.players && localState.players.length > 0) {
+        // 使用本地状态中的玩家列表，以确保准备状态实时更新
+        playerList = localState.players;
+        console.log('[GameTableView] Using localState.players:', playerList);
+    }
     
     // 检查是否有seatIndex字段：检查所有玩家，确保至少有一个玩家有seatIndex字段
     const hasSeatIndex = playerList.length > 0 && playerList.some((p: any) => p.seatIndex !== undefined);
@@ -113,20 +132,6 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             playerListLength: playerList.length
         });
     }
-    
-    // 本地跟踪选中的桌子ID，确保被踢出后立即更新
-    const [selectedTableId, setSelectedTableId] = useState(roomClient.getState().selectedTableId);
-    const isMyTableLocal = selectedTableId === table.tableId;
-    
-    // 检查玩家是否已在其他桌子入座
-    const hasSeatedAtOtherTable = !isMyTableLocal && selectedTableId !== null;
-    
-    // 如果是我所在的桌子，获取 TableClient 来操作
-    const tableClient = isMyTableLocal ? roomClient.getTableClient() : null;
-    const [localState, setLocalState] = useState<any>({});
-    const [timeLeft, setTimeLeft] = useState<number | null>(null);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [dialogData, setDialogData] = useState<any>(null);
 
     // 监听roomClient状态变化，确保isMyTable正确更新
     useEffect(() => {
@@ -284,7 +289,14 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const displayTitle = player.title || '初出茅庐';
         const avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
         const titleColor = player.titleColor || '#666';
-        const isReady = player.ready || player.isReady || false;
+        // 注意：玩家就绪状态字段为 ready，使用宽松相等兼容布尔值和字符串
+        const isReady = player.ready == true; // 使用 == 而不是 ===，兼容 'true' 字符串
+        
+        // 调试日志：检查玩家就绪状态
+        console.log(`[GameTableView] renderPlayer - player: ${displayName}, isReady: ${isReady}, ready: ${player.ready}, player object:`, player);
+        
+        // 临时调试：在UI上显示ready值（仅开发环境）
+        const debugReady = player.ready !== undefined ? String(player.ready) : 'undefined';
 
         return (
             <div className="flex flex-col items-center justify-center">
