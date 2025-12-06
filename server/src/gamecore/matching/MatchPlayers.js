@@ -500,19 +500,28 @@ class MatchRoomState {
             return { success: false, error: '已在房间中' };
         }
 
-        // 分配可用的最小座位索引：0表示左座，1表示右座
-        // 找出当前已使用的座位索引
-        const usedSeatIndices = this.players.map(p => p.seatIndex);
-        let seatIndex = 0;
-        // 寻找最小的未使用索引
-        while (usedSeatIndices.includes(seatIndex) && seatIndex < this.maxPlayers) {
-            seatIndex++;
-        }
-        
-        // 如果超过最大座位数，说明逻辑错误
-        if (seatIndex >= this.maxPlayers) {
-            console.error(`[MatchRoom] No available seat index for player ${playerData.userId}, used indices:`, usedSeatIndices);
-            return { success: false, error: '没有可用座位' };
+        // 分配座位索引
+        let seatIndex;
+        if (this.maxPlayers === 2) {
+            // 两人桌：如果已经有一个玩家，检查他的座位，分配另一个
+            if (this.players.length === 1) {
+                const firstPlayerSeat = this.players[0].seatIndex;
+                seatIndex = firstPlayerSeat === 0 ? 1 : 0;
+            } else {
+                seatIndex = 0;
+            }
+        } else {
+            // 多人桌：分配最小的未使用索引
+            const usedSeatIndices = this.players.map(p => p.seatIndex);
+            seatIndex = 0;
+            while (usedSeatIndices.includes(seatIndex) && seatIndex < this.maxPlayers) {
+                seatIndex++;
+            }
+            
+            if (seatIndex >= this.maxPlayers) {
+                console.error(`[MatchRoom] No available seat index for player ${playerData.userId}, used indices:`, usedSeatIndices);
+                return { success: false, error: '没有可用座位' };
+            }
         }
         
         const playerWithSeat = {

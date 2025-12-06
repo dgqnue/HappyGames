@@ -87,13 +87,21 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         playerList = localState.players;
         console.log('[GameTableView] Using localState.players:', playerList);
     }
-    // 调试：打印playerList中玩家的ready状态
-    console.log('[GameTableView] playerList ready status:', playerList.map((p: any) => ({ 
+    // 调试：打印playerList中玩家的详细信息，包括座位索引
+    console.log('[GameTableView] playerList full info:', playerList.map((p: any) => ({ 
         nickname: p.nickname, 
         ready: p.ready, 
         userId: p.userId,
+        seatIndex: p.seatIndex,
+        hasSeatIndex: p.seatIndex !== undefined,
         hasReady: p.ready !== undefined 
     })));
+    // 检查是否有重复的seatIndex
+    const seatIndices = playerList.map((p: any) => p.seatIndex).filter((index: any) => index !== undefined);
+    const duplicateSeats = seatIndices.filter((item: any, index: number) => seatIndices.indexOf(item) !== index);
+    if (duplicateSeats.length > 0) {
+        console.error('[GameTableView] WARNING: Duplicate seat indices found:', duplicateSeats);
+    }
     
     // 检查是否有seatIndex字段：检查所有玩家，确保至少有一个玩家有seatIndex字段
     const hasSeatIndex = playerList.length > 0 && playerList.some((p: any) => p.seatIndex !== undefined);
