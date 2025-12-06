@@ -56,7 +56,7 @@ export abstract class GameTableClient {
     protected gameType: string;
     protected state: GameTableState;
     protected onStateUpdate: ((state: GameTableState) => void) | null = null;
-    
+
     // 被踢出回调
     protected onKicked: ((data: any) => void) | null = null;
 
@@ -84,7 +84,7 @@ export abstract class GameTableClient {
             canStart: false
         };
     }
-    
+
     /**
      * 设置被踢出回调
      */
@@ -107,28 +107,22 @@ export abstract class GameTableClient {
      * 设置通用事件监听
      */
     protected setupCommonListeners(): void {
-        // 游戏桌状态更新
+        // 游戏桌初始状态 (加入成功后收到)
+        this.socket.on('table_state', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Table state received:`, data);
+            this.handleTableState(data);
+        });
+
+        // 游戏桌状态更新 (广播)
+        this.socket.on('table_update', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Table update received:`, data);
+            this.handleTableUpdate(data);
+        });
+
+        // 兼容旧的 state 事件 (如果还有地方用到)
         this.socket.on('state', (data: any) => {
-            console.log(`[${this.gameType}TableClient] State update:`, data);
+            console.log(`[${this.gameType}TableClient] Legacy state update:`, data);
             this.handleStateUpdate(data);
-        });
-
-        // 玩家加入
-        this.socket.on('player_joined', (data: any) => {
-            console.log(`[${this.gameType}TableClient] Player joined:`, data);
-            this.handlePlayerJoined(data);
-        });
-
-        // 玩家离开
-        this.socket.on('player_left', (data: any) => {
-            console.log(`[${this.gameType}TableClient] Player left:`, data);
-            this.handlePlayerLeft(data);
-        });
-
-        // 玩家准备状态变化
-        this.socket.on('player_ready_changed', (data: any) => {
-            console.log(`[${this.gameType}TableClient] Player ready changed:`, data);
-            this.handlePlayerReadyChanged(data);
         });
 
         // 游戏开始
@@ -164,7 +158,6 @@ export abstract class GameTableClient {
                 countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
             });
         });
-
         // 被踢出
         this.socket.on('kicked', (data: any) => {
             console.warn(`[${this.gameType}TableClient] Kicked:`, data);
@@ -187,58 +180,39 @@ export abstract class GameTableClient {
     }
 
     /**
-     * 处理状态更新
+     * 处理游戏桌初始状态
+     */
+    protected handleTableState(data: any): void {
+        const players = data.playerList || data.players || [];
+
+        this.updateState({
+            tableId: data.roomId,
+            status: data.status,
+            baseBet: data.baseBet,
+            players: players,
+            maxPlayers: data.maxPlayers,
+        });
+    }
+
+    /**
+     * 处理游戏桌状态更新
+     */
+    protected handleTableUpdate(data: any): void {
+        const players = data.playerList || data.players || [];
+        const canStart = this.checkCanStart(players);
+
+        this.updateState({
+            status: data.status,
+            players: players,
+            canStart: canStart
+        });
+    }
+
+    /**
+     * 处理旧版状态更新 (兼容)
      */
     protected handleStateUpdate(data: any): void {
         this.updateState(data);
-    }
-
-    /**
-     * 处理玩家加入
-     */
-    protected handlePlayerJoined(data: any): void {
-        const { player } = data;
-        if (player) {
-            const players = [...this.state.players];
-            const existingIndex = players.findIndex(p => p.userId === player.userId);
-            if (existingIndex >= 0) {
-                players[existingIndex] = player;
-            } else {
-                players.push(player);
-            }
-            this.updateState({ players });
-        }
-    }
-
-    /**
-     * 处理玩家离开
-     */
-    protected handlePlayerLeft(data: any): void {
-        const { userId } = data;
-        if (userId) {
-            const players = this.state.players.filter(p => p.userId !== userId);
-            this.updateState({ players });
-        }
-    }
-
-    /**
-     * 处理玩家准备状态变化
-     */
-    protected handlePlayerReadyChanged(data: any): void {
-        const { userId, ready } = data;
-        if (userId !== undefined) {
-            const players = this.state.players.map(p =>
-                p.userId === userId ? { ...p, ready } : p
-            );
-            const canStart = this.checkCanStart(players);
-            
-            // 如果这个玩家是当前用户，同时更新 isReady 状态
-            // 需要获取当前用户的userId，这里假设可以从socket或状态中获取
-            // 由于数据中可能不直接包含当前用户ID，我们暂时不更新isReady
-            // isReady会在setReady方法中直接更新
-            
-            this.updateState({ players, canStart });
-        }
     }
 
     /**
@@ -361,6 +335,8 @@ export abstract class GameTableClient {
         this.socket.off('player_left');
         this.socket.off('player_ready_changed');
         this.socket.off('game_start');
+        this.socket.off('table_state');
+        this.socket.off('table_update');
     }
 
     /**

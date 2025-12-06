@@ -280,7 +280,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         }
     }, [tableClient]);
 
-    const isReady = localState.ready || false;
+    const isReady = localState.ready === true;
 
     const handleJoin = (e: React.MouseEvent) => {
         e.stopPropagation();
