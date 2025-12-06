@@ -58,7 +58,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const status = table.status || 'idle';
     const playerCount = table.playerCount || 0;
     const maxPlayers = table.maxPlayers || 2;
-    
+
     const isIdle = status === 'idle';
     const isWaiting = status === 'waiting';
     const isMatching = status === 'matching' || (status === 'waiting' && playerCount === maxPlayers);
@@ -68,10 +68,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 本地跟踪选中的桌子ID，确保被踢出后立即更新
     const [selectedTableId, setSelectedTableId] = useState(roomClient.getState().selectedTableId);
     const isMyTableLocal = selectedTableId === table.tableId;
-    
+
     // 检查玩家是否已在其他桌子入座
     const hasSeatedAtOtherTable = !isMyTableLocal && selectedTableId !== null;
-    
+
     // 如果是我所在的桌子，获取 TableClient 来操作
     const tableClient = isMyTableLocal ? roomClient.getTableClient() : null;
     const [localState, setLocalState] = useState<any>({});
@@ -88,13 +88,13 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         console.log('[GameTableView] Using localState.players:', playerList);
     }
     // 调试：打印playerList中玩家的详细信息，包括座位索引
-    console.log('[GameTableView] playerList full info:', playerList.map((p: any) => ({ 
-        nickname: p.nickname, 
-        ready: p.ready, 
+    console.log('[GameTableView] playerList full info:', playerList.map((p: any) => ({
+        nickname: p.nickname,
+        ready: p.ready,
         userId: p.userId,
         seatIndex: p.seatIndex,
         hasSeatIndex: p.seatIndex !== undefined,
-        hasReady: p.ready !== undefined 
+        hasReady: p.ready !== undefined
     })));
     // 检查是否有重复的seatIndex
     const seatIndices = playerList.map((p: any) => p.seatIndex).filter((index: any) => index !== undefined);
@@ -106,14 +106,14 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     playerList.forEach((p: any, i: number) => {
         console.log(`[GameTableView] Player ${i}: nickname=${p.nickname}, seatIndex=${p.seatIndex}, ready=${p.ready}, userId=${p.userId}`);
     });
-    
+
     // 按座位索引分配玩家到座位数组
     // 创建座位数组，长度为maxPlayers，初始为null
     const seats = new Array(maxPlayers).fill(null);
-    
+
     // 检查是否有seatIndex字段
     const hasSeatIndex = playerList.length > 0 && playerList.some((p: any) => p.seatIndex !== undefined);
-    
+
     if (hasSeatIndex) {
         // 先按座位索引分配
         playerList.forEach((player: any) => {
@@ -121,7 +121,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 seats[player.seatIndex] = player;
             }
         });
-        
+
         // 检查是否有座位冲突（重复分配）
         let duplicateSeats = false;
         const usedIndices = new Set<number>();
@@ -146,14 +146,14 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 }
             });
         }
-        
+
         console.log('[GameTableView] Seat-based allocation:', {
             maxPlayers,
             seats: seats.map((p, idx) => p ? { seatIndex: idx, nickname: p.nickname } : null),
-            playerList: playerList.map((p: any) => ({ 
-                nickname: p.nickname, 
+            playerList: playerList.map((p: any) => ({
+                nickname: p.nickname,
                 seatIndex: p.seatIndex,
-                hasSeatIndex: p.seatIndex !== undefined 
+                hasSeatIndex: p.seatIndex !== undefined
             })),
             duplicateSeats
         });
@@ -170,7 +170,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             playerListLength: playerList.length
         });
     }
-    
+
     // 对于两人桌，座位0在左，座位1在右
     // 保留这两个变量用于渲染，但不再使用leftPlayer/rightPlayer命名
     const seat0Player = seats[0] || null;
@@ -185,10 +185,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 setSelectedTableId(newSelectedTableId);
             }
         }, 300);
-        
+
         return () => clearInterval(interval);
     }, [roomClient, selectedTableId]);
-    
+
     // 如果传入的isMyTable与本地不一致，更新本地状态
     useEffect(() => {
         if (isMyTable !== isMyTableLocal) {
@@ -204,8 +204,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 console.log('[GameTableView] tableClient state update - isReady:', s.isReady);
                 console.log('[GameTableView] tableClient state update - players:', s.players);
                 if (s.players && s.players.length > 0) {
-                    console.log('[GameTableView] Updated players with ready status:', s.players.map((p: any) => ({ 
-                        nickname: p.nickname, 
+                    console.log('[GameTableView] Updated players with ready status:', s.players.map((p: any) => ({
+                        nickname: p.nickname,
                         ready: p.ready,
                         isReady: p.isReady,
                         userId: p.userId,
@@ -253,7 +253,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         roomClient.getTableList(roomState.currentRoom.id);
                     }
                 }, 0);
-                
+
                 setDialogData({
                     title: '已被移出游戏桌',
                     message: '已被移出游戏桌\n原因: 未在规定时间内开始游戏',
@@ -275,7 +275,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             return () => {
                 clearInterval(timer);
                 // 清理回调
-                tableClient.setOnKickedCallback(() => {});
+                tableClient.setOnKickedCallback(() => { });
             };
         }
     }, [tableClient]);
@@ -347,31 +347,30 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const displayTitle = player.title || '初出茅庐';
         const avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
         const titleColor = player.titleColor || '#666';
-        
+
         // 直接使用player.ready字段（统一命名）
         const playerReady = player.ready == true; // 使用宽松相等，兼容布尔值和字符串
-        
-        // 调试日志：检查玩家就绪状态
-        console.log(`[GameTableView] renderPlayer - player: ${displayName}, position: ${position}, playerReady: ${playerReady}, player.ready: ${player.ready}`);
 
         return (
             <div className="flex flex-col items-center justify-center">
-                {/* 昵称 + 称号（分行显示在头像上方） */}
-                <div className="flex flex-col items-center justify-center mb-2">
-                <div className="flex flex-col items-center gap-0.5 min-h-[40px]">
-                    <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
-                        {displayName}
-                    </span>
-                    {playerReady && (
-                        <span className="text-xs text-green-600 font-medium">就绪</span>
-                    )}
-                    <span
-                        className="text-xs whitespace-nowrap leading-tight"
-                        style={{ color: titleColor }}
-                    >
-                        {displayTitle}
-                    </span>
+                {/* 就绪状态 - 占位显示以防止跳动 */}
+                <div className={`h-6 flex items-center justify-center transition-all duration-300 ${playerReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                    <span className="text-sm font-bold text-green-500 tracking-widest">就绪</span>
                 </div>
+
+                {/* 昵称 + 称号（分行显示在头像上方） */}
+                <div className="flex flex-col items-center justify-center h-[32px] mb-2">
+                    <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
+                            {displayName}
+                        </span>
+                        <span
+                            className="text-xs whitespace-nowrap leading-tight"
+                            style={{ color: titleColor }}
+                        >
+                            {displayTitle}
+                        </span>
+                    </div>
                 </div>
 
                 {/* 头像 */}
@@ -399,18 +398,18 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const borderColor = isMyTableLocal ? '#60a5fa' : '#f59e0b'; // blue-400 (淡蓝), amber-500 (金色)
     const borderWidth = '1px';
     const componentHeight = '280px'; // 再降低一点高度
-    
+
     return (
-        <div 
+        <div
             className="bg-white rounded-xl p-3 shadow-sm transition-all duration-300 relative overflow-hidden flex flex-col"
-            style={{ 
+            style={{
                 height: componentHeight,
                 minHeight: componentHeight,
                 maxHeight: componentHeight,
                 borderWidth: borderWidth,
                 borderStyle: 'solid',
                 borderColor: borderColor,
-                boxShadow: isMyTableLocal 
+                boxShadow: isMyTableLocal
                     ? '0 1px 6px -1px rgba(96, 165, 250, 0.2), 0 1px 3px -1px rgba(96, 165, 250, 0.1)'
                     : '0 1px 6px -1px rgba(245, 158, 11, 0.2), 0 1px 3px -1px rgba(245, 158, 11, 0.1)'
             }}
@@ -435,11 +434,11 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
                 <div className={`px-3 py-1 rounded-full text-sm font-normal ${isPlaying ? 'text-red-500' :
                     isMatching ? 'text-orange-500' :
-                    isWaiting ? 'text-green-500' :
-                    isMyTableLocal ? 'text-green-500' :
-                    'text-black'
+                        isWaiting ? 'text-green-500' :
+                            isMyTableLocal ? 'text-green-500' :
+                                'text-black'
                     }`}>
-            {isPlaying ? '游戏' : isMatching ? '匹配' : isWaiting ? '等待' : isMyTableLocal ? '等待' : '空闲'}
+                    {isPlaying ? '游戏' : isMatching ? '匹配' : isWaiting ? '等待' : isMyTableLocal ? '等待' : '空闲'}
                 </div>
             </div>
 
@@ -450,7 +449,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
-            {isMyTableLocal && timeLeft !== null && (localState.countdown?.type === 'start' || (localState.countdown?.type === 'ready' && !isReady)) ? (
+                    {isMyTableLocal && timeLeft !== null && (localState.countdown?.type === 'start' || (localState.countdown?.type === 'ready' && !isReady)) ? (
                         <div className="text-center animate-pulse">
                             <p className="text-red-500 text-lg font-medium">
                                 {timeLeft}
