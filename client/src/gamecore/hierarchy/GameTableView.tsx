@@ -102,51 +102,79 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     if (duplicateSeats.length > 0) {
         console.error('[GameTableView] WARNING: Duplicate seat indices found:', duplicateSeats);
     }
+    // 详细打印每个玩家的seatIndex
+    playerList.forEach((p: any, i: number) => {
+        console.log(`[GameTableView] Player ${i}: nickname=${p.nickname}, seatIndex=${p.seatIndex}, ready=${p.ready}, userId=${p.userId}`);
+    });
     
-    // 检查是否有seatIndex字段：检查所有玩家，确保至少有一个玩家有seatIndex字段
+    // 按座位索引分配玩家到座位数组
+    // 创建座位数组，长度为maxPlayers，初始为null
+    const seats = new Array(maxPlayers).fill(null);
+    
+    // 检查是否有seatIndex字段
     const hasSeatIndex = playerList.length > 0 && playerList.some((p: any) => p.seatIndex !== undefined);
     
-    let leftPlayer = null;
-    let rightPlayer = null;
-    
     if (hasSeatIndex) {
-        // 按座位索引分配：座位0显示在左，座位1显示在右
-        // 支持更多座位，但当前UI只显示左右两个位置
-        leftPlayer = playerList.find((p: any) => p.seatIndex === 0) || null;
-        rightPlayer = playerList.find((p: any) => p.seatIndex === 1) || null;
+        // 先按座位索引分配
+        playerList.forEach((player: any) => {
+            if (player.seatIndex !== undefined && player.seatIndex >= 0 && player.seatIndex < maxPlayers) {
+                seats[player.seatIndex] = player;
+            }
+        });
+        
+        // 检查是否有座位冲突（重复分配）
+        let duplicateSeats = false;
+        const usedIndices = new Set<number>();
+        playerList.forEach((player: any) => {
+            if (player.seatIndex !== undefined) {
+                if (usedIndices.has(player.seatIndex)) {
+                    duplicateSeats = true;
+                } else {
+                    usedIndices.add(player.seatIndex);
+                }
+            }
+        });
+
+        // 如果有重复，则按数组顺序重新分配
+        if (duplicateSeats) {
+            console.warn('[GameTableView] Duplicate seat indices detected, reassigning seats by array order');
+            // 重置座位数组
+            seats.fill(null);
+            playerList.forEach((player: any, index: number) => {
+                if (index < maxPlayers) {
+                    seats[index] = player;
+                }
+            });
+        }
         
         console.log('[GameTableView] Seat-based allocation:', {
-            hasSeatIndex,
-            leftPlayer: leftPlayer ? { nickname: leftPlayer.nickname, seatIndex: leftPlayer.seatIndex } : null,
-            rightPlayer: rightPlayer ? { nickname: rightPlayer.nickname, seatIndex: rightPlayer.seatIndex } : null,
+            maxPlayers,
+            seats: seats.map((p, idx) => p ? { seatIndex: idx, nickname: p.nickname } : null),
             playerList: playerList.map((p: any) => ({ 
                 nickname: p.nickname, 
                 seatIndex: p.seatIndex,
                 hasSeatIndex: p.seatIndex !== undefined 
-            }))
+            })),
+            duplicateSeats
         });
-        
-        // 调试：如果只有一个玩家，检查其座位索引
-        if (playerList.length === 1) {
-            const singlePlayer = playerList[0];
-            console.log('[GameTableView] Single player with seatIndex:', {
-                nickname: singlePlayer.nickname,
-                seatIndex: singlePlayer.seatIndex,
-                shouldDisplayLeft: singlePlayer.seatIndex === 0,
-                shouldDisplayRight: singlePlayer.seatIndex === 1
-            });
-        }
     } else {
-        // 按数组顺序：第一个玩家在左，第二个在右（兼容旧逻辑）
-        leftPlayer = playerList[0] || null;
-        rightPlayer = playerList[1] || null;
+        // 按数组顺序分配（兼容旧逻辑）
+        playerList.forEach((player: any, index: number) => {
+            if (index < maxPlayers) {
+                seats[index] = player;
+            }
+        });
         console.log('[GameTableView] Array-order allocation (no seatIndex):', {
-            hasSeatIndex,
-            leftPlayer: leftPlayer ? { nickname: leftPlayer.nickname } : null,
-            rightPlayer: rightPlayer ? { nickname: rightPlayer.nickname } : null,
+            maxPlayers,
+            seats: seats.map((p, idx) => p ? { seatIndex: idx, nickname: p.nickname } : null),
             playerListLength: playerList.length
         });
     }
+    
+    // 对于两人桌，座位0在左，座位1在右
+    // 保留这两个变量用于渲染，但不再使用leftPlayer/rightPlayer命名
+    const seat0Player = seats[0] || null;
+    const seat1Player = seats[1] || null;
 
     // 监听roomClient状态变化，确保isMyTable正确更新
     useEffect(() => {
@@ -417,8 +445,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
             {/* 中间：玩家区域 */}
             <div className="flex-1 flex items-center justify-between mb-6 px-4">
-                {/* 左侧玩家 */}
-                {renderPlayer(leftPlayer, 'left')}
+                {/* 左侧玩家（座位0） */}
+                {renderPlayer(seat0Player, 'left')}
 
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
@@ -433,8 +461,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     )}
                 </div>
 
-                {/* 右侧玩家 */}
-                {renderPlayer(rightPlayer, 'right')}
+                {/* 右侧玩家（座位1） */}
+                {renderPlayer(seat1Player, 'right')}
             </div>
 
             {/* 左下角玩家计数 */}
