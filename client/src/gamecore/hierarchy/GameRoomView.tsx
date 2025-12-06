@@ -14,52 +14,69 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
     const [roomState, setRoomState] = useState(roomClient.getState());
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        let hasReceivedData = false;
+  useEffect(() => {
+    let hasReceivedData = false;
 
-        // 订阅状态更新
-        roomClient.init((state) => {
-            setRoomState(state);
-            // 只在第一次收到数据时设置为加载完成
-            if (!hasReceivedData) {
-                hasReceivedData = true;
-                setIsLoading(false);
-            }
-        });
+    // 订阅状态更新
+    roomClient.init((state) => {
+      console.log('[GameRoomView] 房间状态更新:', state);
+      setRoomState(state);
+      // 只在第一次收到数据时设置为加载完成
+      if (!hasReceivedData) {
+        hasReceivedData = true;
+        setIsLoading(false);
+      }
+    });
 
-        // 获取初始状态
-        setRoomState(roomClient.getState());
+    // 获取初始状态
+    const initialState = roomClient.getState();
+    console.log('[GameRoomView] 初始房间状态:', initialState);
+    setRoomState(initialState);
 
-        // 设置超时，最多加载3秒
-        const timeout = setTimeout(() => {
-            setIsLoading(false);
-        }, 3000);
+    // 设置超时，最多加载3秒
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
 
-        return () => {
-            clearTimeout(timeout);
-        };
-    }, [roomClient]);
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [roomClient]);
 
-    // 检查是否正在游戏中（已入座且游戏已开始）
-    const tableClient = roomClient.getTableClient();
-    const myTableId = roomState.selectedTableId;
-    const myTable = roomState.tables?.find((t: any) => t.tableId === myTableId);
+  // 检查是否正在游戏中（已入座且游戏已开始）
+  const tableClient = roomClient.getTableClient();
+  const myTableId = roomState.selectedTableId;
 
-    // 如果游戏已开始且我在桌上，显示全屏对局视图
-    if (myTableId && myTable?.status === 'playing' && tableClient && MatchView) {
-        const matchClient = tableClient.getMatchClient();
-        if (matchClient) {
-            return (
-                <MatchView
-                    matchClient={matchClient}
-                    onBack={() => {
-                        // 游戏结束或强制离开时返回
-                        roomClient.deselectTable();
-                    }}
-                />
-            );
-        }
+  // 调试日志
+  console.log('[GameRoomView] 当前状态:', {
+    myTableId,
+    hasTableClient: !!tableClient,
+    tableState: tableClient ? tableClient.getState() : null,
+    MatchView: !!MatchView
+  });
+
+  // 如果游戏已开始且我在桌上，显示全屏对局视图
+  if (myTableId && tableClient && MatchView) {
+    const tableState = tableClient.getState();
+    console.log('[GameRoomView] 检查游戏状态:', tableState.status);
+    if (tableState.status === 'playing') {
+      const matchClient = tableClient.getMatchClient();
+      console.log('[GameRoomView] 游戏开始，跳转到对局页面，matchClient:', matchClient);
+      if (matchClient) {
+        return (
+          <MatchView
+            matchClient={matchClient}
+            onBack={() => {
+              // 游戏结束或强制离开时返回
+              roomClient.deselectTable();
+            }}
+          />
+        );
+      }
+    } else {
+      console.log('[GameRoomView] 游戏尚未开始，当前状态:', tableState.status);
     }
+  }
 
     return (
         <main className="min-h-screen bg-amber-50 p-4 md:p-8">

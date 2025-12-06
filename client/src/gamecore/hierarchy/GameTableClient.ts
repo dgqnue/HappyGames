@@ -219,10 +219,14 @@ export abstract class GameTableClient {
      * 处理游戏开始
      */
     protected handleGameStart(data: any): void {
+        console.log(`[${this.gameType}TableClient] Game starting:`, data);
+        
         // 创建对局客户端
         if (!this.matchClient) {
+            console.log(`[${this.gameType}TableClient] Creating match client`);
             this.matchClient = new this.MatchClientClass(this.socket);
             this.matchClient.init((matchState) => {
+                console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
                 // 将对局状态合并到游戏桌状态
                 this.updateState({ ...(matchState as any) });
             });
@@ -232,6 +236,7 @@ export abstract class GameTableClient {
             status: 'playing',
             ...data
         });
+        console.log(`[${this.gameType}TableClient] State updated to playing, current state:`, this.state);
     }
 
     /**
@@ -289,7 +294,11 @@ export abstract class GameTableClient {
      * 更新状态并通知UI
      */
     protected updateState(newState: Partial<GameTableState>): void {
+        const oldStatus = this.state.status;
         this.state = { ...this.state, ...newState };
+        if (oldStatus !== this.state.status) {
+            console.log(`[${this.gameType}TableClient] Status changed from ${oldStatus} to ${this.state.status}`);
+        }
         if (this.onStateUpdate) {
             this.onStateUpdate(this.state);
         }
