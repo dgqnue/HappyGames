@@ -1160,6 +1160,7 @@ class MatchPlayers {
      * 开始游戏
      */
     startGame() {
+        console.log(`[MatchPlayers] startGame called for room ${this.roomId}`);
         this.isLocked = false;
         if (this.countdownTimer) {
             clearInterval(this.countdownTimer);
@@ -1167,6 +1168,8 @@ class MatchPlayers {
         }
 
         this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
+        console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
+
         this.matchState.cancelReadyCheck();
 
         // 停止僵尸桌检查
@@ -1176,10 +1179,12 @@ class MatchPlayers {
         }
 
         // 广播状态更新，确保所有客户端（包括大厅）都知道状态变为 playing
+        console.log(`[MatchPlayers] Broadcasting room state...`);
         this.table.broadcastRoomState();
 
         // 通知游戏桌开始游戏
         if (typeof this.table.startGame === 'function') {
+            console.log(`[MatchPlayers] Calling table.startGame()...`);
             this.table.startGame();
         } else {
             console.error('[MatchPlayers] Table does not implement startGame()');

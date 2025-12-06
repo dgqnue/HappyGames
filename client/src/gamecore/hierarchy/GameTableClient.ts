@@ -205,6 +205,7 @@ export abstract class GameTableClient {
      * 处理游戏桌状态更新
      */
     protected handleTableUpdate(data: any): void {
+        console.log(`[${this.gameType}TableClient] handleTableUpdate received status: ${data.status}`);
         const players = data.playerList || data.players || [];
         const canStart = this.checkCanStart(players);
 
