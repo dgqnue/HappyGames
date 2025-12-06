@@ -236,9 +236,18 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
     const handleLeave = (e: React.MouseEvent) => {
         e.stopPropagation();
+        console.log('[GameTableView] handleLeave called, tableClient exists:', !!tableClient);
         if (tableClient) {
+            console.log('[GameTableView] Calling tableClient.leaveTable()');
             tableClient.leaveTable();
+            console.log('[GameTableView] Calling roomClient.deselectTable()');
             roomClient.deselectTable();
+        }
+        // 强制刷新游戏桌列表
+        const roomState = roomClient.getState();
+        if (roomState.currentRoom?.id) {
+            console.log('[GameTableView] Forcing refresh of table list for room:', roomState.currentRoom.id);
+            roomClient.getTableList(roomState.currentRoom.id);
         }
     };
 

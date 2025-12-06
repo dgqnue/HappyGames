@@ -825,9 +825,11 @@ class MatchPlayers {
      */
     playerLeave(socket) {
         const userId = socket.user._id.toString();
+        console.log(`[MatchPlayers] playerLeave called for userId: ${userId}, roomId: ${this.roomId}`);
 
         // 记录之前的状态
         const wasMatching = this.matchState.status === MatchingRules.TABLE_STATUS.MATCHING;
+        console.log(`[MatchPlayers] Before leave - status: ${this.matchState.status}, wasMatching: ${wasMatching}`);
 
         // 从玩家列表移除
         const wasPlayer = this.matchState.removePlayer(userId);
@@ -835,12 +837,16 @@ class MatchPlayers {
         // 从观众列表移除
         const wasSpectator = this.matchState.removeSpectator(userId);
 
+        console.log(`[MatchPlayers] After removePlayer - wasPlayer: ${wasPlayer}, wasSpectator: ${wasSpectator}`);
+
         if (wasPlayer || wasSpectator) {
             socket.leave(this.roomId);
+            console.log(`[MatchPlayers] Socket left room, broadcasting room state. Current players: ${this.matchState.players.length}, status: ${this.matchState.status}`);
             this.table.broadcastRoomState();
 
             // 如果之前是匹配中，现在取消了，通知客户端取消倒计时
             if (wasMatching && this.matchState.status !== MatchingRules.TABLE_STATUS.MATCHING) {
+                console.log(`[MatchPlayers] Broadcasting ready_check_cancelled because matching was interrupted`);
                 this.table.broadcast('ready_check_cancelled', {
                     reason: '玩家离开，匹配中断',
                     remainingPlayers: this.matchState.players.length
@@ -849,8 +855,11 @@ class MatchPlayers {
 
             // 如果正在游戏倒计时，取消它
             if (this.countdownTimer) {
+                console.log(`[MatchPlayers] Cancelling game countdown because player left`);
                 this.cancelGameCountdown();
             }
+        } else {
+            console.log(`[MatchPlayers] Player ${userId} was not in the room as player or spectator`);
         }
 
         return wasPlayer || wasSpectator;
