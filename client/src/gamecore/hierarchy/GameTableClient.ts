@@ -127,8 +127,15 @@ export abstract class GameTableClient {
 
         // 游戏开始
         this.socket.on('game_start', (data: any) => {
-            console.log(`[${this.gameType}TableClient] Game starting:`, data);
+            console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
             this.handleGameStart(data);
+        });
+        
+        // 调试：监听所有游戏相关事件
+        this.socket.onAny((eventName, ...args) => {
+            if (eventName.includes('game') || eventName.includes('start') || eventName.includes('match')) {
+                console.log(`[${this.gameType}TableClient] Socket event: ${eventName}`, args);
+            }
         });
 
         // 准备倒计时开始
