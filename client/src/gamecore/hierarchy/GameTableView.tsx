@@ -290,17 +290,20 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             <div className="flex flex-col items-center justify-center">
                 {/* 昵称 + 称号（分行显示在头像上方） */}
                 <div className="flex flex-col items-center justify-center h-[32px] mb-2">
-                    <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
-                            {displayName}
-                        </span>
-                        <span
-                            className="text-xs whitespace-nowrap leading-tight"
-                            style={{ color: titleColor }}
-                        >
-                            {displayTitle}
-                        </span>
-                    </div>
+                <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
+                        {displayName}
+                    </span>
+                    {isReady && (
+                        <span className="text-xs text-green-600 font-medium">就绪</span>
+                    )}
+                    <span
+                        className="text-xs whitespace-nowrap leading-tight"
+                        style={{ color: titleColor }}
+                    >
+                        {displayTitle}
+                    </span>
+                </div>
                 </div>
 
                 {/* 头像 */}
