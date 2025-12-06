@@ -2,7 +2,7 @@
 
 import { GameRoomView } from '@/gamecore/hierarchy/GameRoomView';
 import { ChineseChessRoomClient } from './ChineseChessRoomClient';
-import { ChineseChessMatchView } from './ChineseChessMatchView';
+import ChineseChessMatchView from './ChineseChessMatchView';
 
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
@@ -14,6 +14,7 @@ interface ChineseChessRoomViewProps {
  * 这是一个简单的包装组件，将通用的 GameRoomView 与中国象棋的 RoomClient 和 MatchView 连接
  */
 export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomViewProps) {
+    console.log('[ChineseChessRoomView] Rendering, ChineseChessMatchView:', ChineseChessMatchView);
     return (
         <GameRoomView
             roomClient={roomClient}

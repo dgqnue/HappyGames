@@ -40,7 +40,7 @@ const BOARD_HEIGHT = 600;
 const CELL_SIZE = 60;
 const PIECE_SIZE = 50; // 棋子绘制大小
 
-export function ChineseChessMatchView({ matchClient, onBack }: ChineseChessMatchViewProps) {
+export default function ChineseChessMatchView({ matchClient, onBack }: ChineseChessMatchViewProps) {
   // 强制刷新状态
   const [, setTick] = useState(0);
   const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
