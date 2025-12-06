@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { ChineseChessCenterClient } from '@/games/chinesechess/gamepagehierarchy/ChineseChessCenterClient';
-import { ChineseChessCenterView } from '@/games/chinesechess/ChineseChessCenterView';
+import { ChineseChessCenterView } from '@/games/chinesechess/gamepagehierarchy/ChineseChessCenterView';
 
 export default function ChineseChessPage() {
     const router = useRouter();

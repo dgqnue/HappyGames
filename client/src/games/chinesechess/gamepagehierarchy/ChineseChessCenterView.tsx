@@ -1,7 +1,7 @@
 'use client';
 
 import { GameCenterView } from '@/gamecore/hierarchy/GameCenterView';
-import { ChineseChessCenterClient } from './gamepagehierarchy/ChineseChessCenterClient';
+import { ChineseChessCenterClient } from './ChineseChessCenterClient';
 
 interface ChineseChessCenterViewProps {
     centerClient: ChineseChessCenterClient;

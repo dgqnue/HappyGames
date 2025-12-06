@@ -1,7 +1,7 @@
 'use client';
 
 import { GameTableView } from '@/gamecore/hierarchy/GameTableView';
-import { ChineseChessRoomClient } from './gamepagehierarchy/ChineseChessRoomClient';
+import { ChineseChessRoomClient } from './ChineseChessRoomClient';
 
 interface ChineseChessTableViewProps {
     table: any;

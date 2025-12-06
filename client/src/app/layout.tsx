@@ -24,12 +24,11 @@
  */
 
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/lib/i18n';
 
-// 配置 Google 字体 Inter
-const inter = Inter({ subsets: ['latin'] })
+// 移除 Google 字体以避免构建时的网络超时问题
+// 在 globals.css 中使用系统字体栈
 
 // 导出全局元数据，用于 SEO 优化
 export const metadata: Metadata = {
@@ -49,7 +48,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body className={inter.className}>
+            <body>
                 {/* 多语言 Provider，为所有子组件提供语言切换功能 */}
                 <LanguageProvider>
                     {children}
