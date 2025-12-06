@@ -87,6 +87,13 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         playerList = localState.players;
         console.log('[GameTableView] Using localState.players:', playerList);
     }
+    // 调试：打印playerList中玩家的ready状态
+    console.log('[GameTableView] playerList ready status:', playerList.map((p: any) => ({ 
+        nickname: p.nickname, 
+        ready: p.ready, 
+        userId: p.userId,
+        hasReady: p.ready !== undefined 
+    })));
     
     // 检查是否有seatIndex字段：检查所有玩家，确保至少有一个玩家有seatIndex字段
     const hasSeatIndex = playerList.length > 0 && playerList.some((p: any) => p.seatIndex !== undefined);
@@ -157,6 +164,19 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     useEffect(() => {
         if (tableClient) {
             const updateState = (s: any) => {
+                console.log('[GameTableView] tableClient state update - full state:', s);
+                console.log('[GameTableView] tableClient state update - isReady:', s.isReady);
+                console.log('[GameTableView] tableClient state update - players:', s.players);
+                if (s.players && s.players.length > 0) {
+                    console.log('[GameTableView] Updated players with ready status:', s.players.map((p: any) => ({ 
+                        nickname: p.nickname, 
+                        ready: p.ready,
+                        isReady: p.isReady,
+                        userId: p.userId,
+                        hasReadyField: p.ready !== undefined,
+                        hasIsReadyField: p.isReady !== undefined
+                    })));
+                }
                 setLocalState(s);
 
                 // 处理倒计时逻辑
@@ -175,7 +195,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 }
             };
 
-            updateState(tableClient.getState());
+            const initialState = tableClient.getState();
+            console.log('[GameTableView] Initial tableClient state:', initialState);
+            updateState(initialState);
             tableClient.init(updateState);
 
             // 设置被踢出回调
@@ -222,7 +244,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         }
     }, [tableClient]);
 
-    const isReady = localState.isReady || false;
+    const isReady = localState.ready || false;
 
     const handleJoin = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -289,14 +311,12 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const displayTitle = player.title || '初出茅庐';
         const avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
         const titleColor = player.titleColor || '#666';
-        // 注意：玩家就绪状态字段为 ready，使用宽松相等兼容布尔值和字符串
-        const isReady = player.ready == true; // 使用 == 而不是 ===，兼容 'true' 字符串
+        
+        // 直接使用player.ready字段（统一命名）
+        const playerReady = player.ready == true; // 使用宽松相等，兼容布尔值和字符串
         
         // 调试日志：检查玩家就绪状态
-        console.log(`[GameTableView] renderPlayer - player: ${displayName}, isReady: ${isReady}, ready: ${player.ready}, player object:`, player);
-        
-        // 临时调试：在UI上显示ready值（仅开发环境）
-        const debugReady = player.ready !== undefined ? String(player.ready) : 'undefined';
+        console.log(`[GameTableView] renderPlayer - player: ${displayName}, position: ${position}, playerReady: ${playerReady}, player.ready: ${player.ready}`);
 
         return (
             <div className="flex flex-col items-center justify-center">
@@ -306,8 +326,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     <span className="text-base truncate max-w-[100px] text-center leading-tight text-gray-800">
                         {displayName}
                     </span>
-                    {isReady && (
-                        <span className="text-xs text-green-600 font-medium">就绪 (ready: {debugReady})</span>
+                    {playerReady && (
+                        <span className="text-xs text-green-600 font-medium">就绪</span>
                     )}
                     <span
                         className="text-xs whitespace-nowrap leading-tight"
@@ -330,7 +350,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             target.src = '/images/default-avatar.png';
                         }}
                     />
-                    {isReady && (
+                    {playerReady && (
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
                             <span className="text-white text-xs">✓</span>
                         </div>

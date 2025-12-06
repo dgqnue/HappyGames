@@ -39,7 +39,7 @@ export interface GameTableState {
     baseBet: number;
     players: Player[];
     maxPlayers: number;
-    isReady: boolean;
+    ready: boolean;  // 统一使用ready，而非isReady
     canStart: boolean;
     countdown?: {
         type: 'ready' | 'start' | 'rematch';
@@ -63,6 +63,8 @@ export abstract class GameTableClient {
     // 对局客户端（游戏开始后创建）
     protected matchClient: GameMatchClient | null = null;
     protected MatchClientClass: new (socket: Socket) => GameMatchClient;
+    // 当前用户ID
+    protected currentUserId: string | null = null;
 
     constructor(
         socket: Socket,
@@ -78,7 +80,7 @@ export abstract class GameTableClient {
             baseBet: 0,
             players: [],
             maxPlayers: 2,
-            isReady: false,
+            ready: false,
             canStart: false
         };
     }
@@ -229,6 +231,12 @@ export abstract class GameTableClient {
                 p.userId === userId ? { ...p, ready } : p
             );
             const canStart = this.checkCanStart(players);
+            
+            // 如果这个玩家是当前用户，同时更新 isReady 状态
+            // 需要获取当前用户的userId，这里假设可以从socket或状态中获取
+            // 由于数据中可能不直接包含当前用户ID，我们暂时不更新isReady
+            // isReady会在setReady方法中直接更新
+            
             this.updateState({ players, canStart });
         }
     }
@@ -287,7 +295,7 @@ export abstract class GameTableClient {
         this.updateState({
             tableId: null,
             players: [],
-            isReady: false,
+            ready: false,
             canStart: false
         });
     }
@@ -300,7 +308,7 @@ export abstract class GameTableClient {
         console.log(`[${this.gameType}TableClient] Setting ready:`, ready);
         const event = ready ? 'player_ready' : 'player_unready';
         this.socket.emit(event);
-        this.updateState({ isReady: ready });
+        this.updateState({ ready: ready });
     }
 
     /**

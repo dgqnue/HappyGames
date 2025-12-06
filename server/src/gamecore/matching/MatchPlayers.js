@@ -848,7 +848,7 @@ class MatchPlayers {
             winRate: Math.round(winRate),
             disconnectRate: Math.round(disconnectRate),
             matchSettings: matchSettings,
-            isReady: false
+            ready: false
         };
 
         // 尝试入座
