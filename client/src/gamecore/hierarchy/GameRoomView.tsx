@@ -43,6 +43,23 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
         };
     }, [roomClient]);
 
+    // 监听 tableClient 的状态变化，强制刷新组件
+    useEffect(() => {
+        const checkTableStatus = () => {
+            const currentTableClient = roomClient.getTableClient();
+            if (currentTableClient) {
+                const state = currentTableClient.getState();
+                // 如果状态是 playing 且有 matchClient，强制刷新以触发跳转
+                if (state.status === 'playing' && state.matchClient) {
+                    setRoomState(prev => ({ ...prev }));
+                }
+            }
+        };
+
+        const interval = setInterval(checkTableStatus, 500);
+        return () => clearInterval(interval);
+    }, [roomClient, roomState.selectedTableId]);
+
     // 检查是否正在游戏中（已入座且游戏已开始）
     const tableClient = roomClient.getTableClient();
     const myTableId = roomState.selectedTableId;
@@ -71,7 +88,7 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
             myTableId,
             hasMatchView: !!MatchView
         });
-        
+
         if (tableState.status === 'playing') {
             const matchClient = tableClient.getMatchClient();
             console.log('[GameRoomView] 游戏开始，跳转到对局页面，matchClient:', matchClient);
