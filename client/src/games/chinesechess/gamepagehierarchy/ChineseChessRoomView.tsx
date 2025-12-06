@@ -2,7 +2,12 @@
 
 import { GameRoomView } from '@/gamecore/hierarchy/GameRoomView';
 import { ChineseChessRoomClient } from './ChineseChessRoomClient';
-import ChineseChessMatchView from './ChineseChessMatchView';
+import dynamic from 'next/dynamic';
+
+const ChineseChessMatchView = dynamic(() => import('./ChineseChessMatchView'), {
+    loading: () => <div className="flex justify-center items-center h-full">Loading Game...</div>,
+    ssr: false
+});
 
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
