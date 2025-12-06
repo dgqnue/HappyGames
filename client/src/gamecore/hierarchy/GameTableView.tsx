@@ -61,9 +61,22 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
     const isIdle = status === 'idle';
     const isWaiting = status === 'waiting';
+    // 匹配状态：服务器明确发送matching，或者满座但状态为waiting（兼容旧逻辑）
     const isMatching = status === 'matching' || (status === 'waiting' && playerCount === maxPlayers);
     const isPlaying = status === 'playing';
     const canJoin = (isIdle || isWaiting) && playerCount < maxPlayers;
+    
+    // 调试状态
+    console.log('[GameTableView] Status debug:', {
+        status,
+        playerCount,
+        maxPlayers,
+        isIdle,
+        isWaiting,
+        isMatching,
+        isPlaying,
+        canJoin
+    });
 
     // 本地跟踪选中的桌子ID，确保被踢出后立即更新
     const [selectedTableId, setSelectedTableId] = useState(roomClient.getState().selectedTableId);
