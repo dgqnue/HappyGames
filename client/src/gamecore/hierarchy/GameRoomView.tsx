@@ -93,6 +93,7 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
             const matchClient = tableClient.getMatchClient();
             console.log('[GameRoomView] 游戏开始，跳转到对局页面，matchClient:', matchClient);
             if (matchClient) {
+                console.log('[GameRoomView] Rendering MatchView...');
                 return (
                     <MatchView
                         matchClient={matchClient}
