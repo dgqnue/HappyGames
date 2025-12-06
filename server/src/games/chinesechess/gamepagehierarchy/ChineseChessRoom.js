@@ -135,7 +135,7 @@ class ChineseChessRoom extends GameRoom {
                 avatar: p.user?.avatar,
                 title: p.title || '初出茅庐',
                 titleColor: p.titleColor || '#666',
-                isReady: p.isReady || false,
+                ready: p.ready || false,
                 seatIndex: p.seatIndex
             }))
         }));

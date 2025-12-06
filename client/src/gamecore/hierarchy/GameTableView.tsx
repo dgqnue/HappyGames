@@ -349,12 +349,12 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const titleColor = player.titleColor || '#666';
 
         // 直接使用player.ready字段（统一命名）
-        const playerReady = player.ready == true; // 使用宽松相等，兼容布尔值和字符串
+        const playerReady = !!player.ready; // 强制转换为布尔值
 
         return (
             <div className="flex flex-col items-center justify-center">
                 {/* 就绪状态 - 占位显示以防止跳动 */}
-                <div className={`h-6 flex items-center justify-center transition-all duration-300 ${playerReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                <div className={`h-6 flex items-center justify-center ${playerReady ? 'opacity-100' : 'opacity-0'}`}>
                     <span className="text-sm font-bold text-green-500 tracking-widest">就绪</span>
                 </div>
 
