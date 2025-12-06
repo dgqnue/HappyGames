@@ -400,7 +400,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                                 {timeLeft}
                             </p>
                             <p className="text-xs text-red-500 mt-1">
-                                请在30秒内开始游戏
+                                {localState.countdown && localState.countdown.type === 'start' ? `${timeLeft}秒后开始游戏` : '请在30秒内开始游戏'}
                             </p>
                         </div>
                     ) : (
