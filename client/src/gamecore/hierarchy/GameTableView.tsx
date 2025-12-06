@@ -355,7 +355,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             <div className="flex flex-col items-center justify-center">
                 {/* 就绪状态 - 占位显示以防止跳动 */}
                 <div className={`h-6 flex items-center justify-center ${playerReady ? 'opacity-100' : 'opacity-0'}`}>
-                    <span className="text-sm font-bold text-green-500 tracking-widest">就绪</span>
+                    <span className="text-sm text-green-500 tracking-widest">就绪</span>
                 </div>
 
                 {/* 昵称 + 称号（分行显示在头像上方） */}
