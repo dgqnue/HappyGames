@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 
 // 棋子类型定义
@@ -60,47 +60,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [playerNames, setPlayerNames] = useState<any>({ r: '红方', b: '黑方' });
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 订阅游戏状态变化
-  useEffect(() => {
-    if (!tableClient) return;
-
-    try {
-      const unsubscribe = tableClient.onStateChange?.(() => {
-        // 直接更新游戏状态，而不是仅仅触发 tick
-        if (tableClient) {
-          try {
-            const newBoardData = tableClient.getBoard?.() || null;
-            const newCurrentTurn = tableClient.getTurn?.() || 'r';
-            const mySideValue = tableClient.getMySide?.();
-            const newMySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
-            let newGameState = tableClient.getState?.();
-            
-            if (!newGameState) {
-              newGameState = { winner: null };
-            }
-            
-            const newPlayerNames = newGameState.players || { r: '红方', b: '黑方' };
-            
-            setBoardData(newBoardData);
-            setCurrentTurn(newCurrentTurn);
-            setMySide(newMySide);
-            setGameState(newGameState);
-            setPlayerNames(newPlayerNames);
-          } catch (err) {
-            console.error('[ChineseChessDisplay] Error updating game state from onStateChange:', err);
-          }
-        }
-      });
-      return unsubscribe;
-    } catch (err) {
-      console.error('[ChineseChessDisplay] Error in state subscription:', err);
-    }
-  }, [tableClient]);
-
-  // 获取游戏状态 - 使用 useEffect 来更新 state
-  useEffect(() => {
+  // 更新游戏状态的函数
+  const updateGameState = useCallback(() => {
     if (!tableClient) {
-      console.error('[ChineseChessDisplay] tableClient is not provided');
       setGameState({ winner: null });
       return;
     }
@@ -138,6 +100,24 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       setGameState({ winner: null });
     }
   }, [tableClient]);
+
+  // 订阅游戏状态变化
+  useEffect(() => {
+    if (!tableClient) return;
+
+    // 初始化时更新一次
+    updateGameState();
+
+    try {
+      const unsubscribe = tableClient.onStateChange?.(() => {
+        // 游戏状态改变时更新
+        updateGameState();
+      });
+      return unsubscribe;
+    } catch (err) {
+      console.error('[ChineseChessDisplay] Error in state subscription:', err);
+    }
+  }, [tableClient, updateGameState]);
 
   // 棋子数据处理（useMemo避免无限循环）
   const pieces = useMemo(() => {
