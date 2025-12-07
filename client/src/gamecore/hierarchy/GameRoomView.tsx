@@ -97,49 +97,21 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
     }
 
     // 如果游戏已开始，显示游戏界面
+    // 如果游戏已开始，显示游戏界面
     if (shouldShowGame && myTableId && tableClient) {
-        const matchClient = tableClient.getMatchClient();
-        console.log('[GameRoomView] Showing game - matchClient:', !!matchClient);
+        console.log('[GameRoomView] Game is playing, showing game directly');
         
         if (MatchView) {
-            if (matchClient) {
-                console.log('[GameRoomView] Rendering MatchView with matchClient');
-                return (
-                    <MatchView
-                        matchClient={matchClient}
-                        onBack={() => {
-                            roomClient.deselectTable();
-                        }}
-                    />
-                );
-            } else {
-                console.log('[GameRoomView] Game started, waiting for matchClient...');
-                return (
-                    <main className="min-h-screen bg-amber-50 p-4 md:p-8">
-                        <div className="max-w-7xl mx-auto">
-                            <div className="flex items-center gap-4 mb-8">
-                                <button
-                                    onClick={onBack}
-                                    className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                                >
-                                    <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                    </svg>
-                                </button>
-                                <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
-                                    <span className="text-4xl">🏠</span> 游戏加载中...
-                                </h1>
-                            </div>
-                            <div className="flex justify-center items-center h-96">
-                                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-800"></div>
-                                <div className="ml-4 text-gray-600">
-                                    正在初始化游戏对局...
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-                );
-            }
+            console.log('[GameRoomView] Rendering MatchView with tableClient');
+            return (
+                <MatchView
+                    tableClient={tableClient}
+                    matchClient={tableClient.getMatchClient()}
+                    onBack={() => {
+                        roomClient.deselectTable();
+                    }}
+                />
+            );
         } else {
             console.error('[GameRoomView] MatchView is not provided!');
             return (

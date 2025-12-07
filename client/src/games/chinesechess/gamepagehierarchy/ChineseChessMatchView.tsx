@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ChineseChessMatchClient } from './ChineseChessMatchClient';
 
 interface ChineseChessMatchViewProps {
-  matchClient: ChineseChessMatchClient;
+  tableClient?: any;
+  matchClient?: any;
   onBack: () => void;
 }
 
@@ -41,7 +42,8 @@ const BOARD_HEIGHT = 600;
 const CELL_SIZE = 60;
 const PIECE_SIZE = 50; // 棋子绘制大小
 
-export default function ChineseChessMatchView({ matchClient, onBack }: ChineseChessMatchViewProps) {
+export default function ChineseChessMatchView({ tableClient, matchClient, onBack }: ChineseChessMatchViewProps) {
+  const gameClient = tableClient || matchClient;
   // 强制刷新状态
   const [, setTick] = useState(0);
   const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
@@ -72,11 +74,11 @@ export default function ChineseChessMatchView({ matchClient, onBack }: ChineseCh
   // 订阅游戏状态变化
   useEffect(() => {
     try {
-      if (!matchClient || typeof matchClient.onStateChange !== 'function') {
-        console.warn('[ChineseChessMatchView] matchClient.onStateChange not available');
+      if (!gameClient || typeof gameClient.onStateChange !== 'function') {
+        console.warn('[ChineseChessMatchView] gameClient.onStateChange not available');
         return;
       }
-      const unsubscribe = matchClient.onStateChange(() => {
+      const unsubscribe = gameClient.onStateChange(() => {
         setTick(t => t + 1);
       });
       return unsubscribe;
@@ -84,7 +86,7 @@ export default function ChineseChessMatchView({ matchClient, onBack }: ChineseCh
       console.error('[ChineseChessMatchView] Error in onStateChange setup:', err);
       setError('状态监听失败');
     }
-  }, [matchClient]);
+  }, [gameClient]);
 
   // 获取当前游戏状态
   let boardData: (string | null)[][] | null = null;
@@ -94,11 +96,11 @@ export default function ChineseChessMatchView({ matchClient, onBack }: ChineseCh
   let playerNames: any = { r: '红方', b: '黑方' };
 
   try {
-    if (matchClient) {
-      boardData = matchClient.getBoard?.() || null;
-      currentTurn = matchClient.getTurn?.() || 'r';
-      mySide = matchClient.getMySide?.();
-      state = matchClient.getState?.() || {};
+    if (gameClient) {
+      boardData = gameClient.getBoard?.() || null;
+      currentTurn = gameClient.getTurn?.() || 'r';
+      mySide = gameClient.getMySide?.();
+      state = gameClient.getState?.() || {};
       playerNames = state.players || { r: '红方', b: '黑方' };
     }
   } catch (err) {
@@ -191,10 +193,10 @@ export default function ChineseChessMatchView({ matchClient, onBack }: ChineseCh
         }
 
         // 尝试移动 (如果是我的回合)
-        if (isMyTurn && matchClient && typeof matchClient.sendMove === 'function') {
+        if (isMyTurn && gameClient && typeof gameClient.sendMove === 'function') {
           console.log(`Attempting move from (${selectedPiece.row}, ${selectedPiece.col}) to (${row}, ${col})`);
           try {
-            matchClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
+            gameClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
             setSelectedPiece(null);
           } catch (err) {
             console.error('[ChineseChessMatchView] Error sending move:', err);

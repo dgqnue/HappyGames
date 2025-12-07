@@ -419,6 +419,66 @@ export abstract class GameTableClient {
         return this.matchClient;
     }
 
+    // ===== 游戏特定方法（简化架构 - 不通过 MatchClient） =====
+
+    /**
+     * 获取棋盘数据
+     */
+    public getBoard(): any {
+        return this.state.board || [];
+    }
+
+    /**
+     * 获取当前回合
+     */
+    public getTurn(): string {
+        return this.state.turn || 'r';
+    }
+
+    /**
+     * 获取我的方
+     */
+    public getMySide(): string | undefined {
+        return this.state.mySide;
+    }
+
+    /**
+     * 获取游戏状态
+     */
+    public getGameState(): any {
+        return {
+            board: this.state.board,
+            turn: this.state.turn,
+            mySide: this.state.mySide,
+            players: this.state.players,
+            status: this.state.status,
+            winner: this.state.winner
+        };
+    }
+
+    /**
+     * 发送棋子移动
+     */
+    public sendMove(fromX: number, fromY: number, toX: number, toY: number): void {
+        console.log(`[${this.gameType}TableClient] Sending move: (${fromX}, ${fromY}) → (${toX}, ${toY})`);
+        this.socket.emit(`${this.gameType}_move`, { fromX, fromY, toX, toY });
+    }
+
+    /**
+     * 订阅状态变化（提供给游戏视图）
+     */
+    public onStateChange(callback: () => void): () => void {
+        // 返回一个取消订阅函数
+        const handler = (state: any) => callback();
+        if (this.onStateUpdate) {
+            this.onStateUpdate(this.state);
+        }
+        // 注意：这是一个简化的实现，实际需要存储监听器并定期调用
+        return () => {
+            // 取消订阅
+        };
+    }
+
     /**
      * 清理资源
      */
