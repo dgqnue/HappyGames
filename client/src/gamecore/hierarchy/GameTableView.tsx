@@ -193,22 +193,26 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 监听roomClient状态变化，确保isMyTable正确更新
     useEffect(() => {
         // 定期检查roomClient状态，确保UI与状态同步
+        // 但在游戏进行中不要改变selectedTableId，防止中途卸载
         const interval = setInterval(() => {
-            const newSelectedTableId = roomClient.getState().selectedTableId;
-            if (newSelectedTableId !== selectedTableId) {
-                setSelectedTableId(newSelectedTableId);
+            if (localState.status !== 'playing') {
+                const newSelectedTableId = roomClient.getState().selectedTableId;
+                if (newSelectedTableId !== selectedTableId) {
+                    setSelectedTableId(newSelectedTableId);
+                }
             }
         }, 300);
 
         return () => clearInterval(interval);
-    }, [roomClient, selectedTableId]);
+    }, [roomClient, selectedTableId, localState.status]);
 
     // 如果传入的isMyTable与本地不一致，更新本地状态
+    // 但在游戏进行中不要改变，防止中途卸载重装
     useEffect(() => {
-        if (isMyTable !== isMyTableLocal) {
+        if (isMyTable !== isMyTableLocal && localState.status !== 'playing') {
             setSelectedTableId(isMyTable ? table.tableId : null);
         }
-    }, [isMyTable]);
+    }, [isMyTable, localState.status]);
 
     // 同步 TableClient 状态
     useEffect(() => {
@@ -314,10 +318,18 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const leaveSeat = () => {
             if (hasLeft) return;
             if (tableClientRef.current && isMyTableLocalRef.current) {
-                console.log('[GameTableView] Auto leaving seat due to page/component unload');
-                tableClientRef.current.leaveTable();
-                roomClientRef.current.deselectTable();
-                hasLeft = true;
+                const tableState = tableClientRef.current.getState?.();
+                // 游戏进行中不要调用deselectTable - 这会导致tableClient被销毁
+                // 只在idle或waiting状态时才允许完全离座
+                if (tableState?.status !== 'playing') {
+                    console.log('[GameTableView] Auto leaving seat due to page/component unload');
+                    tableClientRef.current.leaveTable();
+                    roomClientRef.current.deselectTable();
+                    hasLeft = true;
+                } else {
+                    console.log('[GameTableView] Game in progress, not calling deselectTable to avoid destroying tableClient');
+                    hasLeft = true; // 标记为已处理，但不销毁tableClient
+                }
             }
         };
 

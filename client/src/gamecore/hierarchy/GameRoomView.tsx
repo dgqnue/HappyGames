@@ -70,30 +70,24 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     // 检查游戏是否开始 - 如果游戏状态为 'playing'，则显示游戏界面
     let shouldShowGame = false;
     console.log('[GameRoomView] Game status check started, myTableId:', myTableId, 'tableClient exists:', !!tableClient);
-    if (myTableId) {
+    if (myTableId && tableClient) {
         console.log(`[GameRoomView] Checking game status for myTableId: ${myTableId}`);
         
-        // 优先从 roomState.tables 中查找状态（通过 table_update 事件）
-        if (roomState.tables && roomState.tables.length > 0) {
-            const myTable = roomState.tables.find((t: any) => t.tableId === myTableId);
-            console.log(`[GameRoomView] Found table in roomState.tables:`, myTable);
-            if (myTable && myTable.status === 'playing') {
-                shouldShowGame = true;
-                console.log('[GameRoomView] ✓ Game starting - detected from roomState.tables');
-            } else if (myTable) {
-                console.log(`[GameRoomView] Table found but status is ${myTable.status}, not playing yet`);
-            }
+        // 从 tableClient 的状态查找（最可靠的来源）
+        const tableState = tableClient.getState();
+        console.log(`[GameRoomView] tableClient status:`, tableState.status);
+        if (tableState.status === 'playing') {
+            shouldShowGame = true;
+            console.log('[GameRoomView] ✓ Game starting - detected from tableClient');
         } else {
-            console.log(`[GameRoomView] roomState.tables is empty or not available`);
-        }
-        
-        // 或者从 tableClient 的状态查找（备选方案）
-        if (!shouldShowGame && tableClient) {
-            const tableState = tableClient.getState();
-            console.log(`[GameRoomView] Checking tableClient status:`, tableState.status);
-            if (tableState.status === 'playing') {
-                shouldShowGame = true;
-                console.log('[GameRoomView] ✓ Game starting - detected from tableClient');
+            // 备选：从 roomState.tables 查找（备用来源）
+            if (roomState.tables && roomState.tables.length > 0) {
+                const myTable = roomState.tables.find((t: any) => t.tableId === myTableId);
+                console.log(`[GameRoomView] Found table in roomState.tables:`, myTable);
+                if (myTable && myTable.status === 'playing') {
+                    shouldShowGame = true;
+                    console.log('[GameRoomView] ✓ Game starting - detected from roomState.tables');
+                }
             }
         }
     }
@@ -109,6 +103,7 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
         console.log('[GameRoomView] ✅ Game playing, rendering GameTableView');
         return (
             <GameTableView
+                key={`game-${myTableId}`}
                 table={myTable}
                 roomClient={roomClient}
                 isMyTable={true}
