@@ -295,16 +295,28 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     }, [tableClient]);
 
     // 处理页面卸载或组件卸载时的自动离座
+    // 使用 ref 来避免依赖项变化导致的重复执行
+    const tableClientRef = useRef(tableClient);
+    const isMyTableLocalRef = useRef(isMyTableLocal);
+    const roomClientRef = useRef(roomClient);
+
+    useEffect(() => {
+        // 更新 ref 的值，但不触发 effect 重新执行
+        tableClientRef.current = tableClient;
+        isMyTableLocalRef.current = isMyTableLocal;
+        roomClientRef.current = roomClient;
+    }, [tableClient, isMyTableLocal, roomClient]);
+
     useEffect(() => {
         // 标记是否已经执行过离座，避免重复执行
         let hasLeft = false;
 
         const leaveSeat = () => {
             if (hasLeft) return;
-            if (tableClient && isMyTableLocal) {
+            if (tableClientRef.current && isMyTableLocalRef.current) {
                 console.log('[GameTableView] Auto leaving seat due to page/component unload');
-                tableClient.leaveTable();
-                roomClient.deselectTable();
+                tableClientRef.current.leaveTable();
+                roomClientRef.current.deselectTable();
                 hasLeft = true;
             }
         };
@@ -326,7 +338,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             window.removeEventListener('beforeunload', handleBeforeUnload);
             leaveSeat();
         };
-    }, [tableClient, isMyTableLocal, roomClient]);
+    }, []); // 空依赖数组：只在挂载/卸载时执行
 
     const isReady = localState.ready === true;
 
