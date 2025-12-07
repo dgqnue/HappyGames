@@ -42,15 +42,20 @@ const CELL_SIZE = 60;
 const PIECE_SIZE = 50; // 棋子绘制大小
 
 export default function ChineseChessMatchView({ tableClient, matchClient, onBack }: ChineseChessMatchViewProps) {
+  console.log('[ChineseChessMatchView] Initializing with props:', { tableClient: !!tableClient, matchClient: !!matchClient });
   const gameClient = tableClient || matchClient;
+  console.log('[ChineseChessMatchView] gameClient assigned:', !!gameClient);
+  
   // 强制刷新状态
   const [, setTick] = useState(0);
   const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  console.log('[ChineseChessMatchView] State hooks initialized');
 
   // 验证 gameClient 是否有效
   if (!gameClient) {
+    console.error('[ChineseChessMatchView] gameClient is null/undefined!');
     return (
       <main className="min-h-screen bg-red-50 p-4 md:p-8 flex items-center justify-center">
         <div className="max-w-md w-full">
