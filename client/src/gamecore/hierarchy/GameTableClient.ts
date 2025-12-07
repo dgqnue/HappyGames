@@ -59,6 +59,9 @@ export abstract class GameTableClient {
     // 被踢出回调
     protected onKicked: ((data: any) => void) | null = null;
 
+    // 状态变化订阅列表
+    protected stateChangeCallbacks: Array<() => void> = [];
+
     // 当前用户ID
     protected currentUserId: string | null = null;
 
@@ -345,6 +348,15 @@ export abstract class GameTableClient {
         } else {
             console.warn(`[${this.gameType}TableClient] onStateUpdate is null, cannot notify UI`);
         }
+
+        // 调用所有订阅的状态变化回调
+        this.stateChangeCallbacks.forEach(callback => {
+            try {
+                callback();
+            } catch (err) {
+                console.error(`[${this.gameType}TableClient] Error in state change callback:`, err);
+            }
+        });
     }
 
     /**
@@ -403,14 +415,19 @@ export abstract class GameTableClient {
      * 订阅状态变化（提供给游戏视图）
      */
     public onStateChange(callback: () => void): () => void {
-        // 返回一个取消订阅函数
-        const handler = (state: any) => callback();
-        if (this.onStateUpdate) {
-            this.onStateUpdate(this.state);
+        // 添加回调到列表
+        this.stateChangeCallbacks.push(callback);
+        
+        // 立即调用一次以获取初始状态
+        try {
+            callback();
+        } catch (err) {
+            console.error(`[${this.gameType}TableClient] Error in initial state change callback:`, err);
         }
-        // 注意：这是一个简化的实现，实际需要存储监听器并定期调用
+        
+        // 返回一个取消订阅函数
         return () => {
-            // 取消订阅
+            this.stateChangeCallbacks = this.stateChangeCallbacks.filter(cb => cb !== callback);
         };
     }
 
@@ -422,6 +439,7 @@ export abstract class GameTableClient {
         this.removeCommonListeners();
         this.removeTableListeners();
         this.onStateUpdate = null;
+        this.stateChangeCallbacks = [];
     }
 
     /**

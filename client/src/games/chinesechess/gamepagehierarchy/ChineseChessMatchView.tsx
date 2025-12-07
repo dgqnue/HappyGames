@@ -49,8 +49,8 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 验证 matchClient 是否有效
-  if (!matchClient) {
+  // 验证 gameClient 是否有效
+  if (!gameClient) {
     return (
       <main className="min-h-screen bg-red-50 p-4 md:p-8 flex items-center justify-center">
         <div className="max-w-md w-full">
