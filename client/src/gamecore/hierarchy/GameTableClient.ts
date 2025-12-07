@@ -271,32 +271,50 @@ export abstract class GameTableClient {
     protected handleGameStart(data: any): void {
         console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
 
-        // 创建对局客户端
-        if (!this.matchClient) {
-            console.log(`[${this.gameType}TableClient] Creating match client`);
-            this.matchClient = new this.MatchClientClass(this.socket);
-            this.matchClient.init((matchState) => {
-                console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
-                // 将对局状态合并到游戏桌状态
-                this.updateState({ ...(matchState as any) });
-            });
-        } else {
-            console.log(`[${this.gameType}TableClient] Match client already exists`);
-        }
+        try {
+            // 创建对局客户端
+            if (!this.matchClient) {
+                console.log(`[${this.gameType}TableClient] Creating match client`);
+                this.matchClient = new this.MatchClientClass(this.socket);
+                
+                // 初始化对局客户端
+                console.log(`[${this.gameType}TableClient] Initializing match client`);
+                this.matchClient.init((matchState) => {
+                    try {
+                        console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
+                        // 将对局状态合并到游戏桌状态
+                        this.updateState({ ...(matchState as any) });
+                    } catch (error) {
+                        console.error(`[${this.gameType}TableClient] Error updating state from match client:`, error);
+                    }
+                });
+                
+                console.log(`[${this.gameType}TableClient] Match client initialized successfully`);
+            } else {
+                console.log(`[${this.gameType}TableClient] Match client already exists`);
+            }
 
-        // 更新状态为 playing，并确保其他相关字段也更新
-        this.updateState({
-            status: 'playing',
-            ...data,
-            canStart: false, // 游戏开始后不能再开始
-            ready: false, // 重置准备状态
-            countdown: null // 清除倒计时
-        });
-        
-        console.log(`[${this.gameType}TableClient] State updated to playing, current state:`, this.state);
-        
-        // 额外广播一次状态更新，确保所有客户端收到
-        this.socket.emit('request_table_state');
+            // 更新状态为 playing，并确保其他相关字段也更新
+            this.updateState({
+                status: 'playing',
+                ...data,
+                canStart: false, // 游戏开始后不能再开始
+                ready: false, // 重置准备状态
+                countdown: null // 清除倒计时
+            });
+            
+            console.log(`[${this.gameType}TableClient] State updated to playing, current state:`, this.state);
+            
+            // 额外广播一次状态更新，确保所有客户端收到
+            this.socket.emit('request_table_state');
+        } catch (error) {
+            console.error(`[${this.gameType}TableClient] Fatal error in handleGameStart:`, error);
+            // 发送错误事件给UI
+            this.socket.emit('error', {
+                message: '游戏启动失败',
+                error: (error as Error).message
+            });
+        }
     }
 
     /**

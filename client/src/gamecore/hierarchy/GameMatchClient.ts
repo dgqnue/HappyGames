@@ -47,11 +47,24 @@ export abstract class GameMatchClient {
     }
 
     /**
+     * 初始化对局状态
+     * 子类可以覆盖此方法来初始化游戏特定状态
+     */
+    protected initializeMatchState(): void {
+        // 基类只初始化通用状态，具体游戏状态由子类实现
+        this.state = {
+            status: 'waiting',
+            players: []
+        };
+    }
+
+    /**
      * 初始化对局客户端
      * @param onStateUpdate - 状态更新回调函数
      */
     public init(onStateUpdate: (state: GameMatchState) => void): void {
         this.onStateUpdate = onStateUpdate;
+        this.initializeMatchState();
         this.setupCommonListeners();
         this.setupMatchListeners();
         console.log(`[${this.gameType}MatchClient] Initialized`);

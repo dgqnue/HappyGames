@@ -1235,22 +1235,23 @@ class MatchPlayers {
         console.log(`[MatchPlayers] Broadcasting room state...`);
         this.table.broadcastRoomState();
 
-        // 额外发送 game_start 事件，确保客户端收到
-        console.log(`[MatchPlayers] Emitting game_start event to room ${this.roomId}`);
-        this.table.broadcast('game_start', {
-            roomId: this.roomId,
-            status: 'playing',
-            players: this.matchState.players.map(p => ({
-                userId: p.userId,
-                nickname: p.nickname,
-                seatIndex: p.seatIndex
-            }))
-        });
+        // 注意：不要在这里发送 game_start 事件！
+        // 游戏逻辑会在 table.startGame() 中处理并发送自己的 game_start 事件
+        // 这样可以避免事件重复和数据不一致
 
         // 通知游戏桌开始游戏
         if (typeof this.table.startGame === 'function') {
             console.log(`[MatchPlayers] Calling table.startGame()...`);
-            this.table.startGame();
+            try {
+                this.table.startGame();
+            } catch (error) {
+                console.error(`[MatchPlayers] Error calling table.startGame():`, error);
+                // 错误处理：游戏启动失败
+                this.table.broadcast('error', {
+                    message: '游戏启动失败',
+                    error: error.message
+                });
+            }
         } else {
             console.error('[MatchPlayers] Table does not implement startGame()');
         }

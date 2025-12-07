@@ -18,31 +18,78 @@ export function GameMatchView({ matchClient, onBack }: GameMatchViewProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [selected, setSelected] = useState<{ x: number; y: number } | null>(null);
     const [, forceUpdate] = useState({});
+    const [error, setError] = useState<string | null>(null);
 
     // 订阅状态变化
     useEffect(() => {
-        if (typeof matchClient.onStateChange === 'function') {
-            const unsubscribe = matchClient.onStateChange(() => {
-                forceUpdate({});
-            });
+        try {
+            if (typeof matchClient.onStateChange === 'function') {
+                const unsubscribe = matchClient.onStateChange(() => {
+                    try {
+                        forceUpdate({});
+                    } catch (err) {
+                        console.error('[GameMatchView] Error in state change callback:', err);
+                        setError('状态更新出错');
+                    }
+                });
 
-            return () => {
-                unsubscribe();
-            };
+                return () => {
+                    try {
+                        unsubscribe();
+                    } catch (err) {
+                        console.error('[GameMatchView] Error unsubscribing:', err);
+                    }
+                };
+            }
+        } catch (err) {
+            console.error('[GameMatchView] Error setting up state change listener:', err);
+            setError('无法建立状态监听');
         }
     }, [matchClient]);
 
     // 绘制棋盘
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas) {
+            console.log('[GameMatchView] Canvas ref not available');
+            return;
+        }
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+            console.error('[GameMatchView] Could not get canvas context');
+            return;
+        }
 
-        if (typeof matchClient.getBoard === 'function' && typeof matchClient.drawBoardToCanvas === 'function') {
-            const board = matchClient.getBoard();
-            matchClient.drawBoardToCanvas(ctx, board, selected);
+        try {
+            if (typeof matchClient.getBoard === 'function' && typeof matchClient.drawBoardToCanvas === 'function') {
+                const board = matchClient.getBoard();
+                if (!board || !Array.isArray(board)) {
+                    console.warn('[GameMatchView] Board is not available or not an array:', board);
+                    // 绘制加载中的状态
+                    ctx.fillStyle = '#f5f5f5';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#999';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('加载游戏中...', canvas.width / 2, canvas.height / 2);
+                    return;
+                }
+                matchClient.drawBoardToCanvas(ctx, board, selected);
+            } else {
+                console.warn('[GameMatchView] getBoard or drawBoardToCanvas not available');
+            }
+        } catch (error) {
+            console.error('[GameMatchView] Error drawing board:', error);
+            // 绘制错误提示
+            ctx.fillStyle = '#ffebee';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#c62828';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('游戏界面加载失败', canvas.width / 2, canvas.height / 2);
         }
     }, [matchClient, selected]);
 
@@ -82,6 +129,27 @@ export function GameMatchView({ matchClient, onBack }: GameMatchViewProps) {
     };
 
     const state = matchClient.getState();
+
+    // 如果有错误，显示错误信息
+    if (error) {
+        return (
+            <main className="min-h-screen bg-red-50 p-4 md:p-8 flex items-center justify-center">
+                <div className="max-w-md w-full">
+                    <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+                        <div className="text-4xl mb-4">⚠️</div>
+                        <h1 className="text-2xl font-bold text-red-900 mb-4">游戏加载失败</h1>
+                        <p className="text-gray-700 mb-6">{error}</p>
+                        <button
+                            onClick={onBack}
+                            className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                            返回游戏房间
+                        </button>
+                    </div>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-amber-50 p-4 md:p-8">
