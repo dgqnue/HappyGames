@@ -917,6 +917,17 @@ class MatchPlayers {
         if (wasPlayer || wasSpectator) {
             socket.leave(this.roomId);
             console.log(`[MatchPlayers] Socket left room, broadcasting room state. Current players: ${this.matchState.players.length}, status: ${this.matchState.status}`);
+            
+            // 如果所有玩家都离座了，重置游戏桌的所有状态
+            if (this.matchState.players.length === 0) {
+                console.log(`[MatchPlayers] All players left the table, resetting table state`);
+                // 重置为初始状态
+                this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
+                this.matchState.resetReadyStatus();
+                this.readyCheckCancelled = false;
+                this.isLocked = false;
+            }
+            
             this.table.broadcastRoomState();
 
             // 如果之前是匹配中，现在取消了，通知客户端取消倒计时
@@ -1175,6 +1186,9 @@ class MatchPlayers {
             this.countdownTimer = null;
         }
         this.isLocked = false;
+        
+        // 重置准备倒计时取消标志，以便下一轮倒计时可以正常工作
+        this.readyCheckCancelled = false;
 
         this.table.broadcast('game_countdown_cancelled', {
             message: '倒计时已取消',
@@ -1214,8 +1228,8 @@ class MatchPlayers {
         this.matchState.status = MatchingRules.TABLE_STATUS.PLAYING;
         console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
 
-        // 重置所有玩家的准备状态（虽然游戏已开始，但确保状态一致）
-        this.matchState.resetReadyStatus();
+        // 注意：不要重置准备状态！准备状态应该保持到游戏结束
+        // 重置准备状态应该只在 onGameEnd() 中进行
 
         // 广播状态更新，确保所有客户端（包括大厅）都知道状态变为 playing
         console.log(`[MatchPlayers] Broadcasting room state...`);
