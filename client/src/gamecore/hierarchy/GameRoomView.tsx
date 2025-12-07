@@ -106,7 +106,6 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
             return (
                 <MatchView
                     tableClient={tableClient}
-                    matchClient={tableClient.getMatchClient()}
                     onBack={() => {
                         roomClient.deselectTable();
                     }}

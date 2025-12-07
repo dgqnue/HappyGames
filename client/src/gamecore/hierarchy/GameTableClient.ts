@@ -8,12 +8,12 @@
  * - 处理玩家加入/离开
  * - 处理准备/取消准备
  * - 触发游戏开始
- * - 管理 GameMatchClient 实例
+ * - 管理游戏状态和数据
  * 
  * 使用方法：
  * class MyGameTableClient extends GameTableClient {
- *     constructor(socket, gameType, MatchClientClass) {
- *         super(socket, gameType, MatchClientClass);
+ *     constructor(socket, gameType) {
+ *         super(socket, gameType);
  *     }
  *     
  *     protected setupTableListeners() {
@@ -23,7 +23,6 @@
  */
 
 import { Socket } from 'socket.io-client';
-import { GameMatchClient } from './GameMatchClient';
 
 export interface Player {
     userId: string;
@@ -60,20 +59,15 @@ export abstract class GameTableClient {
     // 被踢出回调
     protected onKicked: ((data: any) => void) | null = null;
 
-    // 对局客户端（游戏开始后创建）
-    protected matchClient: GameMatchClient | null = null;
-    protected MatchClientClass: new (socket: Socket) => GameMatchClient;
     // 当前用户ID
     protected currentUserId: string | null = null;
 
     constructor(
         socket: Socket,
-        gameType: string,
-        MatchClientClass: new (socket: Socket) => GameMatchClient
+        gameType: string
     ) {
         this.socket = socket;
         this.gameType = gameType;
-        this.MatchClientClass = MatchClientClass;
         this.state = {
             tableId: null,
             status: 'idle',
@@ -226,17 +220,6 @@ export abstract class GameTableClient {
         if (data.status === 'playing') {
             console.log(`[${this.gameType}TableClient] Status changed to playing via table_update`);
             
-            // 如果没有 matchClient，创建
-            if (!this.matchClient) {
-                console.log(`[${this.gameType}TableClient] Creating match client in handleTableUpdate`);
-                this.matchClient = new this.MatchClientClass(this.socket);
-                this.matchClient.init((matchState) => {
-                    console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
-                    // 将对局状态合并到游戏桌状态
-                    this.updateState({ ...(matchState as any) });
-                });
-            }
-            
             // 更新状态为 playing，并确保其他相关字段也更新
             this.updateState({
                 status: 'playing',
@@ -272,37 +255,6 @@ export abstract class GameTableClient {
         console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
 
         try {
-            // 创建对局客户端
-            if (!this.matchClient) {
-                console.log(`[${this.gameType}TableClient] Creating match client`);
-                this.matchClient = new this.MatchClientClass(this.socket);
-                
-                // 初始化对局客户端
-                console.log(`[${this.gameType}TableClient] Initializing match client`);
-                this.matchClient.init((matchState) => {
-                    try {
-                        console.log(`[${this.gameType}TableClient] Match state update:`, matchState);
-                        // 将对局状态合并到游戏桌状态
-                        this.updateState({ ...(matchState as any) });
-                    } catch (error) {
-                        console.error(`[${this.gameType}TableClient] Error updating state from match client:`, error);
-                    }
-                });
-                
-                console.log(`[${this.gameType}TableClient] Match client initialized successfully`);
-                
-                // 通知 MatchClient 处理 game_start 数据
-                if (typeof this.matchClient.handleRemoteGameStart === 'function') {
-                    this.matchClient.handleRemoteGameStart(data);
-                }
-            } else {
-                console.log(`[${this.gameType}TableClient] Match client already exists, forwarding game_start`);
-                // MatchClient 已存在，直接转发事件
-                if (typeof this.matchClient.handleRemoteGameStart === 'function') {
-                    this.matchClient.handleRemoteGameStart(data);
-                }
-            }
-
             // 更新状态为 playing，并确保其他相关字段也更新
             this.updateState({
                 status: 'playing',
@@ -317,12 +269,8 @@ export abstract class GameTableClient {
             // 额外广播一次状态更新，确保所有客户端收到
             this.socket.emit('request_table_state');
         } catch (error) {
-            console.error(`[${this.gameType}TableClient] Fatal error in handleGameStart:`, error);
-            // 发送错误事件给UI
-            this.socket.emit('error', {
-                message: '游戏启动失败',
-                error: (error as Error).message
-            });
+            console.error(`[${this.gameType}TableClient] Error handling game start:`, error);
+            this.updateState({ status: 'idle' });
         }
     }
 
@@ -351,12 +299,6 @@ export abstract class GameTableClient {
     public leaveTable(): void {
         console.log(`[${this.gameType}TableClient] Leaving table`);
         this.socket.emit(`${this.gameType}_leave`);
-
-        // 清理对局客户端
-        if (this.matchClient) {
-            this.matchClient.dispose();
-            this.matchClient = null;
-        }
 
         this.updateState({
             tableId: null,
@@ -412,14 +354,7 @@ export abstract class GameTableClient {
         return { ...this.state };
     }
 
-    /**
-     * 获取对局客户端
-     */
-    public getMatchClient(): GameMatchClient | null {
-        return this.matchClient;
-    }
-
-    // ===== 游戏特定方法（简化架构 - 不通过 MatchClient） =====
+    // ===== 游戏特定方法（简化架构 - 直接在 GameTableClient 中）=====
 
     /**
      * 获取棋盘数据
@@ -484,13 +419,6 @@ export abstract class GameTableClient {
      */
     public dispose(): void {
         console.log(`[${this.gameType}TableClient] Disposing`);
-
-        // 清理对局客户端
-        if (this.matchClient) {
-            this.matchClient.dispose();
-            this.matchClient = null;
-        }
-
         this.removeCommonListeners();
         this.removeTableListeners();
         this.onStateUpdate = null;

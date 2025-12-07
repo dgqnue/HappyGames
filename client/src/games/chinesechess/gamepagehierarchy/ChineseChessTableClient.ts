@@ -7,13 +7,10 @@
 
 import { Socket } from 'socket.io-client';
 import { GameTableClient } from '../../../gamecore/hierarchy/GameTableClient';
-import { ChineseChessMatchClient } from './ChineseChessMatchClient';
 
 export class ChineseChessTableClient extends GameTableClient {
-    declare protected matchClient: ChineseChessMatchClient | null;
-
     constructor(socket: Socket) {
-        super(socket, 'chinesechess', ChineseChessMatchClient);
+        super(socket, 'chinesechess');
         // 象棋游戏桌最多2个玩家
         this.state.maxPlayers = 2;
     }
@@ -31,12 +28,5 @@ export class ChineseChessTableClient extends GameTableClient {
      */
     protected removeTableListeners(): void {
         // 象棋目前没有额外的特定事件
-    }
-
-    /**
-     * 获取象棋对局客户端
-     */
-    public getChessMatchClient(): ChineseChessMatchClient | null {
-        return this.matchClient;
     }
 }

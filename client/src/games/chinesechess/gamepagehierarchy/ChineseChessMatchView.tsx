@@ -2,7 +2,6 @@
 console.log('[ChineseChessMatchView] Module evaluating...');
 
 import { useEffect, useRef, useState } from 'react';
-import { ChineseChessMatchClient } from './ChineseChessMatchClient';
 
 interface ChineseChessMatchViewProps {
   tableClient?: any;
