@@ -53,8 +53,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   console.log('[ChineseChessDisplay] ✅ Component mounted successfully, isMyTable:', isMyTable);
   const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
   const [gameError, setGameError] = useState<string | null>(null);
+  const [boardData, setBoardData] = useState<(string | null)[][] | null>(null);
+  const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
+  const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
+  const [gameState, setGameState] = useState<any>({ winner: null });
+  const [playerNames, setPlayerNames] = useState<any>({ r: '红方', b: '黑方' });
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [, setTick] = useState(0);
 
   // 订阅游戏状态变化
   useEffect(() => {
@@ -62,7 +66,30 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
     try {
       const unsubscribe = tableClient.onStateChange?.(() => {
-        setTick(t => t + 1);
+        // 直接更新游戏状态，而不是仅仅触发 tick
+        if (tableClient) {
+          try {
+            const newBoardData = tableClient.getBoard?.() || null;
+            const newCurrentTurn = tableClient.getTurn?.() || 'r';
+            const mySideValue = tableClient.getMySide?.();
+            const newMySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
+            let newGameState = tableClient.getState?.();
+            
+            if (!newGameState) {
+              newGameState = { winner: null };
+            }
+            
+            const newPlayerNames = newGameState.players || { r: '红方', b: '黑方' };
+            
+            setBoardData(newBoardData);
+            setCurrentTurn(newCurrentTurn);
+            setMySide(newMySide);
+            setGameState(newGameState);
+            setPlayerNames(newPlayerNames);
+          } catch (err) {
+            console.error('[ChineseChessDisplay] Error updating game state from onStateChange:', err);
+          }
+        }
       });
       return unsubscribe;
     } catch (err) {
@@ -70,34 +97,47 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     }
   }, [tableClient]);
 
-  // 获取游戏状态
-  let boardData: (string | null)[][] | null = null;
-  let currentTurn: 'r' | 'b' | string = 'r';
-  let mySide: 'r' | 'b' | undefined = undefined;
-  let gameState: any = null;
-  let playerNames: any = { r: '红方', b: '黑方' };
-
-  try {
-    if (tableClient) {
-      boardData = tableClient.getBoard?.() || null;
-      currentTurn = tableClient.getTurn?.() || 'r';
-      const mySideValue = tableClient.getMySide?.();
-      mySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
-      gameState = tableClient.getState?.();
-      if (!gameState) {
-        console.warn('[ChineseChessDisplay] gameState is null/undefined from tableClient.getState()');
-        gameState = { winner: null };
-      }
-      playerNames = gameState.players || { r: '红方', b: '黑方' };
-      console.log('[ChineseChessDisplay] Game state loaded:', { boardData: !!boardData, currentTurn, mySide, hasWinner: !!gameState.winner, playerNames });
-    } else {
+  // 获取游戏状态 - 使用 useEffect 来更新 state
+  useEffect(() => {
+    if (!tableClient) {
       console.error('[ChineseChessDisplay] tableClient is not provided');
-      gameState = { winner: null };
+      setGameState({ winner: null });
+      return;
     }
-  } catch (err) {
-    console.error('[ChineseChessDisplay] Error getting game state:', err);
-    gameState = { winner: null };
-  }
+
+    try {
+      const newBoardData = tableClient.getBoard?.() || null;
+      const newCurrentTurn = tableClient.getTurn?.() || 'r';
+      const mySideValue = tableClient.getMySide?.();
+      const newMySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
+      let newGameState = tableClient.getState?.();
+      
+      if (!newGameState) {
+        console.warn('[ChineseChessDisplay] gameState is null/undefined from tableClient.getState()');
+        newGameState = { winner: null };
+      }
+      
+      const newPlayerNames = newGameState.players || { r: '红方', b: '黑方' };
+      
+      console.log('[ChineseChessDisplay] Game state loaded:', { 
+        boardData: !!newBoardData, 
+        currentTurn: newCurrentTurn, 
+        mySide: newMySide, 
+        hasWinner: !!newGameState.winner, 
+        playerNames: newPlayerNames 
+      });
+
+      // 更新所有状态
+      setBoardData(newBoardData);
+      setCurrentTurn(newCurrentTurn);
+      setMySide(newMySide);
+      setGameState(newGameState);
+      setPlayerNames(newPlayerNames);
+    } catch (err) {
+      console.error('[ChineseChessDisplay] Error getting game state:', err);
+      setGameState({ winner: null });
+    }
+  }, [tableClient]);
 
   // 棋子数据处理（useMemo避免无限循环）
   const pieces = useMemo(() => {
