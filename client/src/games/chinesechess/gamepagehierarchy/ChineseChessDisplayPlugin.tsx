@@ -74,7 +74,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   let boardData: (string | null)[][] | null = null;
   let currentTurn: 'r' | 'b' | string = 'r';
   let mySide: 'r' | 'b' | undefined = undefined;
-  let gameState: any = {};
+  let gameState: any = null;
   let playerNames: any = { r: '红方', b: '黑方' };
 
   try {
@@ -83,11 +83,20 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       currentTurn = tableClient.getTurn?.() || 'r';
       const mySideValue = tableClient.getMySide?.();
       mySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
-      gameState = tableClient.getState?.() || {};
+      gameState = tableClient.getState?.();
+      if (!gameState) {
+        console.warn('[ChineseChessDisplay] gameState is null/undefined from tableClient.getState()');
+        gameState = { winner: null };
+      }
       playerNames = gameState.players || { r: '红方', b: '黑方' };
+      console.log('[ChineseChessDisplay] Game state loaded:', { boardData: !!boardData, currentTurn, mySide, hasWinner: !!gameState.winner, playerNames });
+    } else {
+      console.error('[ChineseChessDisplay] tableClient is not provided');
+      gameState = { winner: null };
     }
   } catch (err) {
     console.error('[ChineseChessDisplay] Error getting game state:', err);
+    gameState = { winner: null };
   }
 
   // 棋子数据处理（useMemo避免无限循环）
@@ -364,12 +373,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               </div>
 
               {/* 游戏状态 */}
-              {gameState.winner ? (
+              {gameState?.winner ? (
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-5 rounded-xl border border-amber-200 text-center animate-pulse">
                   <div className="text-3xl mb-3">🏆</div>
                   <div className="font-bold text-amber-900 text-xl mb-1">游戏结束</div>
                   <div className="text-amber-700">
-                    {gameState.winner === 'r' ? '红方' : '黑方'} 获得胜利！
+                    {gameState?.winner === 'r' ? '红方' : '黑方'} 获得胜利！
                   </div>
                 </div>
               ) : (
@@ -391,7 +400,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         <div className="mt-8 bg-white rounded-xl p-4 shadow-sm border border-amber-100">
           <div className="flex items-center justify-between text-sm text-gray-600">
             <div>
-              游戏状态：<span className="font-medium text-green-600">{gameState.winner ? '已结束' : '进行中'}</span>
+              游戏状态：<span className="font-medium text-green-600">{gameState?.winner ? '已结束' : '进行中'}</span>
             </div>
             <div>
               我的身份：{mySide === 'r' ? '红方' : mySide === 'b' ? '黑方' : '观众'}
