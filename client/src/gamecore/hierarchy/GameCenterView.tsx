@@ -7,7 +7,6 @@ import { GameRoomView } from './GameRoomView';
 interface GameCenterViewProps {
     centerClient: GameCenterClient;
     onBack: () => void;
-    MatchView?: React.ComponentType<any>;
 }
 
 interface MatchSettings {
@@ -24,7 +23,7 @@ const DEFAULT_SETTINGS: MatchSettings = {
     maxDisconnectRate: 20
 };
 
-export function GameCenterView({ centerClient, onBack, MatchView }: GameCenterViewProps) {
+export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
     const [centerState, setCenterState] = useState(centerClient.getState());
     const [showSettings, setShowSettings] = useState(false);
     const [settings, setSettings] = useState<MatchSettings>(DEFAULT_SETTINGS);
@@ -64,7 +63,6 @@ export function GameCenterView({ centerClient, onBack, MatchView }: GameCenterVi
             <GameRoomView
                 roomClient={roomClient}
                 onBack={() => centerClient.deselectRoom()}
-                MatchView={MatchView}
             />
         );
     }

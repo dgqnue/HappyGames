@@ -1,13 +1,12 @@
+/**
+ * 中国象棋游戏显示插件
+ * 包含所有中国象棋特定的UI和逻辑
+ */
+
 'use client';
-console.log('[ChineseChessMatchView] Module evaluating...');
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-
-interface ChineseChessMatchViewProps {
-  tableClient?: any;
-  matchClient?: any;
-  onBack: () => void;
-}
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 
 // 棋子类型定义
 interface ChessPiece {
@@ -39,92 +38,58 @@ const CHAR_TO_PIECE: Record<string, { type: ChessPiece['type'], color: ChessPiec
 const BOARD_WIDTH = 540;
 const BOARD_HEIGHT = 600;
 const CELL_SIZE = 60;
-const PIECE_SIZE = 50; // 棋子绘制大小
+const PIECE_SIZE = 50;
 
-export default function ChineseChessMatchView({ tableClient, matchClient, onBack }: ChineseChessMatchViewProps) {
-  console.log('[ChineseChessMatchView] Initializing with props:', { tableClient: !!tableClient, matchClient: !!matchClient });
-  const gameClient = tableClient || matchClient;
-  console.log('[ChineseChessMatchView] gameClient assigned:', !!gameClient);
-  
-  // 强制刷新状态
-  const [, setTick] = useState(0);
+interface ChineseChessDisplayProps {
+  tableClient: any;
+  isMyTable: boolean;
+  onLeaveTable: () => void;
+}
+
+/**
+ * 中国象棋游戏显示组件
+ */
+function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseChessDisplayProps) {
   const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [gameError, setGameError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  console.log('[ChineseChessMatchView] State hooks initialized');
-
-  // 验证 gameClient 是否有效
-  if (!gameClient) {
-    console.error('[ChineseChessMatchView] gameClient is null/undefined!');
-    return (
-      <main className="min-h-screen bg-red-50 p-4 md:p-8 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-            <div className="text-4xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold text-red-900 mb-4">游戏未初始化</h1>
-            <p className="text-gray-700 mb-6">游戏客户端未正确加载</p>
-            <button
-              onClick={onBack}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              返回游戏房间
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const [, setTick] = useState(0);
 
   // 订阅游戏状态变化
   useEffect(() => {
+    if (!tableClient) return;
+
     try {
-      if (!gameClient || typeof gameClient.onStateChange !== 'function') {
-        console.warn('[ChineseChessMatchView] gameClient.onStateChange not available');
-        return;
-      }
-      console.log('[ChineseChessMatchView] Subscribing to game state changes');
-      const unsubscribe = gameClient.onStateChange(() => {
-        console.log('[ChineseChessMatchView] State changed, triggering re-render');
+      const unsubscribe = tableClient.onStateChange?.(() => {
         setTick(t => t + 1);
       });
       return unsubscribe;
     } catch (err) {
-      console.error('[ChineseChessMatchView] Error in onStateChange setup:', err);
-      setError('状态监听失败');
+      console.error('[ChineseChessDisplay] Error in state subscription:', err);
     }
-  }, [gameClient]);
+  }, [tableClient]);
 
-  // 获取当前游戏状态
+  // 获取游戏状态
   let boardData: (string | null)[][] | null = null;
   let currentTurn: 'r' | 'b' | string = 'r';
   let mySide: 'r' | 'b' | undefined = undefined;
-  let state: any = {};
+  let gameState: any = {};
   let playerNames: any = { r: '红方', b: '黑方' };
 
   try {
-    if (gameClient) {
-      boardData = gameClient.getBoard?.() || null;
-      currentTurn = gameClient.getTurn?.() || 'r';
-      mySide = gameClient.getMySide?.();
-      state = gameClient.getState?.() || {};
-      playerNames = state.players || { r: '红方', b: '黑方' };
-      
-      // 调试输出
-      console.log('[ChineseChessMatchView] Game state snapshot:', {
-        boardData: boardData,
-        boardDataLength: boardData?.length,
-        boardData0: boardData?.[0],
-        currentTurn,
-        mySide,
-        gameClientState: state
-      });
+    if (tableClient) {
+      boardData = tableClient.getBoard?.() || null;
+      currentTurn = tableClient.getTurn?.() || 'r';
+      const mySideValue = tableClient.getMySide?.();
+      mySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
+      gameState = tableClient.getState?.() || {};
+      playerNames = gameState.players || { r: '红方', b: '黑方' };
     }
   } catch (err) {
-    console.error('[ChineseChessMatchView] Error getting game state:', err);
-    setError('获取游戏状态失败');
+    console.error('[ChineseChessDisplay] Error getting game state:', err);
   }
 
-  // 将字符串棋盘转换为对象数组以便渲染（使用useMemo避免无限循环）
+  // 棋子数据处理（useMemo避免无限循环）
   const pieces = useMemo(() => {
     const result: ChessPiece[] = [];
     if (boardData && boardData.length > 0) {
@@ -141,63 +106,31 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
           });
         });
       } catch (err) {
-        console.error('[ChineseChessMatchView] Error processing board data:', err);
+        console.error('[ChineseChessDisplay] Error processing board data:', err);
       }
     }
     return result;
   }, [boardData]);
 
-  // 棋子图片路径获取
-  const getPieceImage = (piece: ChessPiece) => {
-    return `/images/chinesechess/pieces/${piece.color}/${piece.type}.png`;
-  };
-
-  // 如果有错误，显示错误信息
-  if (error) {
-    return (
-      <main className="min-h-screen bg-red-50 p-4 md:p-8 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-            <div className="text-4xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold text-red-900 mb-4">游戏出错</h1>
-            <p className="text-gray-700 mb-6">{error}</p>
-            <button
-              onClick={onBack}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              返回游戏房间
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  // 处理棋盘点击
+  // 棋盘点击处理
   const handleBoardClick = (row: number, col: number) => {
     try {
-      // 检查是否在棋盘范围内
       if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
 
       if (!boardData || !Array.isArray(boardData)) {
-        console.warn('[ChineseChessMatchView] Board data not available');
+        console.warn('[ChineseChessDisplay] Board data not available');
         return;
       }
 
       const clickedPieceChar = boardData[row]?.[col];
       const isMyTurn = currentTurn === mySide;
 
-      console.log(`Clicked: (${row}, ${col}), Char: ${clickedPieceChar}, MySide: ${mySide}, Turn: ${currentTurn}`);
-
-      // 如果已经选中了一个棋子
       if (selectedPiece) {
-        // 如果点击的是同一个位置，取消选中
         if (selectedPiece.row === row && selectedPiece.col === col) {
           setSelectedPiece(null);
           return;
         }
 
-        // 如果点击的是己方棋子，切换选中
         if (clickedPieceChar) {
           const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
           if (pieceInfo) {
@@ -211,19 +144,16 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
           }
         }
 
-        // 尝试移动 (如果是我的回合)
-        if (isMyTurn && gameClient && typeof gameClient.sendMove === 'function') {
-          console.log(`Attempting move from (${selectedPiece.row}, ${selectedPiece.col}) to (${row}, ${col})`);
+        if (isMyTurn && tableClient && typeof tableClient.sendMove === 'function') {
           try {
-            gameClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
+            tableClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
             setSelectedPiece(null);
           } catch (err) {
-            console.error('[ChineseChessMatchView] Error sending move:', err);
-            setError('移动失败，请重试');
+            console.error('[ChineseChessDisplay] Error sending move:', err);
+            setGameError('移动失败，请重试');
           }
         }
       } else {
-        // 如果没有选中棋子，且点击了己方棋子，则选中
         if (clickedPieceChar) {
           const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
           if (pieceInfo) {
@@ -237,35 +167,22 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
         }
       }
     } catch (error) {
-      console.error('[ChineseChessMatchView] Error handling board click:', error);
+      console.error('[ChineseChessDisplay] Error handling board click:', error);
     }
   };
 
-  // 绘制棋盘和棋子
+  // 绘制棋盘
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      console.warn('[ChineseChessMatchView] Canvas not available');
-      return;
-    }
+    if (!isMyTable || !canvasRef.current) return;
 
+    const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('[ChineseChessMatchView] Could not get canvas context');
-      return;
-    }
+    if (!ctx) return;
 
     try {
-      // 清空画布
       ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-      // 如果没有棋盘数据，显示加载中
       if (!boardData || boardData.length === 0) {
-        console.log('[ChineseChessMatchView] No board data available, showing loading...', {
-          boardData,
-          length: boardData?.length,
-          pieces: pieces.length
-        });
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
         ctx.fillStyle = '#999';
@@ -276,104 +193,61 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
         return;
       }
 
-      console.log('[ChineseChessMatchView] Drawing board, pieces count:', pieces.length);
+      // 绘制棋盘网格
+      ctx.fillStyle = '#DEB887';
+      ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-      // 直接绘制棋盘网格（简化方案，避免异步Image加载问题）
-      const drawBoard = () => {
-        try {
-          ctx.fillStyle = '#DEB887';
-          ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+      ctx.strokeStyle = '#8B4513';
+      ctx.lineWidth = 2;
 
-          ctx.strokeStyle = '#8B4513';
-          ctx.lineWidth = 2;
+      for (let i = 0; i < 9; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * CELL_SIZE, 0);
+        ctx.lineTo(i * CELL_SIZE, BOARD_HEIGHT);
+        ctx.stroke();
+      }
 
-          // 纵线
-          for (let i = 0; i < 9; i++) {
-            ctx.beginPath();
-            ctx.moveTo(i * CELL_SIZE, 0);
-            ctx.lineTo(i * CELL_SIZE, BOARD_HEIGHT);
-            ctx.stroke();
-          }
-
-          // 横线
-          for (let i = 0; i < 10; i++) {
-            ctx.beginPath();
-            ctx.moveTo(0, i * CELL_SIZE);
-            ctx.lineTo(BOARD_WIDTH, i * CELL_SIZE);
-            ctx.stroke();
-          }
-        } catch (err) {
-          console.error('[ChineseChessMatchView] Error drawing board grid:', err);
-        }
-      };
+      for (let i = 0; i < 10; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * CELL_SIZE);
+        ctx.lineTo(BOARD_WIDTH, i * CELL_SIZE);
+        ctx.stroke();
+      }
 
       // 绘制棋子
-      const drawPieces = () => {
-        try {
-          pieces.forEach((piece: ChessPiece) => {
-            const x = piece.col * CELL_SIZE + CELL_SIZE / 2;
-            const y = piece.row * CELL_SIZE + CELL_SIZE / 2;
-            const radius = PIECE_SIZE / 2 - 5;
+      pieces.forEach((piece: ChessPiece) => {
+        const x = piece.col * CELL_SIZE + CELL_SIZE / 2;
+        const y = piece.row * CELL_SIZE + CELL_SIZE / 2;
+        const radius = PIECE_SIZE / 2 - 5;
 
-            ctx.fillStyle = piece.color === 'red' ? '#FF6B6B' : '#4ECDC4';
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+        ctx.fillStyle = piece.color === 'red' ? '#FF6B6B' : '#4ECDC4';
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-            // 如果棋子被选中，绘制选中效果
-            if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
-              ctx.strokeStyle = '#3b82f6';
-              ctx.lineWidth = 3;
-              ctx.strokeRect(x - PIECE_SIZE / 2 + 2, y - PIECE_SIZE / 2 + 2, PIECE_SIZE - 4, PIECE_SIZE - 4);
-            }
-
-            // 绘制棋子类型标记
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const typeChar = Object.keys(CHAR_TO_PIECE).find(
-              key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color
-            ) || '?';
-            ctx.fillText(typeChar, x, y);
-          });
-        } catch (err) {
-          console.error('[ChineseChessMatchView] Error drawing pieces:', err);
+        if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x - PIECE_SIZE / 2 + 2, y - PIECE_SIZE / 2 + 2, PIECE_SIZE - 4, PIECE_SIZE - 4);
         }
-      };
 
-      // 绘制棋盘和棋子
-      drawBoard();
-      drawPieces();
-
-      console.log('[ChineseChessMatchView] Board rendered successfully');
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const typeChar = Object.keys(CHAR_TO_PIECE).find(
+          key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color
+        ) || '?';
+        ctx.fillText(typeChar, x, y);
+      });
 
     } catch (error) {
-      console.error('[ChineseChessMatchView] Unexpected error in canvas drawing:', error);
-      // 绘制错误提示
-      ctx.fillStyle = '#ffebee';
-      ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-      ctx.fillStyle = '#c62828';
-      ctx.font = '16px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('游戏界面加载失败', BOARD_WIDTH / 2, BOARD_HEIGHT / 2);
+      console.error('[ChineseChessDisplay] Error drawing board:', error);
     }
-
-  }, [pieces, selectedPiece]); // 依赖 pieces (由 boardData 派生) 和 selectedPiece
-
-  // 处理返回/退出操作
-  const handleBack = () => {
-    try {
-      console.log('[ChineseChessMatchView] 点击退出按钮，执行离座操作');
-      onBack();
-    } catch (error) {
-      console.error('[ChineseChessMatchView] Error handling back button:', error);
-    }
-  };
+  }, [pieces, selectedPiece, boardData, isMyTable]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 p-4 md:p-8">
@@ -382,7 +256,7 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
-              onClick={handleBack}
+              onClick={onLeaveTable}
               className="p-3 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
               aria-label="返回并离座"
             >
@@ -489,12 +363,12 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
               </div>
 
               {/* 游戏状态 */}
-              {state.winner ? (
+              {gameState.winner ? (
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-5 rounded-xl border border-amber-200 text-center animate-pulse">
                   <div className="text-3xl mb-3">🏆</div>
                   <div className="font-bold text-amber-900 text-xl mb-1">游戏结束</div>
                   <div className="text-amber-700">
-                    {state.winner === 'r' ? '红方' : '黑方'} 获得胜利！
+                    {gameState.winner === 'r' ? '红方' : '黑方'} 获得胜利！
                   </div>
                 </div>
               ) : (
@@ -516,7 +390,7 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
         <div className="mt-8 bg-white rounded-xl p-4 shadow-sm border border-amber-100">
           <div className="flex items-center justify-between text-sm text-gray-600">
             <div>
-              游戏状态：<span className="font-medium text-green-600">{state.winner ? '已结束' : '进行中'}</span>
+              游戏状态：<span className="font-medium text-green-600">{gameState.winner ? '已结束' : '进行中'}</span>
             </div>
             <div>
               我的身份：{mySide === 'r' ? '红方' : mySide === 'b' ? '黑方' : '观众'}
@@ -530,3 +404,22 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
     </main>
   );
 }
+
+/**
+ * 导出中国象棋显示插件
+ */
+export const ChineseChessDisplayPlugin: GameDisplayPlugin = {
+  gameType: 'chinesechess',
+
+  Component: ChineseChessDisplay,
+
+  canHandle: (gameClient: any) => {
+    // 检查gameClient是否有中国象棋特定的方法
+    return (
+      typeof gameClient.getBoard === 'function' &&
+      typeof gameClient.getTurn === 'function' &&
+      typeof gameClient.getMySide === 'function' &&
+      typeof gameClient.sendMove === 'function'
+    );
+  }
+};

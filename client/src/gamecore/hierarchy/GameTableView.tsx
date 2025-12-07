@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { GameRoomClient } from './GameRoomClient';
+import { getGameDisplayPluginForClient } from './GameDisplayPlugin';
 import Image from 'next/image';
 import SystemDialog from '@/components/SystemDialog';
 
@@ -446,6 +447,26 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const borderWidth = '1px';
     const componentHeight = '280px'; // 再降低一点高度
 
+    // ========== 游戏界面显示逻辑 - 使用插件系统 ==========
+    // 查找合适的游戏显示插件
+    const gameDisplayPlugin = tableClient && isPlaying ? getGameDisplayPluginForClient(tableClient) : null;
+
+    // 如果在游戏中且是我的游戏桌，显示游戏界面
+    if (isPlaying && isMyTableLocal && tableClient && gameDisplayPlugin) {
+        const { Component: GameDisplay } = gameDisplayPlugin;
+        return (
+            <GameDisplay
+                tableClient={tableClient}
+                isMyTable={true}
+                onLeaveTable={() => {
+                    tableClient.leaveTable();
+                    roomClient.deselectTable();
+                }}
+            />
+        );
+    }
+
+    // ========== 常规游戏桌显示（非游戏中） ==========
     return (
         <div
             className="bg-white rounded-xl p-3 shadow-sm transition-all duration-300 relative overflow-hidden flex flex-col"

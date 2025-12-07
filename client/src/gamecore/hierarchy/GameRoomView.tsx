@@ -7,10 +7,9 @@ import { GameTableView } from './GameTableView';
 interface GameRoomViewProps {
     roomClient: GameRoomClient;
     onBack: () => void;
-    MatchView?: React.ComponentType<any>;
 }
 
-export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProps) {
+export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     const [roomState, setRoomState] = useState(roomClient.getState());
     const [isLoading, setIsLoading] = useState(true);
 
@@ -99,47 +98,20 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
         }
     }
 
-    // 如果游戏已开始，显示游戏界面
-    // 如果游戏已开始，显示游戏界面
-    console.log('[GameRoomView] Final decision - shouldShowGame:', shouldShowGame, 'myTableId:', myTableId, 'tableClient:', !!tableClient, 'MatchView:', !!MatchView);
+    // 如果游戏已开始，GameTableView会直接显示游戏界面
+    // 此时只需要渲染我的游戏桌（会自动显示游戏界面）
     if (shouldShowGame && myTableId && tableClient) {
-        console.log('[GameRoomView] Game is playing, showing game directly');
+        console.log('[GameRoomView] Game is playing, showing GameTableView in fullscreen mode');
         
-        if (MatchView) {
-            console.log('[GameRoomView] Rendering MatchView with tableClient');
+        // 在shouldShowGame时，找到我的游戏桌并单独渲染它（作为全屏游戏界面）
+        const myTable = roomState.tables?.find((t: any) => t.tableId === myTableId);
+        if (myTable) {
             return (
-                <MatchView
-                    tableClient={tableClient}
-                    onBack={() => {
-                        roomClient.deselectTable();
-                    }}
+                <GameTableView
+                    table={myTable}
+                    roomClient={roomClient}
+                    isMyTable={true}
                 />
-            );
-        } else {
-            console.error('[GameRoomView] MatchView is not provided!');
-            return (
-                <main className="min-h-screen bg-amber-50 p-4 md:p-8">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="flex items-center gap-4 mb-8">
-                            <button
-                                onClick={onBack}
-                                className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                            >
-                                <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                            </button>
-                            <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
-                                <span className="text-4xl">🏠</span> 游戏错误
-                            </h1>
-                        </div>
-                        <div className="flex justify-center items-center h-96">
-                            <div className="text-red-500 text-lg">
-                                MatchView component not loaded, please refresh
-                            </div>
-                        </div>
-                    </div>
-                </main>
             );
         }
     }

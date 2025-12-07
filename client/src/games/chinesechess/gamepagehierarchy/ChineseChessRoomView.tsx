@@ -1,13 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import { GameRoomView } from '@/gamecore/hierarchy/GameRoomView';
+import { registerGameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 import { ChineseChessRoomClient } from './ChineseChessRoomClient';
-import dynamic from 'next/dynamic';
+import { ChineseChessDisplayPlugin } from './ChineseChessDisplayPlugin';
 
-const ChineseChessMatchView = dynamic(() => import('./ChineseChessMatchView'), {
-    loading: () => <div className="flex justify-center items-center h-full">Loading Game...</div>,
-    ssr: false
-});
+// 在组件级别注册插件（只执行一次）
+let isRegistered = false;
 
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
@@ -16,15 +16,21 @@ interface ChineseChessRoomViewProps {
 
 /**
  * 中国象棋游戏房间视图
- * 这是一个简单的包装组件，将通用的 GameRoomView 与中国象棋的 RoomClient 和 MatchView 连接
+ * 这是一个简单的包装组件，将通用的 GameRoomView 与中国象棋的 RoomClient 和显示插件连接
  */
 export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomViewProps) {
-    console.log('[ChineseChessRoomView] Rendering, ChineseChessMatchView:', ChineseChessMatchView);
+    // 注册中国象棋显示插件
+    useEffect(() => {
+        if (!isRegistered) {
+            registerGameDisplayPlugin(ChineseChessDisplayPlugin);
+            isRegistered = true;
+        }
+    }, []);
+
     return (
         <GameRoomView
             roomClient={roomClient}
             onBack={onBack}
-            MatchView={ChineseChessMatchView}
         />
     );
 }
