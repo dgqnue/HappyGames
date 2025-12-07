@@ -33,20 +33,35 @@ const gameDisplayPlugins: Map<string, GameDisplayPlugin> = new Map();
 
 export function registerGameDisplayPlugin(plugin: GameDisplayPlugin) {
   gameDisplayPlugins.set(plugin.gameType, plugin);
-  console.log(`[GameDisplayPlugin] Registered plugin: ${plugin.gameType}`);
+  console.log(`[GameDisplayPlugin] ✅ Registered plugin: ${plugin.gameType}`);
+  console.log(`[GameDisplayPlugin] Total plugins registered: ${gameDisplayPlugins.size}`);
+  return plugin;
 }
 
 export function getGameDisplayPlugin(gameType: string): GameDisplayPlugin | undefined {
-  return gameDisplayPlugins.get(gameType);
+  const plugin = gameDisplayPlugins.get(gameType);
+  console.log(`[GameDisplayPlugin] Looking for: ${gameType}, Found: ${plugin ? '✅' : '❌'}`);
+  return plugin;
 }
 
 export function getGameDisplayPluginForClient(gameClient: any): GameDisplayPlugin | undefined {
+  console.log(`[GameDisplayPlugin] 📝 Searching plugins for client, ${gameDisplayPlugins.size} registered`);
+  
   // 遍历所有已注册的插件，找到第一个能处理该gameClient的
-  const plugins = Array.from(gameDisplayPlugins.values());
-  for (const plugin of plugins) {
-    if (plugin.canHandle(gameClient)) {
-      return plugin;
+  const plugins = Array.from(gameDisplayPlugins.entries());
+  for (const [gameType, plugin] of plugins) {
+    console.log(`[GameDisplayPlugin] Checking plugin: ${gameType}`);
+    try {
+      if (plugin.canHandle(gameClient)) {
+        console.log(`[GameDisplayPlugin] ✅ Found matching plugin: ${gameType}`);
+        return plugin;
+      } else {
+        console.log(`[GameDisplayPlugin] ❌ Plugin ${gameType} canHandle() returned false`);
+      }
+    } catch (err) {
+      console.log(`[GameDisplayPlugin] ❌ Plugin ${gameType} canHandle() threw error:`, err);
     }
   }
+  console.log(`[GameDisplayPlugin] ❌ No matching plugin found`);
   return undefined;
 }

@@ -415,12 +415,22 @@ export const ChineseChessDisplayPlugin: GameDisplayPlugin = {
   Component: ChineseChessDisplay,
 
   canHandle: (gameClient: any) => {
+    console.log('[ChineseChessDisplayPlugin] canHandle() called with:', {
+      hasGetBoard: typeof gameClient?.getBoard === 'function',
+      hasGetTurn: typeof gameClient?.getTurn === 'function',
+      hasMySide: typeof gameClient?.getMySide === 'function',
+      hasSendMove: typeof gameClient?.sendMove === 'function',
+      keys: Object.keys(gameClient || {}).slice(0, 10)
+    });
+    
     // 检查gameClient是否有中国象棋特定的方法
-    return (
-      typeof gameClient.getBoard === 'function' &&
-      typeof gameClient.getTurn === 'function' &&
-      typeof gameClient.getMySide === 'function' &&
-      typeof gameClient.sendMove === 'function'
+    const result = (
+      typeof gameClient?.getBoard === 'function' &&
+      typeof gameClient?.getTurn === 'function' &&
+      typeof gameClient?.getMySide === 'function' &&
+      typeof gameClient?.sendMove === 'function'
     );
+    console.log('[ChineseChessDisplayPlugin] canHandle() result:', result ? '✅' : '❌');
+    return result;
   }
 };

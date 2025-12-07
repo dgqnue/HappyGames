@@ -6,9 +6,6 @@ import { registerGameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugi
 import { ChineseChessRoomClient } from './ChineseChessRoomClient';
 import { ChineseChessDisplayPlugin } from './ChineseChessDisplayPlugin';
 
-// 在组件级别注册插件（只执行一次）
-let isRegistered = false;
-
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
     onBack: () => void;
@@ -19,14 +16,15 @@ interface ChineseChessRoomViewProps {
  * 这是一个简单的包装组件，将通用的 GameRoomView 与中国象棋的 RoomClient 和显示插件连接
  */
 export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomViewProps) {
-    // 注册中国象棋显示插件
+    // 在挂载时立即注册插件，不依赖状态
     useEffect(() => {
-        if (!isRegistered) {
-            console.log('[ChineseChessRoomView] 📝 Registering ChineseChessDisplayPlugin...');
-            registerGameDisplayPlugin(ChineseChessDisplayPlugin);
-            isRegistered = true;
-        }
-    }, []);
+        console.log('[ChineseChessRoomView] 📝 Registering ChineseChessDisplayPlugin...');
+        const registeredPlugin = registerGameDisplayPlugin(ChineseChessDisplayPlugin);
+        console.log('[ChineseChessRoomView] ✅ Plugin registered successfully:', registeredPlugin);
+        
+        // 不需要清理函数 - 插件应该全局保持注册状态
+        return undefined;
+    }, []); // 空依赖数组确保只运行一次
 
     return (
         <GameRoomView
