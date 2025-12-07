@@ -1076,11 +1076,16 @@ class MatchPlayers {
      * 准备超时处理
      */
     onReadyTimeout() {
-        console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, current status: ${this.status}`);
+        console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, current status: ${this.status}, isLocked: ${this.isLocked}`);
         
         // 检查是否已经进入游戏开始状态，避免在游戏即将开始时踢出玩家
-        if (this.isLocked || this.matchState.status === MatchingRules.TABLE_STATUS.PLAYING) {
-            console.log(`[MatchPlayers] Game is locked or already playing, skipping ready timeout processing`);
+        if (this.isLocked) {
+            console.log(`[MatchPlayers] Game is locked, skipping ready timeout processing`);
+            return;
+        }
+
+        if (this.matchState.status === MatchingRules.TABLE_STATUS.PLAYING) {
+            console.log(`[MatchPlayers] Game already playing, skipping ready timeout processing`);
             return;
         }
 
@@ -1174,7 +1179,8 @@ class MatchPlayers {
         console.log(`[MatchPlayers] startGame called for room ${this.roomId}`);
         
         // 清除所有定时器，确保不会再有状态变更
-        this.isLocked = false;
+        // 注意：不要设置 isLocked = false，因为游戏正在开始
+        // 只有在游戏真正结束时才应该释放 lock
         
         // 清除游戏开始倒计时
         if (this.countdownTimer) {
@@ -1232,6 +1238,9 @@ class MatchPlayers {
      */
     onGameEnd(result) {
         console.log(`[MatchPlayers] Game ended in room ${this.roomId}`);
+
+        // 释放游戏锁定状态（游戏结束了，可以进行新的匹配）
+        this.isLocked = false;
 
         // 重置准备状态
         this.matchState.resetReadyStatus();
