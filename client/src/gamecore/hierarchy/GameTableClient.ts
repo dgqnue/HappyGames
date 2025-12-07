@@ -176,6 +176,19 @@ export abstract class GameTableClient {
                 alert(`您已被移出游戏桌: ${data.reason}`);
             }
         });
+
+        // 游戏桌已满座 - 通知玩家应该准备
+        this.socket.on('table_full', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Table is full, players should prepare:`, data);
+            // 显示提示但不自动准备，让玩家手动点击准备按钮
+            this.updateState({ status: 'matching' });
+        });
+
+        // 加入成功作为观众
+        this.socket.on('joined_as_spectator', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Joined as spectator:`, data);
+            this.updateState({ status: 'matching' });
+        });
     }
 
     /**

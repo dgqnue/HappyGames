@@ -100,11 +100,11 @@ export abstract class GameRoomClient {
             this.handleTableListUpdate(data);
         });
 
-        // 游戏桌状态更新 - 当玩家加入桌子时收到（暂时注释，避免TypeScript错误）
-        // this.socket.on('table_state', (data: any) => {
-        //     console.log(`[${this.gameType}RoomClient] Table state received:`, data);
-        //     this.handleTableState(data);
-        // });
+        // 游戏桌状态更新 - 当玩家加入桌子时收到或游戏状态变化时收到
+        this.socket.on('table_update', (data: any) => {
+            console.log(`[${this.gameType}RoomClient] Table state update received:`, data);
+            this.handleTableUpdate(data);
+        });
 
         // 游戏开始事件 - 确保在房间客户端也能收到并处理
         this.socket.on('game_start', (data: any) => {
@@ -135,6 +135,38 @@ export abstract class GameRoomClient {
     protected handleTableListUpdate(data: any): void {
         const tables = Array.isArray(data) ? data : [];
         this.updateState({ tables });
+    }
+
+    /**
+     * 处理单个游戏桌状态更新
+     * 当某个游戏桌的状态变化时（比如从 'matching' 变为 'playing'）调用
+     */
+    protected handleTableUpdate(data: any): void {
+        console.log(`[${this.gameType}RoomClient] Handling table update for table ${data.roomId || data.tableId}:`, data);
+        
+        const tableId = data.roomId || data.tableId;
+        if (!tableId) return;
+
+        // 更新 tables 列表中对应的表格
+        const updatedTables = this.state.tables.map(table => {
+            if (table.tableId === tableId || table.id === tableId) {
+                return {
+                    ...table,
+                    status: data.status || table.status,
+                    players: data.players || table.players,
+                    playerCount: data.playerCount || table.playerCount,
+                    ...data // 合并其他字段
+                };
+            }
+            return table;
+        });
+
+        this.updateState({ tables: updatedTables });
+
+        // 如果这是我所在的表格，也更新 selectedTableId
+        if (tableId === this.state.selectedTableId) {
+            console.log(`[${this.gameType}RoomClient] This is my table, status changed to ${data.status}`);
+        }
     }
 
     /**

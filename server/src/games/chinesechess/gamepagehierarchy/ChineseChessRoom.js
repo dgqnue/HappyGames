@@ -222,7 +222,16 @@ class ChineseChessRoom extends GameRoom {
         // 4. 调用 GameTable 的 joinTable 方法处理实际加入
         const result = await table.joinTable(socket, canPlay);
 
-        // 5. 返回结果
+        // 5. 如果加入成功且满座，通知客户端
+        if (result.success && table.players.length === table.maxPlayers && !result.asSpectator) {
+            console.log(`[ChineseChessRoom] 桌子已满座，发送 table_full 事件到客户端`);
+            socket.emit('table_full', {
+                message: '游戏桌已满座，准备开始游戏',
+                tableId: table.tableId
+            });
+        }
+
+        // 6. 返回结果
         return {
             ...result,
             tableId: table.tableId
