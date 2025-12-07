@@ -17,9 +17,20 @@ export interface ChineseChessCenterState extends GameCenterState {
 export class ChineseChessCenterClient extends GameCenterClient {
     declare protected state: ChineseChessCenterState;
     declare protected roomClient: ChineseChessRoomClient | null;
+    
+    // 匹配成功时的回调函数
+    private onMatchFoundCallback: ((data: any) => void) | null = null;
 
     constructor(socket: Socket) {
         super(socket, 'chinesechess', ChineseChessRoomClient);
+    }
+
+    /**
+     * 设置匹配成功的回调函数
+     * @param callback - 回调函数
+     */
+    public setOnMatchFoundCallback(callback: (data: any) => void): void {
+        this.onMatchFoundCallback = callback;
     }
 
     /**
@@ -35,6 +46,19 @@ export class ChineseChessCenterClient extends GameCenterClient {
      */
     protected removeCenterListeners(): void {
         // 象棋目前没有额外的特定事件
+    }
+
+    /**
+     * 重写基类的 handleMatchFound 方法，处理象棋特定的逻辑
+     */
+    protected handleMatchFound(data: any): void {
+        console.log('[ChineseChessCenterClient] Match found! Routing to game...', data);
+        this.updateState({ matchFoundData: data });
+        
+        // 调用回调函数通知UI层
+        if (this.onMatchFoundCallback) {
+            this.onMatchFoundCallback(data);
+        }
     }
 
     /**

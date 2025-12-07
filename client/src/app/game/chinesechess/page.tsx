@@ -25,6 +25,15 @@ export default function ChineseChessPage() {
         });
 
         const client = new ChineseChessCenterClient(newSocket);
+        
+        // 设置匹配成功的回调，自动跳转到游戏
+        client.setOnMatchFoundCallback((data: any) => {
+            console.log('[ChineseChessPage] Match found, navigating to game room...', data);
+            // 跳转到游戏房间
+            if (data.roomId) {
+                router.push(`/game/chinesechess/room/${data.roomId}`);
+            }
+        });
 
         setSocket(newSocket);
         setCenterClient(client);

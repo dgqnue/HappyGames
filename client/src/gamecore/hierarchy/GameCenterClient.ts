@@ -38,6 +38,8 @@ export interface GameCenterState {
     rooms: RoomInfo[];
     userStats: UserStats | null;
     selectedRoomId: string | null;
+    isMatching?: boolean;
+    matchFoundData?: any;
     [key: string]: any;
 }
 
@@ -62,7 +64,8 @@ export abstract class GameCenterClient {
         this.state = {
             rooms: [],
             userStats: null,
-            selectedRoomId: null
+            selectedRoomId: null,
+            isMatching: false
         };
     }
 
@@ -92,6 +95,30 @@ export abstract class GameCenterClient {
             console.log(`[${this.gameType}CenterClient] User stats update:`, data);
             this.handleUserStatsUpdate(data);
         });
+
+        // 匹配成功事件
+        this.socket.on('match_found', (data: any) => {
+            console.log(`[${this.gameType}CenterClient] Match found:`, data);
+            this.handleMatchFound(data);
+        });
+
+        // 匹配队列已加入事件
+        this.socket.on('match_queue_joined', (data: any) => {
+            console.log(`[${this.gameType}CenterClient] Joined match queue:`, data);
+            this.handleMatchQueueJoined(data);
+        });
+
+        // 匹配已取消事件
+        this.socket.on('match_cancelled', (data: any) => {
+            console.log(`[${this.gameType}CenterClient] Match cancelled:`, data);
+            this.handleMatchCancelled(data);
+        });
+
+        // 匹配失败事件
+        this.socket.on('match_failed', (data: any) => {
+            console.log(`[${this.gameType}CenterClient] Match failed:`, data);
+            this.handleMatchFailed(data);
+        });
     }
 
     /**
@@ -115,6 +142,39 @@ export abstract class GameCenterClient {
      */
     protected handleUserStatsUpdate(data: any): void {
         this.updateState({ userStats: data });
+    }
+
+    /**
+     * 处理匹配成功
+     */
+    protected handleMatchFound(data: any): void {
+        // 子类应该重写此方法，在客户端UI中跳转到游戏
+        // 这里仅打印日志，实际导航由子类或组件处理
+        console.log(`[${this.gameType}CenterClient] Match found event, but no handler defined`);
+    }
+
+    /**
+     * 处理匹配队列已加入
+     */
+    protected handleMatchQueueJoined(data: any): void {
+        console.log(`[${this.gameType}CenterClient] Match queue joined`);
+        this.updateState({ isMatching: true });
+    }
+
+    /**
+     * 处理匹配已取消
+     */
+    protected handleMatchCancelled(data: any): void {
+        console.log(`[${this.gameType}CenterClient] Match cancelled`);
+        this.updateState({ isMatching: false });
+    }
+
+    /**
+     * 处理匹配失败
+     */
+    protected handleMatchFailed(data: any): void {
+        console.log(`[${this.gameType}CenterClient] Match failed:`, data);
+        this.updateState({ isMatching: false });
     }
 
     /**
@@ -147,7 +207,8 @@ export abstract class GameCenterClient {
         this.updateState({
             rooms: [],
             userStats: null,
-            selectedRoomId: null
+            selectedRoomId: null,
+            isMatching: false
         });
     }
 
@@ -271,6 +332,10 @@ export abstract class GameCenterClient {
     protected removeCommonListeners(): void {
         this.socket.off('room_list');
         this.socket.off('user_stats');
+        this.socket.off('match_found');
+        this.socket.off('match_queue_joined');
+        this.socket.off('match_cancelled');
+        this.socket.off('match_failed');
     }
 
     /**
