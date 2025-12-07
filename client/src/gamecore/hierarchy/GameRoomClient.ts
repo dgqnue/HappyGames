@@ -142,19 +142,32 @@ export abstract class GameRoomClient {
      * 当某个游戏桌的状态变化时（比如从 'matching' 变为 'playing'）调用
      */
     protected handleTableUpdate(data: any): void {
-        console.log(`[${this.gameType}RoomClient] Handling table update for table ${data.roomId || data.tableId}:`, data);
+        console.log(`[${this.gameType}RoomClient] Handling table update:`, data);
         
         const tableId = data.roomId || data.tableId;
-        if (!tableId) return;
+        if (!tableId) {
+            console.warn(`[${this.gameType}RoomClient] No tableId/roomId in table update`);
+            return;
+        }
 
         // 更新 tables 列表中对应的表格
         const updatedTables = this.state.tables.map(table => {
-            if (table.tableId === tableId || table.id === tableId) {
+            // 支持多种 ID 匹配方式：tableId、id、roomId
+            const tableMatches = 
+                table.tableId === tableId || 
+                table.id === tableId || 
+                (table as any).roomId === tableId;
+            
+            if (tableMatches) {
+                console.log(`[${this.gameType}RoomClient] Found matching table, updating status from ${table.status} to ${data.status}`);
                 return {
                     ...table,
+                    tableId: table.tableId || tableId,  // 确保 tableId 字段存在
                     status: data.status || table.status,
                     players: data.players || table.players,
-                    playerCount: data.playerCount || table.playerCount,
+                    playerCount: data.playerCount || data.players?.length || table.playerCount,
+                    maxPlayers: data.maxPlayers || table.maxPlayers,
+                    playerList: data.playerList || table.playerList,
                     ...data // 合并其他字段
                 };
             }
@@ -163,9 +176,9 @@ export abstract class GameRoomClient {
 
         this.updateState({ tables: updatedTables });
 
-        // 如果这是我所在的表格，也更新 selectedTableId
+        // 如果这是我所在的表格，记录一下
         if (tableId === this.state.selectedTableId) {
-            console.log(`[${this.gameType}RoomClient] This is my table, status changed to ${data.status}`);
+            console.log(`[${this.gameType}RoomClient] This is my table, status is now ${data.status}`);
         }
     }
 

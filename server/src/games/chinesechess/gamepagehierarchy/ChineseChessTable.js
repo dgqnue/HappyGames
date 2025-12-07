@@ -313,10 +313,12 @@ class ChineseChessTable extends GameTable {
      */
     broadcastRoomState() {
         const roomInfo = this.matchPlayers.matchState.getRoomInfo();
-        roomInfo.status = this.status;
-
+        
         const state = {
             ...roomInfo,
+            tableId: this.tableId,              // 确保 tableId 被设置
+            roomId: this.tableId,               // 保留 roomId 作为备选
+            status: this.status,                // 游戏桌状态（idle, waiting, matching, playing）
             players: this.players.map(p => ({
                 userId: p.userId,
                 socketId: p.socketId,
@@ -329,6 +331,8 @@ class ChineseChessTable extends GameTable {
                 seatIndex: p.seatIndex
             }))
         };
+
+        console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${this.status}`);
 
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
