@@ -71,15 +71,19 @@ export abstract class GameMatchClient {
     }
 
     /**
+     * 处理游戏开始事件（由外部调用，不自动监听）
+     * 这样可以避免重复监听
+     */
+    public handleRemoteGameStart(data: any): void {
+        console.log(`[${this.gameType}MatchClient] Handling remote game_start:`, data);
+        this.handleGameStart(data);
+    }
+
+    /**
      * 设置通用事件监听
+     * 注意：不监听 game_start，因为它由 GameTableClient 处理并通过 handleRemoteGameStart() 调用
      */
     protected setupCommonListeners(): void {
-        // 游戏开始
-        this.socket.on('game_start', (data: any) => {
-            console.log(`[${this.gameType}MatchClient] Game started:`, data);
-            this.handleGameStart(data);
-        });
-
         // 游戏结束
         this.socket.on('game_over', (data: any) => {
             console.log(`[${this.gameType}MatchClient] Game over:`, data);

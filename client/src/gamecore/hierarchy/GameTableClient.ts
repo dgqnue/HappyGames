@@ -290,8 +290,17 @@ export abstract class GameTableClient {
                 });
                 
                 console.log(`[${this.gameType}TableClient] Match client initialized successfully`);
+                
+                // 通知 MatchClient 处理 game_start 数据
+                if (typeof this.matchClient.handleRemoteGameStart === 'function') {
+                    this.matchClient.handleRemoteGameStart(data);
+                }
             } else {
-                console.log(`[${this.gameType}TableClient] Match client already exists`);
+                console.log(`[${this.gameType}TableClient] Match client already exists, forwarding game_start`);
+                // MatchClient 已存在，直接转发事件
+                if (typeof this.matchClient.handleRemoteGameStart === 'function') {
+                    this.matchClient.handleRemoteGameStart(data);
+                }
             }
 
             // 更新状态为 playing，并确保其他相关字段也更新
