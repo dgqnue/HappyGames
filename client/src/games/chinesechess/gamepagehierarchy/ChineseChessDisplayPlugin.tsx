@@ -117,7 +117,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     } catch (err) {
       console.error('[ChineseChessDisplay] Error in state subscription:', err);
     }
-  }, [tableClient, updateGameState]);
+  }, [tableClient]);
 
   // 棋子数据处理（useMemo避免无限循环）
   const pieces = useMemo(() => {
