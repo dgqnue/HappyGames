@@ -50,6 +50,7 @@ interface ChineseChessDisplayProps {
  * 中国象棋游戏显示组件
  */
 function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseChessDisplayProps) {
+  console.log('[ChineseChessDisplay] ✅ Component mounted successfully, isMyTable:', isMyTable);
   const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
   const [gameError, setGameError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

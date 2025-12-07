@@ -22,6 +22,7 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
     // 注册中国象棋显示插件
     useEffect(() => {
         if (!isRegistered) {
+            console.log('[ChineseChessRoomView] 📝 Registering ChineseChessDisplayPlugin...');
             registerGameDisplayPlugin(ChineseChessDisplayPlugin);
             isRegistered = true;
         }

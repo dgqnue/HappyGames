@@ -99,11 +99,9 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     }
 
     // 如果游戏已开始，GameTableView会直接显示游戏界面
-    // 此时只需要渲染我的游戏桌（会自动显示游戏界面）
     if (shouldShowGame && myTableId && tableClient) {
-        console.log('[GameRoomView] Game is playing, showing GameTableView in fullscreen mode');
+        console.log('[GameRoomView] ✅ Game playing, rendering GameTableView');
         
-        // 在shouldShowGame时，找到我的游戏桌并单独渲染它（作为全屏游戏界面）
         const myTable = roomState.tables?.find((t: any) => t.tableId === myTableId);
         if (myTable) {
             return (
@@ -113,6 +111,8 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
                     isMyTable={true}
                 />
             );
+        } else {
+            console.error('[GameRoomView] ❌ ERROR: Could not find myTable');
         }
     }
 
