@@ -1,7 +1,7 @@
 'use client';
 console.log('[ChineseChessMatchView] Module evaluating...');
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface ChineseChessMatchViewProps {
   tableClient?: any;
@@ -107,25 +107,28 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
     setError('获取游戏状态失败');
   }
 
-  // 将字符串棋盘转换为对象数组以便渲染
-  const pieces: ChessPiece[] = [];
-  if (boardData && boardData.length > 0) {
-    try {
-      boardData.forEach((row, rowIndex) => {
-        row.forEach((char, colIndex) => {
-          if (char && CHAR_TO_PIECE[char]) {
-            pieces.push({
-              ...CHAR_TO_PIECE[char],
-              row: rowIndex,
-              col: colIndex
-            });
-          }
+  // 将字符串棋盘转换为对象数组以便渲染（使用useMemo避免无限循环）
+  const pieces = useMemo(() => {
+    const result: ChessPiece[] = [];
+    if (boardData && boardData.length > 0) {
+      try {
+        boardData.forEach((row, rowIndex) => {
+          row.forEach((char, colIndex) => {
+            if (char && CHAR_TO_PIECE[char]) {
+              result.push({
+                ...CHAR_TO_PIECE[char],
+                row: rowIndex,
+                col: colIndex
+              });
+            }
+          });
         });
-      });
-    } catch (err) {
-      console.error('[ChineseChessMatchView] Error processing board data:', err);
+      } catch (err) {
+        console.error('[ChineseChessMatchView] Error processing board data:', err);
+      }
     }
-  }
+    return result;
+  }, [boardData]);
 
   // 棋子图片路径获取
   const getPieceImage = (piece: ChessPiece) => {
@@ -299,7 +302,7 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
       };
 
       const drawPiecesOnCanvas = () => {
-        pieces.forEach((piece) => {
+        pieces.forEach((piece: ChessPiece) => {
           const pieceImage = new Image();
           pieceImage.src = getPieceImage(piece);
           
@@ -363,7 +366,7 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
           ctx.font = 'bold 14px Arial';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          const typeChar = pieces.find(p => p.row === piece.row && p.col === piece.col)
+          const typeChar = pieces.find((p: ChessPiece) => p.row === piece.row && p.col === piece.col)
             ? Object.keys(CHAR_TO_PIECE).find(key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color)
             : '';
           ctx.fillText(typeChar || '?', x, y);
