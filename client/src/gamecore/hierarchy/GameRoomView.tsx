@@ -39,8 +39,10 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
         };
     }, [roomClient]);
 
+    console.log('[GameRoomView] render called, roomState:', roomState);
     const tableClient = roomClient.getTableClient();
     const myTableId = roomState.selectedTableId;
+    console.log('[GameRoomView] tableClient:', tableClient, 'myTableId:', myTableId);
 
     useEffect(() => {
         if (!tableClient) return;
@@ -68,6 +70,7 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
 
     // 检查游戏是否开始 - 如果游戏状态为 'playing'，则显示游戏界面
     let shouldShowGame = false;
+    console.log('[GameRoomView] Game status check started, myTableId:', myTableId, 'tableClient exists:', !!tableClient);
     if (myTableId) {
         console.log(`[GameRoomView] Checking game status for myTableId: ${myTableId}`);
         
@@ -98,6 +101,7 @@ export function GameRoomView({ roomClient, onBack, MatchView }: GameRoomViewProp
 
     // 如果游戏已开始，显示游戏界面
     // 如果游戏已开始，显示游戏界面
+    console.log('[GameRoomView] Final decision - shouldShowGame:', shouldShowGame, 'myTableId:', myTableId, 'tableClient:', !!tableClient, 'MatchView:', !!MatchView);
     if (shouldShowGame && myTableId && tableClient) {
         console.log('[GameRoomView] Game is playing, showing game directly');
         
