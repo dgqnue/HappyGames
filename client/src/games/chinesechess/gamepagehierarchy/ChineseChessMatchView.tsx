@@ -85,111 +85,275 @@ export default function ChineseChessMatchView({ matchClient, onBack }: ChineseCh
 
   // 处理棋盘点击
   const handleBoardClick = (row: number, col: number) => {
-    // 检查是否在棋盘范围内
-    if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
+    try {
+      // 检查是否在棋盘范围内
+      if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
 
-    const clickedPieceChar = boardData[row]?.[col];
-    const isMyTurn = currentTurn === mySide;
-
-    console.log(`Clicked: (${row}, ${col}), Char: ${clickedPieceChar}, MySide: ${mySide}, Turn: ${currentTurn}`);
-
-    // 如果已经选中了一个棋子
-    if (selectedPiece) {
-      // 如果点击的是同一个位置，取消选中
-      if (selectedPiece.row === row && selectedPiece.col === col) {
-        setSelectedPiece(null);
+      if (!boardData || !Array.isArray(boardData)) {
+        console.warn('[ChineseChessMatchView] Board data not available');
         return;
       }
 
-      // 如果点击的是己方棋子，切换选中
-      if (clickedPieceChar) {
-        const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
-        if (pieceInfo) {
-          const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
-            (mySide === 'b' && pieceInfo.color === 'black');
+      const clickedPieceChar = boardData[row]?.[col];
+      const isMyTurn = currentTurn === mySide;
 
-          if (isMyPiece) {
-            setSelectedPiece({ row, col });
-            return;
+      console.log(`Clicked: (${row}, ${col}), Char: ${clickedPieceChar}, MySide: ${mySide}, Turn: ${currentTurn}`);
+
+      // 如果已经选中了一个棋子
+      if (selectedPiece) {
+        // 如果点击的是同一个位置，取消选中
+        if (selectedPiece.row === row && selectedPiece.col === col) {
+          setSelectedPiece(null);
+          return;
+        }
+
+        // 如果点击的是己方棋子，切换选中
+        if (clickedPieceChar) {
+          const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
+          if (pieceInfo) {
+            const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
+              (mySide === 'b' && pieceInfo.color === 'black');
+
+            if (isMyPiece) {
+              setSelectedPiece({ row, col });
+              return;
+            }
+          }
+        }
+
+        // 尝试移动 (如果是我的回合)
+        if (isMyTurn) {
+          console.log(`Attempting move from (${selectedPiece.row}, ${selectedPiece.col}) to (${row}, ${col})`);
+          matchClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
+          setSelectedPiece(null);
+        }
+      } else {
+        // 如果没有选中棋子，且点击了己方棋子，则选中
+        if (clickedPieceChar) {
+          const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
+          if (pieceInfo) {
+            const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
+              (mySide === 'b' && pieceInfo.color === 'black');
+
+            if (isMyPiece) {
+              setSelectedPiece({ row, col });
+            }
           }
         }
       }
-
-      // 尝试移动 (如果是我的回合)
-      if (isMyTurn) {
-        console.log(`Attempting move from (${selectedPiece.row}, ${selectedPiece.col}) to (${row}, ${col})`);
-        matchClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
-        setSelectedPiece(null);
-      }
-    } else {
-      // 如果没有选中棋子，且点击了己方棋子，则选中
-      if (clickedPieceChar) {
-        const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
-        if (pieceInfo) {
-          const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
-            (mySide === 'b' && pieceInfo.color === 'black');
-
-          if (isMyPiece) {
-            setSelectedPiece({ row, col });
-          }
-        }
-      }
+    } catch (error) {
+      console.error('[ChineseChessMatchView] Error handling board click:', error);
     }
   };
 
   // 绘制棋盘和棋子
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.warn('[ChineseChessMatchView] Canvas not available');
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.error('[ChineseChessMatchView] Could not get canvas context');
+      return;
+    }
 
-    // 清空画布
-    ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+    try {
+      // 清空画布
+      ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-    // 绘制棋盘背景
-    const boardImage = new Image();
-    boardImage.src = '/images/chinesechess/board/board.png';
+      // 如果没有棋盘数据，显示加载中
+      if (!boardData || boardData.length === 0) {
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+        ctx.fillStyle = '#999';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('游戏初始化中...', BOARD_WIDTH / 2, BOARD_HEIGHT / 2);
+        return;
+      }
 
-    boardImage.onload = () => {
-      // 绘制棋盘
-      ctx.drawImage(boardImage, 0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+      // 绘制棋盘背景
+      const boardImage = new Image();
+      boardImage.src = '/images/chinesechess/board/board.png';
+      
+      let imageLoadTimeout: NodeJS.Timeout;
+      let boardImageLoaded = false;
 
-      // 绘制棋子
-      pieces.forEach((piece) => {
-        const pieceImage = new Image();
-        pieceImage.src = getPieceImage(piece);
+      // 设置超时：如果5秒还没加载，使用备选方案
+      imageLoadTimeout = setTimeout(() => {
+        if (!boardImageLoaded) {
+          console.warn('[ChineseChessMatchView] Board image loading timeout, using fallback');
+          drawBoardGridFallback();
+        }
+      }, 5000);
 
-        pieceImage.onload = () => {
-          // 计算棋子位置（居中对齐）
-          const x = piece.col * CELL_SIZE + (CELL_SIZE - PIECE_SIZE) / 2;
-          const y = piece.row * CELL_SIZE + (CELL_SIZE - PIECE_SIZE) / 2;
+      const drawBoardGridFallback = () => {
+        try {
+          // 绘制棋盘网格作为备选
+          ctx.fillStyle = '#DEB887';
+          ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+
+          ctx.strokeStyle = '#8B4513';
+          ctx.lineWidth = 2;
+
+          // 纵线
+          for (let i = 0; i < 9; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * CELL_SIZE, 0);
+            ctx.lineTo(i * CELL_SIZE, BOARD_HEIGHT);
+            ctx.stroke();
+          }
+
+          // 横线
+          for (let i = 0; i < 10; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, i * CELL_SIZE);
+            ctx.lineTo(BOARD_WIDTH, i * CELL_SIZE);
+            ctx.stroke();
+          }
 
           // 绘制棋子
-          ctx.drawImage(pieceImage, x, y, PIECE_SIZE, PIECE_SIZE);
+          drawPiecesOnCanvas();
+        } catch (err) {
+          console.error('[ChineseChessMatchView] Error drawing board grid fallback:', err);
+        }
+      };
 
-          // 如果棋子被选中，绘制选中效果
-          if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
-            ctx.strokeStyle = '#3b82f6'; // 蓝色高亮
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x - 2, y - 2, PIECE_SIZE + 4, PIECE_SIZE + 4);
-          }
-        };
-      });
-    };
+      const drawPiecesOnCanvas = () => {
+        pieces.forEach((piece) => {
+          const pieceImage = new Image();
+          pieceImage.src = getPieceImage(piece);
+          
+          let pieceImageLoaded = false;
 
-    // 如果 boardImage 已经缓存，onload 可能不会触发，所以需要处理 complete
-    if (boardImage.complete) {
-      boardImage.onload(new Event('load'));
+          pieceImage.onerror = () => {
+            if (!pieceImageLoaded) {
+              console.warn(`[ChineseChessMatchView] Failed to load piece image: ${getPieceImage(piece)}`);
+              drawPieceFallback(piece);
+            }
+          };
+
+          pieceImage.onload = () => {
+            if (pieceImageLoaded) return;
+            pieceImageLoaded = true;
+
+            try {
+              const x = piece.col * CELL_SIZE + (CELL_SIZE - PIECE_SIZE) / 2;
+              const y = piece.row * CELL_SIZE + (CELL_SIZE - PIECE_SIZE) / 2;
+
+              ctx.drawImage(pieceImage, x, y, PIECE_SIZE, PIECE_SIZE);
+
+              // 如果棋子被选中，绘制选中效果
+              if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - 2, y - 2, PIECE_SIZE + 4, PIECE_SIZE + 4);
+              }
+            } catch (err) {
+              console.error('[ChineseChessMatchView] Error drawing piece image:', err);
+              drawPieceFallback(piece);
+            }
+          };
+
+          // 设置棋子加载超时
+          setTimeout(() => {
+            if (!pieceImageLoaded) {
+              console.warn(`[ChineseChessMatchView] Piece image loading timeout: ${getPieceImage(piece)}`);
+              drawPieceFallback(piece);
+            }
+          }, 3000);
+        });
+      };
+
+      const drawPieceFallback = (piece: ChessPiece) => {
+        try {
+          const x = piece.col * CELL_SIZE + CELL_SIZE / 2;
+          const y = piece.row * CELL_SIZE + CELL_SIZE / 2;
+          const radius = PIECE_SIZE / 2 - 5;
+
+          ctx.fillStyle = piece.color === 'red' ? '#FF6B6B' : '#4ECDC4';
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // 绘制棋子类型标记
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const typeChar = pieces.find(p => p.row === piece.row && p.col === piece.col)
+            ? Object.keys(CHAR_TO_PIECE).find(key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color)
+            : '';
+          ctx.fillText(typeChar || '?', x, y);
+        } catch (err) {
+          console.error('[ChineseChessMatchView] Error drawing piece fallback:', err);
+        }
+      };
+
+      boardImage.onerror = () => {
+        clearTimeout(imageLoadTimeout);
+        console.warn('[ChineseChessMatchView] Board image failed to load, drawing grid fallback');
+        drawBoardGridFallback();
+      };
+
+      boardImage.onload = () => {
+        boardImageLoaded = true;
+        clearTimeout(imageLoadTimeout);
+        try {
+          ctx.drawImage(boardImage, 0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+          drawPiecesOnCanvas();
+        } catch (err) {
+          console.error('[ChineseChessMatchView] Error drawing board image:', err);
+          drawBoardGridFallback();
+        }
+      };
+
+      // 如果棋盘图像已经在缓存中，onload 可能不会触发
+      if (boardImage.complete && boardImage.src) {
+        boardImageLoaded = true;
+        clearTimeout(imageLoadTimeout);
+        try {
+          ctx.drawImage(boardImage, 0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+          drawPiecesOnCanvas();
+        } catch (err) {
+          console.error('[ChineseChessMatchView] Error with cached board image:', err);
+          drawBoardGridFallback();
+        }
+      }
+
+      return () => {
+        clearTimeout(imageLoadTimeout);
+      };
+
+    } catch (error) {
+      console.error('[ChineseChessMatchView] Unexpected error in canvas drawing:', error);
+      // 绘制错误提示
+      ctx.fillStyle = '#ffebee';
+      ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+      ctx.fillStyle = '#c62828';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('游戏界面加载失败', BOARD_WIDTH / 2, BOARD_HEIGHT / 2);
     }
 
   }, [pieces, selectedPiece]); // 依赖 pieces (由 boardData 派生) 和 selectedPiece
 
   // 处理返回/退出操作
   const handleBack = () => {
-    console.log('[ChineseChessMatchView] 点击退出按钮，执行离座操作');
-    onBack();
+    try {
+      console.log('[ChineseChessMatchView] 点击退出按钮，执行离座操作');
+      onBack();
+    } catch (error) {
+      console.error('[ChineseChessMatchView] Error handling back button:', error);
+    }
   };
 
   return (
