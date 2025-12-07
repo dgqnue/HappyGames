@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { GameRoomClient } from './GameRoomClient';
 import { GameTableView } from './GameTableView';
 
@@ -99,21 +99,21 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     }
 
     // 如果游戏已开始，GameTableView会直接显示游戏界面
-    if (shouldShowGame && myTableId && tableClient) {
+    // 使用 useMemo 稳定 myTable 的引用，防止不必要的重新挂载
+    const myTable = useMemo(
+        () => roomState.tables?.find((t: any) => t.tableId === myTableId),
+        [roomState.tables, myTableId]
+    );
+
+    if (shouldShowGame && myTableId && tableClient && myTable) {
         console.log('[GameRoomView] ✅ Game playing, rendering GameTableView');
-        
-        const myTable = roomState.tables?.find((t: any) => t.tableId === myTableId);
-        if (myTable) {
-            return (
-                <GameTableView
-                    table={myTable}
-                    roomClient={roomClient}
-                    isMyTable={true}
-                />
-            );
-        } else {
-            console.error('[GameRoomView] ❌ ERROR: Could not find myTable');
-        }
+        return (
+            <GameTableView
+                table={myTable}
+                roomClient={roomClient}
+                isMyTable={true}
+            />
+        );
     }
 
     // 显示游戏室 - 房间列表，包含所有表格
