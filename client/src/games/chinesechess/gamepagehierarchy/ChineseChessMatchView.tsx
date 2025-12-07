@@ -77,7 +77,9 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
         console.warn('[ChineseChessMatchView] gameClient.onStateChange not available');
         return;
       }
+      console.log('[ChineseChessMatchView] Subscribing to game state changes');
       const unsubscribe = gameClient.onStateChange(() => {
+        console.log('[ChineseChessMatchView] State changed, triggering re-render');
         setTick(t => t + 1);
       });
       return unsubscribe;
@@ -101,6 +103,16 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
       mySide = gameClient.getMySide?.();
       state = gameClient.getState?.() || {};
       playerNames = state.players || { r: '红方', b: '黑方' };
+      
+      // 调试输出
+      console.log('[ChineseChessMatchView] Game state snapshot:', {
+        boardData: boardData,
+        boardDataLength: boardData?.length,
+        boardData0: boardData?.[0],
+        currentTurn,
+        mySide,
+        gameClientState: state
+      });
     }
   } catch (err) {
     console.error('[ChineseChessMatchView] Error getting game state:', err);
@@ -244,7 +256,11 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
 
       // 如果没有棋盘数据，显示加载中
       if (!boardData || boardData.length === 0) {
-        console.log('[ChineseChessMatchView] No board data, showing loading...');
+        console.log('[ChineseChessMatchView] No board data available, showing loading...', {
+          boardData,
+          length: boardData?.length,
+          pieces: pieces.length
+        });
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
         ctx.fillStyle = '#999';
