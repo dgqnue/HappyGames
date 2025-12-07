@@ -715,6 +715,9 @@ class MatchPlayers {
         // 倒计时锁定状态
         this.isLocked = false;
         this.countdownTimer = null;
+        
+        // 准备倒计时取消标志 - 用于防止30秒倒计时与3秒游戏倒计时冲突
+        this.readyCheckCancelled = false;
 
         // 启动僵尸桌检查
         this.startZombieCheck();
@@ -1073,21 +1076,25 @@ class MatchPlayers {
     }
 
     /**
-     * 准备超时处理
+     * 准备超时处理 (30秒倒计时)
+     * 这个方法只处理准备超时，不应该受到游戏倒计时的影响
      */
     onReadyTimeout() {
-        console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, current status: ${this.status}, isLocked: ${this.isLocked}`);
+        console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, readyCheckCancelled: ${this.readyCheckCancelled}`);
         
-        // 检查是否已经进入游戏开始状态，避免在游戏即将开始时踢出玩家
-        if (this.isLocked) {
-            console.log(`[MatchPlayers] Game is locked, skipping ready timeout processing`);
+        // 如果准备倒计时已被取消（即已开始游戏倒计时），立即返回
+        if (this.readyCheckCancelled) {
+            console.log(`[MatchPlayers] Ready check was already cancelled, skipping timeout processing`);
             return;
         }
-
+        
+        // 如果游戏已经开始，不做任何操作
         if (this.matchState.status === MatchingRules.TABLE_STATUS.PLAYING) {
             console.log(`[MatchPlayers] Game already playing, skipping ready timeout processing`);
             return;
         }
+
+        console.log(`[MatchPlayers] Ready timeout occurred - kicking out unready players`);
 
         const unreadyPlayers = this.matchState.getUnreadyPlayers();
         console.log(`[MatchPlayers] Unready players:`, unreadyPlayers.map(p => p.userId));
@@ -1125,10 +1132,13 @@ class MatchPlayers {
         this.isLocked = true;
 
         // 取消30秒准备倒计时，因为所有玩家已准备，即将开始游戏
+        // 这是关键：必须明确标记30秒倒计时已取消，防止后续的回调执行
         if (this.matchState.readyTimer) {
             clearTimeout(this.matchState.readyTimer);
             this.matchState.readyTimer = null;
         }
+        // 标记准备倒计时已停止，防止onReadyTimeout执行
+        this.readyCheckCancelled = true;
 
         this.table.broadcast('game_locked', {
             message: '所有玩家已就绪，游戏即将开始',
@@ -1241,6 +1251,9 @@ class MatchPlayers {
 
         // 释放游戏锁定状态（游戏结束了，可以进行新的匹配）
         this.isLocked = false;
+        
+        // 重置准备倒计时取消标志，以便下一轮比赛可以使用30秒倒计时
+        this.readyCheckCancelled = false;
 
         // 重置准备状态
         this.matchState.resetReadyStatus();
