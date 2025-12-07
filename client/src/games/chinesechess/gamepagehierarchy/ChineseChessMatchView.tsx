@@ -244,6 +244,7 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
 
       // 如果没有棋盘数据，显示加载中
       if (!boardData || boardData.length === 0) {
+        console.log('[ChineseChessMatchView] No board data, showing loading...');
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
         ctx.fillStyle = '#999';
@@ -254,24 +255,11 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
         return;
       }
 
-      // 绘制棋盘背景
-      const boardImage = new Image();
-      boardImage.src = '/images/chinesechess/board/board.png';
-      
-      let imageLoadTimeout: NodeJS.Timeout;
-      let boardImageLoaded = false;
+      console.log('[ChineseChessMatchView] Drawing board, pieces count:', pieces.length);
 
-      // 设置超时：如果5秒还没加载，使用备选方案
-      imageLoadTimeout = setTimeout(() => {
-        if (!boardImageLoaded) {
-          console.warn('[ChineseChessMatchView] Board image loading timeout, using fallback');
-          drawBoardGridFallback();
-        }
-      }, 5000);
-
-      const drawBoardGridFallback = () => {
+      // 直接绘制棋盘网格（简化方案，避免异步Image加载问题）
+      const drawBoard = () => {
         try {
-          // 绘制棋盘网格作为备选
           ctx.fillStyle = '#DEB887';
           ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
@@ -293,122 +281,54 @@ export default function ChineseChessMatchView({ tableClient, matchClient, onBack
             ctx.lineTo(BOARD_WIDTH, i * CELL_SIZE);
             ctx.stroke();
           }
-
-          // 绘制棋子
-          drawPiecesOnCanvas();
         } catch (err) {
-          console.error('[ChineseChessMatchView] Error drawing board grid fallback:', err);
+          console.error('[ChineseChessMatchView] Error drawing board grid:', err);
         }
       };
 
-      const drawPiecesOnCanvas = () => {
-        pieces.forEach((piece: ChessPiece) => {
-          const pieceImage = new Image();
-          pieceImage.src = getPieceImage(piece);
-          
-          let pieceImageLoaded = false;
-
-          pieceImage.onerror = () => {
-            if (!pieceImageLoaded) {
-              console.warn(`[ChineseChessMatchView] Failed to load piece image: ${getPieceImage(piece)}`);
-              drawPieceFallback(piece);
-            }
-          };
-
-          pieceImage.onload = () => {
-            if (pieceImageLoaded) return;
-            pieceImageLoaded = true;
-
-            try {
-              const x = piece.col * CELL_SIZE + (CELL_SIZE - PIECE_SIZE) / 2;
-              const y = piece.row * CELL_SIZE + (CELL_SIZE - PIECE_SIZE) / 2;
-
-              ctx.drawImage(pieceImage, x, y, PIECE_SIZE, PIECE_SIZE);
-
-              // 如果棋子被选中，绘制选中效果
-              if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(x - 2, y - 2, PIECE_SIZE + 4, PIECE_SIZE + 4);
-              }
-            } catch (err) {
-              console.error('[ChineseChessMatchView] Error drawing piece image:', err);
-              drawPieceFallback(piece);
-            }
-          };
-
-          // 设置棋子加载超时
-          setTimeout(() => {
-            if (!pieceImageLoaded) {
-              console.warn(`[ChineseChessMatchView] Piece image loading timeout: ${getPieceImage(piece)}`);
-              drawPieceFallback(piece);
-            }
-          }, 3000);
-        });
-      };
-
-      const drawPieceFallback = (piece: ChessPiece) => {
+      // 绘制棋子
+      const drawPieces = () => {
         try {
-          const x = piece.col * CELL_SIZE + CELL_SIZE / 2;
-          const y = piece.row * CELL_SIZE + CELL_SIZE / 2;
-          const radius = PIECE_SIZE / 2 - 5;
+          pieces.forEach((piece: ChessPiece) => {
+            const x = piece.col * CELL_SIZE + CELL_SIZE / 2;
+            const y = piece.row * CELL_SIZE + CELL_SIZE / 2;
+            const radius = PIECE_SIZE / 2 - 5;
 
-          ctx.fillStyle = piece.color === 'red' ? '#FF6B6B' : '#4ECDC4';
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.strokeStyle = '#000';
-          ctx.lineWidth = 2;
-          ctx.stroke();
+            ctx.fillStyle = piece.color === 'red' ? '#FF6B6B' : '#4ECDC4';
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-          // 绘制棋子类型标记
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 14px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const typeChar = pieces.find((p: ChessPiece) => p.row === piece.row && p.col === piece.col)
-            ? Object.keys(CHAR_TO_PIECE).find(key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color)
-            : '';
-          ctx.fillText(typeChar || '?', x, y);
+            // 如果棋子被选中，绘制选中效果
+            if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
+              ctx.strokeStyle = '#3b82f6';
+              ctx.lineWidth = 3;
+              ctx.strokeRect(x - PIECE_SIZE / 2 + 2, y - PIECE_SIZE / 2 + 2, PIECE_SIZE - 4, PIECE_SIZE - 4);
+            }
+
+            // 绘制棋子类型标记
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const typeChar = Object.keys(CHAR_TO_PIECE).find(
+              key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color
+            ) || '?';
+            ctx.fillText(typeChar, x, y);
+          });
         } catch (err) {
-          console.error('[ChineseChessMatchView] Error drawing piece fallback:', err);
+          console.error('[ChineseChessMatchView] Error drawing pieces:', err);
         }
       };
 
-      boardImage.onerror = () => {
-        clearTimeout(imageLoadTimeout);
-        console.warn('[ChineseChessMatchView] Board image failed to load, drawing grid fallback');
-        drawBoardGridFallback();
-      };
+      // 绘制棋盘和棋子
+      drawBoard();
+      drawPieces();
 
-      boardImage.onload = () => {
-        boardImageLoaded = true;
-        clearTimeout(imageLoadTimeout);
-        try {
-          ctx.drawImage(boardImage, 0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-          drawPiecesOnCanvas();
-        } catch (err) {
-          console.error('[ChineseChessMatchView] Error drawing board image:', err);
-          drawBoardGridFallback();
-        }
-      };
-
-      // 如果棋盘图像已经在缓存中，onload 可能不会触发
-      if (boardImage.complete && boardImage.src) {
-        boardImageLoaded = true;
-        clearTimeout(imageLoadTimeout);
-        try {
-          ctx.drawImage(boardImage, 0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-          drawPiecesOnCanvas();
-        } catch (err) {
-          console.error('[ChineseChessMatchView] Error with cached board image:', err);
-          drawBoardGridFallback();
-        }
-      }
-
-      return () => {
-        clearTimeout(imageLoadTimeout);
-      };
+      console.log('[ChineseChessMatchView] Board rendered successfully');
 
     } catch (error) {
       console.error('[ChineseChessMatchView] Unexpected error in canvas drawing:', error);
