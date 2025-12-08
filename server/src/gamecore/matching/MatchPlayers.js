@@ -1285,6 +1285,9 @@ class MatchPlayers {
             rematchTimeout: this.matchState.rematchTimeout
         });
 
+        // 广播房间状态更新，刷新房间列表（从 playing 变为 matching）
+        this.table.broadcastRoomState();
+
         this.startRematchCountdown();
     }
 
@@ -1378,6 +1381,10 @@ class MatchPlayers {
         this.matchState.resetReadyStatus();
         this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
         this.matchState.rematchRequests.clear();
+        
+        // 广播房间状态，刷新房间列表
+        this.table.broadcastRoomState();
+        
         this.startZombieCheck();
     }
 
