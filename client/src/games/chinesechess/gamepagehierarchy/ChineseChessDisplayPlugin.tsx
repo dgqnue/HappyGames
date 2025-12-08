@@ -202,8 +202,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             selectedPiece={selectedPiece}
             onPieceClick={handleBoardClick}
             isMyTable={isMyTable}
-            showGridLines={true}
-            showPieces={false}
+            showGridLines={false}
+            showPieces={true}
           />
         </div>
       </div>
