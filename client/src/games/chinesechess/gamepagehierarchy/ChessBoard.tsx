@@ -333,8 +333,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     onClick={() => handleCellClick(piece.row, piece.col)}
                     title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                   >
-                    {/* 棋子图片容器（设为透明以便调试定位） */}
-                    <div className="relative w-full h-full opacity-0">
+                    {/* 棋子图片容器（显示棋子图片） */}
+                    <div className="relative w-full h-full">
                       <Image
                         src={getPieceImagePath()}
                         alt={`${piece.color}-${piece.type}`}
