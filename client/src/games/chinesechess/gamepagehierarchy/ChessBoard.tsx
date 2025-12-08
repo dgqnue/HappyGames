@@ -259,7 +259,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               padding: 0,
               margin: 0,
               cursor: 'pointer',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              border: '2px solid transparent',
+              boxSizing: 'border-box'
             }}
             onClick={(e) => {
               // 只处理直接点击棋盘的事件（不是点击棋子或其他子元素）
@@ -356,7 +358,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             {/* 
               此层可用于开发时校准棋盘位置，如不需要可完全删除
             */}
-            {true && (
+            {false && (
             <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
               {/* 绿色辅助网格线（用于调试定位） */}
               {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
