@@ -34,10 +34,10 @@ const BOARD_ROWS = 10;
 
 // 棋盘边框配置（需要根据新图片调整）
 // 临时使用保守估计，之后根据实际显示效果调整
-let BORDER_LEFT_RATIO = 0.095;   // 左边框
-let BORDER_RIGHT_RATIO = 0.095;  // 右边框
-let BORDER_TOP_RATIO = 0.095;    // 顶部边框
-let BORDER_BOTTOM_RATIO = 0.12;  // 底部边框
+let BORDER_LEFT_RATIO = 0.08;   // 左边框
+let BORDER_RIGHT_RATIO = 0.08;  // 右边框
+let BORDER_TOP_RATIO = 0.08;    // 顶部边框
+let BORDER_BOTTOM_RATIO = 0.08;  // 底部边框
 
 // 调试函数：用于校准边框比例
 const measureBoardImage = () => {

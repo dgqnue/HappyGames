@@ -184,7 +184,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 棋盘容器 - 直接铺满中心区域 */}
       <div className="w-full h-full flex items-center justify-center">
-        <div className="w-full max-w-md aspect-[9/10]">
+        <div style={{ width: '90vw', maxWidth: '500px' }}>
           <ChessBoard 
             pieces={pieces}
             selectedPiece={selectedPiece}
