@@ -37,7 +37,7 @@ const BOARD_ROWS = 9;
 let BORDER_LEFT_RATIO = 0.055;   // 左边框
 let BORDER_RIGHT_RATIO = 0.055;  // 右边框
 let BORDER_TOP_RATIO = 0.055;    // 顶部边框
-let BORDER_BOTTOM_RATIO = 0.065;  // 底部边框
+let BORDER_BOTTOM_RATIO = 0.08;  // 底部边框
 
 // 调试函数：用于校准边框比例
 const measureBoardImage = () => {
