@@ -249,7 +249,7 @@ export function ChessBoardKit({
                         top: `${piecePixelY}px`,
                         width: `${pieceSize}px`,
                         height: `${pieceSize}px`,
-                        transform: 'translate(-50%, -50%)',
+                        transform: `translate(-50%, -50%) ${mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'}`,
                       }}
                       onClick={() => handleCellClick(piece.row, piece.col)}
                       title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}

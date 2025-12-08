@@ -175,10 +175,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       className="relative w-full h-screen overflow-hidden"
       style={{
         backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
-        backgroundSize: '100% 100%',
+        backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
+        backgroundAttachment: 'scroll'
       }}
     >
       {/* 返回按钮 */}
