@@ -32,13 +32,22 @@ const PIECE_NAMES: Record<string, string> = {
 const BOARD_COLS = 9;
 const BOARD_ROWS = 10;
 
-// 棋盘边框配置（基于棋盘图片的实际测量）
-// 棋盘图片中，木质边框占用的空间比例
-// 通过测量棋盘图片确定：边框大约占图片宽度的9-10%
-const BORDER_LEFT_RATIO = 0.095;   // 左边框
-const BORDER_RIGHT_RATIO = 0.095;  // 右边框
-const BORDER_TOP_RATIO = 0.095;    // 顶部边框
-const BORDER_BOTTOM_RATIO = 0.12;  // 底部边框（可能略大）
+// 棋盘边框配置（需要根据新图片调整）
+// 临时使用保守估计，之后根据实际显示效果调整
+let BORDER_LEFT_RATIO = 0.095;   // 左边框
+let BORDER_RIGHT_RATIO = 0.095;  // 右边框
+let BORDER_TOP_RATIO = 0.095;    // 顶部边框
+let BORDER_BOTTOM_RATIO = 0.12;  // 底部边框
+
+// 调试函数：用于校准边框比例
+const measureBoardImage = () => {
+  const img = document.createElement('img');
+  img.onload = () => {
+    console.log(`[ChessBoard] Board image dimensions: ${img.width}x${img.height}`);
+    // 图片加载后，可以根据实际尺寸计算
+  };
+  img.src = '/images/chinesechess/board/board.png';
+};
 
 export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: ChessBoardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -179,6 +188,64 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 </div>
               );
             })}
+          </div>
+
+          {/* 调试网格 - 显示边框和网格线，帮助校准 */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* 边框指示线 */}
+            <div style={{
+              position: 'absolute',
+              left: `${offsetLeft}px`,
+              top: `${offsetTop}px`,
+              width: `${containerWidth - offsetLeft - containerWidth * BORDER_RIGHT_RATIO}px`,
+              height: `${containerHeight - offsetTop - containerHeight * BORDER_BOTTOM_RATIO}px`,
+              border: '2px dashed rgba(255, 0, 0, 0.3)',
+            }} />
+            
+            {/* 网格线 */}
+            {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
+              <div
+                key={`vline-${col}`}
+                style={{
+                  position: 'absolute',
+                  left: `${offsetLeft + col * cellWidth}px`,
+                  top: `${offsetTop}px`,
+                  width: '1px',
+                  height: `${containerHeight - offsetTop - containerHeight * BORDER_BOTTOM_RATIO}px`,
+                  backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                }}
+              />
+            ))}
+            {Array.from({ length: BOARD_ROWS + 1 }).map((_, row) => (
+              <div
+                key={`hline-${row}`}
+                style={{
+                  position: 'absolute',
+                  left: `${offsetLeft}px`,
+                  top: `${offsetTop + row * cellHeight}px`,
+                  width: `${containerWidth - offsetLeft - containerWidth * BORDER_RIGHT_RATIO}px`,
+                  height: '1px',
+                  backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                }}
+              />
+            ))}
+            
+            {/* 输出调试信息 */}
+            <div style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              fontSize: '10px',
+              color: 'red',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              padding: '5px',
+              fontFamily: 'monospace',
+            }}>
+              <div>容器: {containerWidth.toFixed(0)}x{containerHeight.toFixed(0)}</div>
+              <div>左:{(BORDER_LEFT_RATIO*100).toFixed(1)}% 右:{(BORDER_RIGHT_RATIO*100).toFixed(1)}%</div>
+              <div>上:{(BORDER_TOP_RATIO*100).toFixed(1)}% 下:{(BORDER_BOTTOM_RATIO*100).toFixed(1)}%</div>
+              <div>格子: {cellWidth.toFixed(1)}x{cellHeight.toFixed(1)}</div>
+            </div>
           </div>
 
           {/* 选中指示器 */}
