@@ -7,7 +7,8 @@
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
-import { ChessBoard } from '@/games/chinesechess/gamepagehierarchy/ChessBoard';
+// import { ChessBoard } from '@/games/chinesechess/gamepagehierarchy/ChessBoard';
+import { ChessBoardKit } from '@/games/chinesechess/gamepagehierarchy/ChessBoardKit';
 
 // 棋子类型定义
 interface ChessPiece {
@@ -182,14 +183,27 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </svg>
       </button>
 
-      {/* 棋盘容器 - 直接铺满中心区域 */}
+      {/* 棋盘套件容器 - 直接铺满中心区域 */}
       <div className="w-full h-full flex items-center justify-center">
         <div style={{ width: '90vw', maxWidth: '500px' }}>
+          {/* 原棋盘组件代码已注释掉，改用棋盘套件 */}
+          {/*
           <ChessBoard 
             pieces={pieces}
             selectedPiece={selectedPiece}
             onPieceClick={handleBoardClick}
             isMyTable={isMyTable}
+          />
+          */}
+          
+          {/* 使用棋盘套件显示棋盘 */}
+          <ChessBoardKit
+            pieces={pieces}
+            selectedPiece={selectedPiece}
+            onPieceClick={handleBoardClick}
+            isMyTable={isMyTable}
+            showGridLines={false}
+            showPieces={true}
           />
         </div>
       </div>
