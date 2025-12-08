@@ -230,7 +230,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
           </div>
 
           {/* 调试网格 - 显示边框和网格线，帮助校准 */}
-          <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5, display: 'none' }}>
+          <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
             {/* 边框指示线 */}
             <div style={{
               position: 'absolute',
@@ -281,6 +281,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               fontFamily: 'monospace',
             }}>
               <div>图片:{finalImageWidth.toFixed(0)}x{finalImageHeight.toFixed(0)}</div>
+              <div>边框L:{(BORDER_LEFT_RATIO*100).toFixed(1)}% R:{(BORDER_RIGHT_RATIO*100).toFixed(1)}%</div>
+              <div>边框T:{(BORDER_TOP_RATIO*100).toFixed(1)}% B:{(BORDER_BOTTOM_RATIO*100).toFixed(1)}%</div>
               <div>棋盘:({boardWidth.toFixed(0)}x{boardHeight.toFixed(0)})</div>
               <div>格子:{cellWidth.toFixed(1)}x{cellHeight.toFixed(1)}</div>
             </div>
