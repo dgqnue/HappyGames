@@ -311,8 +311,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                   return `/images/chinesechess/pieces/${piece.color}/${piece.type}.png`;
                 };
 
-                // 棋子显示尺寸为格子的91%
-                const pieceSize = Math.min(cellWidth, cellHeight) * 0.91;
+                // 棋子显示尺寸为格子的93%
+                const pieceSize = Math.min(cellWidth, cellHeight) * 0.93;
                 
                 // 棋子在棋格交叉点上（格子的中心位置）
                 const piecePixelX = boardStartX + piece.col * cellWidth;
