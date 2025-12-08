@@ -214,7 +214,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                   onClick={() => handleCellClick(piece.row, piece.col)}
                   title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                 >
-                  <div className="relative w-full h-full">
+                  <div className="relative w-full h-full opacity-0">
                     <Image
                       src={getPieceImagePath()}
                       alt={`${piece.color}-${piece.type}`}
