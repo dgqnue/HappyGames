@@ -201,15 +201,15 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   
   /** 
    * 棋盘游戏区域相对于容器的X坐标（像素）
-   * 即左边框的宽度
+   * 即左边框的宽度，向左移动 3 像素
    */
-  const boardStartX = finalImageWidth * BORDER_LEFT_RATIO;
+  const boardStartX = finalImageWidth * BORDER_LEFT_RATIO - 3;
   
   /** 
    * 棋盘游戏区域相对于容器的Y坐标（像素）
-   * 即顶部边框的高度
+   * 即顶部边框的高度，向上移动 3 像素
    */
-  const boardStartY = finalImageHeight * BORDER_TOP_RATIO;
+  const boardStartY = finalImageHeight * BORDER_TOP_RATIO - 3;
 
   // ======================== 事件处理 ========================
 
