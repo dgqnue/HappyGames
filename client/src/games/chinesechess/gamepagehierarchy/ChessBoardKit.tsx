@@ -65,13 +65,13 @@ const BORDER_BOTTOM_RATIO = 0.08;
 /**
  * 棋盘偏移量（像素，用于精细调整）
  */
-const OFFSET_X = -4.5;  // X方向总偏移（向右移动0.5像素）
+const OFFSET_X = -4.5;  // X方向总偏移
 const OFFSET_Y = -5.5;  // Y方向总偏移
 
 /**
  * 棋格尺寸增加量（像素）
  */
-const CELL_WIDTH_EXTRA = 1.1;   // 每个棋格额外宽度
+const CELL_WIDTH_EXTRA = 0.9;   // 每个棋格额外宽度
 const CELL_HEIGHT_EXTRA = 2.4;  // 每个棋格额外高度
 
 /**
@@ -283,7 +283,7 @@ export function ChessBoardKit({
                     }}
                   />
                 ))}
-                {/* 横线 */}
+                {/* 横线 - 宽度根据减小后的棋格调整 */}
                 {Array.from({ length: BOARD_ROWS + 1 }).map((_, row) => (
                   <div
                     key={`hline-${row}`}
@@ -291,7 +291,7 @@ export function ChessBoardKit({
                       position: 'absolute',
                       left: `${boardStartX}px`,
                       top: `${boardStartY + row * cellHeight}px`,
-                      width: `${boardWidth + CELL_WIDTH_EXTRA * BOARD_COLS}px`,
+                      width: `${boardWidth + CELL_WIDTH_EXTRA * BOARD_COLS - 0.2 * BOARD_COLS}px`,
                       height: '1px',
                       backgroundColor: 'rgba(0, 200, 0, 0.7)',
                     }}
