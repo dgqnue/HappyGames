@@ -108,26 +108,22 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
       ref={containerRef}
       className="w-full relative"
       style={{
-        aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
         maxWidth: '100%',
         padding: 0,
         margin: 0,
-        position: 'relative'  // 确保是定位上下文
+        position: 'relative'
       }}
     >
       {dimensions ? (
         <div
-          className="absolute inset-0"
+          className="relative w-full"
           style={{
-            backgroundImage: 'url(/images/chinesechess/board/board.png)',
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
+            aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
             backgroundColor: '#DEB887',
             padding: 0,
             margin: 0,
             cursor: 'pointer',
-            position: 'relative'
+            overflow: 'hidden'
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -142,6 +138,19 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             }
           }}
         >
+          {/* 棋盘背景 - 使用Next.js Image组件 */}
+          <Image
+            src="/images/chinesechess/board/board.png"
+            alt="棋盘"
+            fill
+            className="object-cover"
+            priority
+            unoptimized
+            style={{
+              zIndex: 1,
+              pointerEvents: 'none'
+            }}
+          />
           {/* 棋子层 */}
           <div className="absolute inset-0" style={{ zIndex: 10 }}>
             {pieces.map((piece, index) => {
