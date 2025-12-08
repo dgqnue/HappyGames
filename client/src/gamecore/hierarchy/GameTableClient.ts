@@ -159,7 +159,16 @@ export abstract class GameTableClient {
         this.socket.on('game_ended', (data: any) => {
             this.updateState({
                 status: 'matching',
+                ready: false,  // 取消准备状态
                 countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
+            });
+        });
+
+        // 玩家取消准备
+        this.socket.on('players_unready', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Players unready:`, data);
+            this.updateState({
+                ready: false
             });
         });
         // 被踢出

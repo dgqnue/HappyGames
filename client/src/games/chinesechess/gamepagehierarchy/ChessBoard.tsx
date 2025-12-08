@@ -76,16 +76,20 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   return (
     <div
       ref={containerRef}
-      className="w-full overflow-hidden"
+      className="w-full"
       style={{
         aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
+        maxWidth: '100%'
       }}
     >
       {dimensions ? (
         <div
-          className="relative w-full h-full bg-contain bg-no-repeat bg-center"
+          className="relative w-full h-full"
           style={{
             backgroundImage: 'url(/images/chinesechess/board/board.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             backgroundColor: '#DEB887',
           }}
         >
@@ -178,3 +182,4 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
     </div>
   );
 }
+

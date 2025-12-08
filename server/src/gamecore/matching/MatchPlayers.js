@@ -1285,6 +1285,11 @@ class MatchPlayers {
             rematchTimeout: this.matchState.rematchTimeout
         });
 
+        // 立即广播取消准备状态，确保客户端收到
+        this.table.broadcast('players_unready', {
+            reason: '游戏结束，准备状态已取消'
+        });
+
         // 广播房间状态更新，刷新房间列表（从 playing 变为 matching）
         this.table.broadcastRoomState();
 
