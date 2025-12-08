@@ -119,6 +119,10 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
         <div
           className="absolute inset-0"
           style={{
+            backgroundImage: 'url(/images/chinesechess/board/board.png)',
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             backgroundColor: '#DEB887',
             padding: 0,
             margin: 0,
@@ -126,7 +130,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             position: 'relative'
           }}
           onClick={(e) => {
-            if (e.target === e.currentTarget || (e.target as HTMLElement)?.tagName === 'IMG') {
+            if (e.target === e.currentTarget) {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               const clickX = e.clientX - rect.left;
               const clickY = e.clientY - rect.top;
@@ -138,22 +142,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             }
           }}
         >
-          {/* 棋盘背景图 */}
-          <img
-            src="/images/chinesechess/board/board.png"
-            alt="棋盘"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              objectPosition: 'center',
-              pointerEvents: 'none'
-            }}
-          />
           {/* 棋子层 */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-0" style={{ zIndex: 10 }}>
             {pieces.map((piece, index) => {
               const isSelected = 
                 selectedPiece?.row === piece.row && 
