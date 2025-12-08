@@ -175,8 +175,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       className="relative w-full h-screen overflow-hidden"
       style={{
         backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
-        backgroundSize: 'cover',
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed'
       }}
     >
@@ -212,6 +213,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             isMyTable={isMyTable}
             showGridLines={false}
             showPieces={true}
+            mySide={mySide}
           />
         </div>
       </div>
