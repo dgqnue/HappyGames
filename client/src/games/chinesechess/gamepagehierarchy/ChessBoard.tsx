@@ -252,7 +252,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 key={`hline-${row}`}
                 style={{
                   position: 'absolute',
-                  left: `${boardStartX - 1.5}px`,
+                  left: `${boardStartX - 2.5}px`,
                   top: `${boardStartY + row * cellHeight}px`,
                   width: `${boardWidth + 5}px`,
                   height: '1px',
