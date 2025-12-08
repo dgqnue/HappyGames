@@ -95,27 +95,11 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
 
   // 计算实际棋盘区域和单元格尺寸
   const containerWidth = dimensions?.width || 0;
-  const containerHeight = dimensions?.height || 0;
+  const containerHeight = containerWidth / imageAspectRatio;
   
-  // 当使用object-contain时，图片可能在容器中缩放显示
-  // 计算图片的实际显示尺寸
-  const imageDisplayHeight = containerWidth / imageAspectRatio;
-  const imageDisplayWidth = containerWidth;
-  
-  // 如果图片高度超过容器高度，则按高度缩放
-  let finalImageWidth = imageDisplayWidth;
-  let finalImageHeight = imageDisplayHeight;
-  let offsetX = 0;
-  let offsetY = 0;
-  
-  if (imageDisplayHeight > containerHeight) {
-    finalImageHeight = containerHeight;
-    finalImageWidth = containerHeight * imageAspectRatio;
-    offsetX = (containerWidth - finalImageWidth) / 2;
-    offsetY = 0;
-  } else {
-    offsetY = (containerHeight - imageDisplayHeight) / 2;
-  }
+  // 使用object-cover，图片会填满整个容器
+  const finalImageWidth = containerWidth;
+  const finalImageHeight = containerHeight;
   
   // 实际棋盘区域（去掉边框）
   const boardWidth = finalImageWidth * (1 - BORDER_LEFT_RATIO - BORDER_RIGHT_RATIO);
@@ -126,8 +110,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   const cellHeight = boardHeight / BOARD_ROWS;
   
   // 棋盘内容区域的起始位置（相对于容器）
-  const boardStartX = offsetX + finalImageWidth * BORDER_LEFT_RATIO;
-  const boardStartY = offsetY + finalImageHeight * BORDER_TOP_RATIO;
+  const boardStartX = finalImageWidth * BORDER_LEFT_RATIO;
+  const boardStartY = finalImageHeight * BORDER_TOP_RATIO;
 
   const handleCellClick = (row: number, col: number) => {
     if (isMyTable) {
@@ -146,57 +130,58 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
         position: 'relative'
       }}
     >
-      {dimensions ? (
+      {dimensions && containerWidth > 0 ? (
         <div
-          className="relative w-full"
+          className="flex items-center justify-center"
           style={{
+            width: '100%',
             minHeight: '300px',
-            backgroundColor: '#DEB887',
+            backgroundColor: 'transparent',
             padding: 0,
-            margin: 0,
-            cursor: 'pointer',
-            overflow: 'visible'
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const clickX = e.clientX - rect.left;
-              const clickY = e.clientY - rect.top;
-              const col = Math.floor((clickX - boardStartX) / cellWidth);
-              const row = Math.floor((clickY - boardStartY) / cellHeight);
-              if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
-                handleCellClick(row, col);
-              }
-            }
+            margin: 0
           }}
         >
-          {/* 棋盘背景 - 使用Next.js Image组件 */}
+          {/* 棋盘容器 - 根据图片宽高比自动调整大小 */}
           <div
             style={{
               position: 'relative',
-              width: '100%',
-              height: `${finalImageHeight}px`,
-              marginTop: `${offsetY}px`,
-              marginLeft: `${offsetX}px`
+              width: `${containerWidth}px`,
+              aspectRatio: imageAspectRatio,
+              backgroundColor: '#DEB887',
+              padding: 0,
+              margin: 0,
+              cursor: 'pointer',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                const col = Math.floor((clickX - boardStartX) / cellWidth);
+                const row = Math.floor((clickY - boardStartY) / cellHeight);
+                if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+                  handleCellClick(row, col);
+                }
+              }
             }}
           >
+            {/* 棋盘背景图 */}
             <Image
               src="/images/chinesechess/board/board.png"
               alt="棋盘"
-              width={Math.round(finalImageWidth)}
-              height={Math.round(finalImageHeight)}
+              fill
+              className="object-cover"
               priority
               unoptimized
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain'
+                zIndex: 1,
+                pointerEvents: 'none'
               }}
             />
-          </div>
 
           {/* 棋子层 */}
-          <div style={{ zIndex: 10, position: 'relative' }}>
+          <div style={{ zIndex: 10, position: 'absolute', inset: 0 }}>
             {pieces.map((piece, index) => {
               const isSelected = 
                 selectedPiece?.row === piece.row && 
@@ -245,7 +230,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
           </div>
 
           {/* 调试网格 - 显示边框和网格线，帮助校准 */}
-          <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
+          <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5, display: 'none' }}>
             {/* 边框指示线 */}
             <div style={{
               position: 'absolute',
@@ -296,7 +281,6 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               fontFamily: 'monospace',
             }}>
               <div>图片:{finalImageWidth.toFixed(0)}x{finalImageHeight.toFixed(0)}</div>
-              <div>偏移:({offsetX.toFixed(0)},{offsetY.toFixed(0)})</div>
               <div>棋盘:({boardWidth.toFixed(0)}x{boardHeight.toFixed(0)})</div>
               <div>格子:{cellWidth.toFixed(1)}x{cellHeight.toFixed(1)}</div>
             </div>
@@ -315,7 +299,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               }}
             />
           )}
-        </div>
+            </div>
+          </div>
       ) : (
         <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gradient-to-b from-amber-100 to-yellow-100">
           <div className="animate-pulse">加载棋盘...</div>
