@@ -83,7 +83,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
     >
       {dimensions ? (
         <div
-          className="relative w-full h-full bg-contain bg-no-repeat bg-center"
+          className="relative w-full h-full bg-cover bg-no-repeat bg-center"
           style={{
             backgroundImage: 'url(/images/chinesechess/board/board.png)',
             backgroundColor: '#DEB887',
