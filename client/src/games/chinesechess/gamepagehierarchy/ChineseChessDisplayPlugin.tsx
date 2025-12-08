@@ -229,29 +229,27 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-lg">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* 棋盘区域 */}
-            <div className="flex-1">
-              <div className="flex flex-col items-center">
-                {/* 棋盘容器 */}
-                <div className="w-full mb-6">
-                  <ChessBoard 
-                    pieces={pieces}
-                    selectedPiece={selectedPiece}
-                    onPieceClick={handleBoardClick}
-                    isMyTable={isMyTable}
-                  />
-                </div>
+            <div className="flex-1 flex flex-col items-center">
+              {/* 棋盘容器 */}
+              <div className="w-full max-w-2xl mb-6">
+                <ChessBoard 
+                  pieces={pieces}
+                  selectedPiece={selectedPiece}
+                  onPieceClick={handleBoardClick}
+                  isMyTable={isMyTable}
+                />
+              </div>
 
-                {/* 操作提示 */}
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 max-w-md w-full">
-                  <div className="text-sm text-blue-800">
-                    <div className="font-medium mb-1">操作提示：</div>
-                    <ul className="text-xs space-y-1">
-                      <li>• 点击己方棋子选中（高亮显示）</li>
-                      <li>• 再次点击目标位置移动</li>
-                      <li>• 只有轮到你时才能移动</li>
-                      <li>• 你是：{mySide === 'r' ? '红方 (下方)' : mySide === 'b' ? '黑方 (上方)' : '观众'}</li>
-                    </ul>
-                  </div>
+              {/* 操作提示 */}
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 max-w-md w-full">
+                <div className="text-sm text-blue-800">
+                  <div className="font-medium mb-1">操作提示：</div>
+                  <ul className="text-xs space-y-1">
+                    <li>• 点击己方棋子选中（高亮显示）</li>
+                    <li>• 再次点击目标位置移动</li>
+                    <li>• 只有轮到你时才能移动</li>
+                    <li>• 你是：{mySide === 'r' ? '红方 (下方)' : mySide === 'b' ? '黑方 (上方)' : '观众'}</li>
+                  </ul>
                 </div>
               </div>
             </div>
