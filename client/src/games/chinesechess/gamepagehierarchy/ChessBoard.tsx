@@ -189,9 +189,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   
   /** 
    * 单个棋格的宽度
-   * 计算公式：棋盘宽度 ÷ 列数(8列) + 1像素（放大）
+   * 计算公式：棋盘宽度 ÷ 列数(8列) + 1.1像素（放大）
    */
-  const cellWidth = boardWidth / BOARD_COLS + 1;
+  const cellWidth = boardWidth / BOARD_COLS + 1.1;
   
   /** 
    * 单个棋格的高度
@@ -381,7 +381,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     position: 'absolute',
                     left: `${boardStartX}px`,
                     top: `${boardStartY + row * cellHeight}px`,
-                    width: `${boardWidth + BOARD_COLS}px`,
+                    width: `${boardWidth + BOARD_COLS + 0.1 * BOARD_COLS}px`,
                     height: '1px',
                     backgroundColor: 'rgba(0, 200, 0, 0.7)',
                   }}
