@@ -278,7 +278,7 @@ export function ChessBoardKit({
                       left: `${boardStartX + col * cellWidth}px`,
                       top: `${boardStartY}px`,
                       width: '1px',
-                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS - 0.4 * BOARD_ROWS}px`,
+                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS}px`,
                       backgroundColor: 'rgba(0, 200, 0, 0.7)',
                     }}
                   />
