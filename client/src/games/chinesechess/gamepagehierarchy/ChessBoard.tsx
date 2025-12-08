@@ -189,9 +189,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   
   /** 
    * 单个棋格的宽度
-   * 计算公式：棋盘宽度 ÷ 列数(8列) + 3像素（放大）
+   * 计算公式：棋盘宽度 ÷ 列数(8列) + 1像素（放大）
    */
-  const cellWidth = boardWidth / BOARD_COLS + 3;
+  const cellWidth = boardWidth / BOARD_COLS + 1;
   
   /** 
    * 单个棋格的高度
@@ -367,7 +367,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     left: `${boardStartX + col * cellWidth}px`,
                     top: `${boardStartY}px`,
                     width: '1px',
-                    height: `${boardHeight + 3 * BOARD_ROWS}px`,
+                    height: `${boardHeight + BOARD_ROWS}px`,
                     backgroundColor: 'rgba(0, 200, 0, 0.7)',
                   }}
                 />
@@ -379,12 +379,12 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     position: 'absolute',
                     left: `${boardStartX}px`,
                     top: `${boardStartY + row * cellHeight}px`,
-                    width: `${boardWidth + 3 * BOARD_COLS}px`,
+                    width: `${boardWidth + BOARD_COLS}px`,
                     height: '1px',
                     backgroundColor: 'rgba(0, 200, 0, 0.7)',
                   }}
                 />
-              ))}
+              ))}}
               
               {/* 调试信息面板已削除 */}
             </div>
