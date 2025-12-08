@@ -69,7 +69,7 @@ const BOARD_ROWS = 9;
  */
 let BORDER_LEFT_RATIO = 0.07;   // 左边框占图片宽度的比例
 let BORDER_RIGHT_RATIO = 0.07;  // 右边框占图片宽度的比例
-let BORDER_TOP_RATIO = 0.7;    // 顶部边框占图片高度的比例
+let BORDER_TOP_RATIO = 0.07;    // 顶部边框占图片高度的比例
 let BORDER_BOTTOM_RATIO = 0.1;  // 底部边框占图片高度的比例
 
 /**
