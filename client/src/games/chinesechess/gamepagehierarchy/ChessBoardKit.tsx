@@ -72,7 +72,7 @@ const OFFSET_Y = -6;  // Y方向总偏移
  * 棋格尺寸增加量（像素）
  */
 const CELL_WIDTH_EXTRA = 1.1;   // 每个棋格额外宽度
-const CELL_HEIGHT_EXTRA = 2.8;  // 每个棋格额外高度
+const CELL_HEIGHT_EXTRA = 2.7;  // 每个棋格额外高度（减少0.1像素）
 
 /**
  * 棋子显示尺寸比例
@@ -269,7 +269,7 @@ export function ChessBoardKit({
             {/* 网格线层 */}
             {showGridLines && (
               <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
-                {/* 竖线 */}
+                {/* 竖线 - 高度根据减小后的棋格调整 */}
                 {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
                   <div
                     key={`vline-${col}`}
@@ -278,7 +278,7 @@ export function ChessBoardKit({
                       left: `${boardStartX + col * cellWidth}px`,
                       top: `${boardStartY}px`,
                       width: '1px',
-                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS}px`,
+                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS - 0.1 * BOARD_ROWS}px`,
                       backgroundColor: 'rgba(0, 200, 0, 0.7)',
                     }}
                   />
