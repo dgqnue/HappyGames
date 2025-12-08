@@ -29,8 +29,8 @@ const PIECE_NAMES: Record<string, string> = {
 };
 
 // 棋盘配置
-const BOARD_COLS = 9;
-const BOARD_ROWS = 10;
+const BOARD_COLS = 8;
+const BOARD_ROWS = 9;
 
 // 棋盘边框配置（需要根据新图片调整）
 // 临时使用保守估计，之后根据实际显示效果调整
@@ -234,7 +234,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             {/* 边框指示线 - 已移除 */}
             
             {/* 网格线 */}
-            {Array.from({ length: BOARD_COLS }).map((_, col) => (
+            {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
               <div
                 key={`vline-${col}`}
                 style={{
@@ -247,7 +247,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 }}
               />
             ))}
-            {Array.from({ length: BOARD_ROWS }).map((_, row) => (
+            {Array.from({ length: BOARD_ROWS + 1 }).map((_, row) => (
               <div
                 key={`hline-${row}`}
                 style={{
