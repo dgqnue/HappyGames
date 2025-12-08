@@ -229,6 +229,102 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             })}
           </div>
 
+          {/* 宫廷边框 - SVG覆盖层 */}
+          <svg
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              zIndex: 5
+            }}
+          >
+            {/* 绘制完整的长方形边框（由四条L形组成） */}
+            {/* 红方宫（0-2行, 3-5列） */}
+            {/* 左边框 - 从(0,3)到(2,3) */}
+            <line
+              x1={boardStartX + 3 * cellWidth}
+              y1={boardStartY + 0 * cellHeight}
+              x2={boardStartX + 3 * cellWidth}
+              y2={boardStartY + 2 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+            
+            {/* 下边框 - 从(2,3)到(2,5) */}
+            <line
+              x1={boardStartX + 3 * cellWidth}
+              y1={boardStartY + 2 * cellHeight}
+              x2={boardStartX + 5 * cellWidth}
+              y2={boardStartY + 2 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+            
+            {/* 右边框 - 从(2,5)到(0,5) */}
+            <line
+              x1={boardStartX + 5 * cellWidth}
+              y1={boardStartY + 2 * cellHeight}
+              x2={boardStartX + 5 * cellWidth}
+              y2={boardStartY + 0 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+            
+            {/* 上边框 - 从(0,5)到(0,3) */}
+            <line
+              x1={boardStartX + 5 * cellWidth}
+              y1={boardStartY + 0 * cellHeight}
+              x2={boardStartX + 3 * cellWidth}
+              y2={boardStartY + 0 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+
+            {/* 黑方宫（7-9行, 3-5列） */}
+            {/* 左边框 - 从(9,3)到(7,3) */}
+            <line
+              x1={boardStartX + 3 * cellWidth}
+              y1={boardStartY + 9 * cellHeight}
+              x2={boardStartX + 3 * cellWidth}
+              y2={boardStartY + 7 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+            
+            {/* 上边框 - 从(7,3)到(7,5) */}
+            <line
+              x1={boardStartX + 3 * cellWidth}
+              y1={boardStartY + 7 * cellHeight}
+              x2={boardStartX + 5 * cellWidth}
+              y2={boardStartY + 7 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+            
+            {/* 右边框 - 从(7,5)到(9,5) */}
+            <line
+              x1={boardStartX + 5 * cellWidth}
+              y1={boardStartY + 7 * cellHeight}
+              x2={boardStartX + 5 * cellWidth}
+              y2={boardStartY + 9 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+            
+            {/* 下边框 - 从(9,5)到(9,3) */}
+            <line
+              x1={boardStartX + 5 * cellWidth}
+              y1={boardStartY + 9 * cellHeight}
+              x2={boardStartX + 3 * cellWidth}
+              y2={boardStartY + 9 * cellHeight}
+              stroke="rgba(150, 100, 50, 0.8)"
+              strokeWidth="1"
+            />
+          </svg>
+
           {/* 调试网格 - 显示边框和网格线，帮助校准 */}
           <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
             {/* 边框指示线 - 已移除 */}
