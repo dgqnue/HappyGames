@@ -116,32 +116,24 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             backgroundRepeat: 'no-repeat',
             backgroundColor: '#DEB887',
             padding: 0,
-            margin: 0
+            margin: 0,
+            position: 'absolute',
+            inset: 0,
+            cursor: 'pointer'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              const clickY = e.clientY - rect.top;
+              const col = Math.floor((clickX - offsetLeft) / cellWidth);
+              const row = Math.floor((clickY - offsetTop) / cellHeight);
+              if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+                handleCellClick(row, col);
+              }
+            }
           }}
         >
-          {/* 棋格网格（用于点击检测） */}
-          <div 
-            className="absolute inset-0 grid" 
-            style={{ 
-              gridTemplateColumns: `repeat(${BOARD_COLS}, 1fr)`, 
-              gridTemplateRows: `repeat(${BOARD_ROWS}, 1fr)` 
-            }}
-          >
-            {Array.from({ length: BOARD_ROWS }).map((_, row) =>
-              Array.from({ length: BOARD_COLS }).map((_, col) => (
-                <div
-                  key={`grid-${row}-${col}`}
-                  className={`relative cursor-pointer hover:bg-blue-200 hover:bg-opacity-20 transition-all ${
-                    selectedPiece?.row === row && selectedPiece?.col === col 
-                      ? 'bg-blue-300 bg-opacity-30' 
-                      : ''
-                  }`}
-                  onClick={() => handleCellClick(row, col)}
-                />
-              ))
-            )}
-          </div>
-
           {/* 棋子层 */}
           <div className="absolute inset-0">
             {pieces.map((piece, index) => {
@@ -156,9 +148,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               // 棋子尺寸为格子的75%
               const pieceSize = Math.min(cellWidth, cellHeight) * 0.75;
               
-              // 相对于容器的百分比位置（考虑边框）
-              const pieceLeftPercent = BORDER_LEFT_RATIO + (piece.col + 0.5) * (1 - BORDER_LEFT_RATIO - BORDER_RIGHT_RATIO) / BOARD_COLS;
-              const pieceTopPercent = BORDER_TOP_RATIO + (piece.row + 0.5) * (1 - BORDER_TOP_RATIO - BORDER_BOTTOM_RATIO) / BOARD_ROWS;
+              // 棋子在容器中的像素位置（相对于棋盘内容区域的起始点）
+              const piecePixelX = offsetLeft + (piece.col + 0.5) * cellWidth;
+              const piecePixelY = offsetTop + (piece.row + 0.5) * cellHeight;
 
               return (
                 <div
@@ -167,8 +159,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     isSelected ? 'ring-4 ring-blue-500 scale-110 z-10' : 'hover:scale-105'
                   }`}
                   style={{
-                    left: `${pieceLeftPercent * 100}%`,
-                    top: `${pieceTopPercent * 100}%`,
+                    left: `${piecePixelX}px`,
+                    top: `${piecePixelY}px`,
                     width: `${pieceSize}px`,
                     height: `${pieceSize}px`,
                     transform: 'translate(-50%, -50%)',

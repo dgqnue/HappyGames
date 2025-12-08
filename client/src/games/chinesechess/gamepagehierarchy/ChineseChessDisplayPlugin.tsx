@@ -182,7 +182,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           </svg>
         </button>
         
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg border-4 border-orange-500 m-0 p-0 overflow-hidden">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg m-0 p-0 overflow-hidden">
           <ChessBoard 
             pieces={pieces}
             selectedPiece={selectedPiece}
