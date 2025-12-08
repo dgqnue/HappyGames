@@ -183,9 +183,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </svg>
       </button>
 
-      {/* 棋盘套件容器 - 直接铺满中心区域 */}
+      {/* 棋盘套件容器 - 居中显示，大小为原来的三分之二 */}
       <div className="w-full h-full flex items-center justify-center">
-        <div style={{ width: '90vw', maxWidth: '500px' }}>
+        <div style={{ width: '60vw', maxWidth: '333px' }}>
           {/* 原棋盘组件代码已注释掉，改用棋盘套件 */}
           {/*
           <ChessBoard 
