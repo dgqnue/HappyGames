@@ -195,9 +195,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   
   /** 
    * 单个棋格的高度
-   * 计算公式：棋盘高度 ÷ 行数(9行) + 3像素（放大）
+   * 计算公式：棋盘高度 ÷ 行数(9行) + 1.3像素（放大）
    */
-  const cellHeight = boardHeight / BOARD_ROWS + 3;
+  const cellHeight = boardHeight / BOARD_ROWS + 1.3;
   
   /** 
    * 棋盘游戏区域相对于容器的X坐标（像素）
@@ -367,7 +367,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     left: `${boardStartX + col * cellWidth}px`,
                     top: `${boardStartY}px`,
                     width: '1px',
-                    height: `${boardHeight + BOARD_ROWS}px`,
+                    height: `${boardHeight + BOARD_ROWS + 0.3 * BOARD_ROWS}px`,
                     backgroundColor: 'rgba(0, 200, 0, 0.7)',
                   }}
                 />
