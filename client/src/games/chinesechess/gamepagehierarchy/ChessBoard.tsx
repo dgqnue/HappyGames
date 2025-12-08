@@ -52,6 +52,18 @@ const measureBoardImage = () => {
 export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: ChessBoardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [imageAspectRatio, setImageAspectRatio] = useState<number>(9 / 10); // 默认9:10
+
+  // 加载棋盘图片并获取其实际宽高比
+  useEffect(() => {
+    const img = document.createElement('img');
+    img.onload = () => {
+      const ratio = img.width / img.height;
+      setImageAspectRatio(ratio);
+      console.log(`[ChessBoard] Board image aspect ratio: ${ratio.toFixed(3)} (${img.width}x${img.height})`);
+    };
+    img.src = '/images/chinesechess/board/board.png';
+  }, []);
 
   // 监听容器尺寸变化，完全自适应
   useEffect(() => {
@@ -81,21 +93,41 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
     };
   }, []);
 
-  // 计算实际可用区域和单元格尺寸
+  // 计算实际棋盘区域和单元格尺寸
   const containerWidth = dimensions?.width || 0;
   const containerHeight = dimensions?.height || 0;
   
+  // 当使用object-contain时，图片可能在容器中缩放显示
+  // 计算图片的实际显示尺寸
+  const imageDisplayHeight = containerWidth / imageAspectRatio;
+  const imageDisplayWidth = containerWidth;
+  
+  // 如果图片高度超过容器高度，则按高度缩放
+  let finalImageWidth = imageDisplayWidth;
+  let finalImageHeight = imageDisplayHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+  
+  if (imageDisplayHeight > containerHeight) {
+    finalImageHeight = containerHeight;
+    finalImageWidth = containerHeight * imageAspectRatio;
+    offsetX = (containerWidth - finalImageWidth) / 2;
+    offsetY = 0;
+  } else {
+    offsetY = (containerHeight - imageDisplayHeight) / 2;
+  }
+  
   // 实际棋盘区域（去掉边框）
-  const boardWidth = containerWidth * (1 - BORDER_LEFT_RATIO - BORDER_RIGHT_RATIO);
-  const boardHeight = containerHeight * (1 - BORDER_TOP_RATIO - BORDER_BOTTOM_RATIO);
+  const boardWidth = finalImageWidth * (1 - BORDER_LEFT_RATIO - BORDER_RIGHT_RATIO);
+  const boardHeight = finalImageHeight * (1 - BORDER_TOP_RATIO - BORDER_BOTTOM_RATIO);
   
   // 每个格子的宽高
   const cellWidth = boardWidth / BOARD_COLS;
   const cellHeight = boardHeight / BOARD_ROWS;
   
-  // 棋盘内容区域的起始位置
-  const offsetLeft = containerWidth * BORDER_LEFT_RATIO;
-  const offsetTop = containerHeight * BORDER_TOP_RATIO;
+  // 棋盘内容区域的起始位置（相对于容器）
+  const boardStartX = offsetX + finalImageWidth * BORDER_LEFT_RATIO;
+  const boardStartY = offsetY + finalImageHeight * BORDER_TOP_RATIO;
 
   const handleCellClick = (row: number, col: number) => {
     if (isMyTable) {
@@ -118,20 +150,20 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
         <div
           className="relative w-full"
           style={{
-            aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
+            minHeight: '300px',
             backgroundColor: '#DEB887',
             padding: 0,
             margin: 0,
             cursor: 'pointer',
-            overflow: 'hidden'
+            overflow: 'visible'
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               const clickX = e.clientX - rect.left;
               const clickY = e.clientY - rect.top;
-              const col = Math.floor((clickX - offsetLeft) / cellWidth);
-              const row = Math.floor((clickY - offsetTop) / cellHeight);
+              const col = Math.floor((clickX - boardStartX) / cellWidth);
+              const row = Math.floor((clickY - boardStartY) / cellHeight);
               if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
                 handleCellClick(row, col);
               }
@@ -139,20 +171,32 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
           }}
         >
           {/* 棋盘背景 - 使用Next.js Image组件 */}
-          <Image
-            src="/images/chinesechess/board/board.png"
-            alt="棋盘"
-            fill
-            className="object-cover"
-            priority
-            unoptimized
+          <div
             style={{
-              zIndex: 1,
-              pointerEvents: 'none'
+              position: 'relative',
+              width: '100%',
+              height: `${finalImageHeight}px`,
+              marginTop: `${offsetY}px`,
+              marginLeft: `${offsetX}px`
             }}
-          />
+          >
+            <Image
+              src="/images/chinesechess/board/board.png"
+              alt="棋盘"
+              width={Math.round(finalImageWidth)}
+              height={Math.round(finalImageHeight)}
+              priority
+              unoptimized
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+
           {/* 棋子层 */}
-          <div className="absolute inset-0" style={{ zIndex: 10 }}>
+          <div style={{ zIndex: 10, position: 'relative' }}>
             {pieces.map((piece, index) => {
               const isSelected = 
                 selectedPiece?.row === piece.row && 
@@ -166,8 +210,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               const pieceSize = Math.min(cellWidth, cellHeight) * 0.75;
               
               // 棋子在容器中的像素位置（相对于棋盘内容区域的起始点）
-              const piecePixelX = offsetLeft + (piece.col + 0.5) * cellWidth;
-              const piecePixelY = offsetTop + (piece.row + 0.5) * cellHeight;
+              const piecePixelX = boardStartX + (piece.col + 0.5) * cellWidth;
+              const piecePixelY = boardStartY + (piece.row + 0.5) * cellHeight;
 
               return (
                 <div
@@ -201,14 +245,14 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
           </div>
 
           {/* 调试网格 - 显示边框和网格线，帮助校准 */}
-          <div className="absolute inset-0 pointer-events-none">
+          <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
             {/* 边框指示线 */}
             <div style={{
               position: 'absolute',
-              left: `${offsetLeft}px`,
-              top: `${offsetTop}px`,
-              width: `${containerWidth - offsetLeft - containerWidth * BORDER_RIGHT_RATIO}px`,
-              height: `${containerHeight - offsetTop - containerHeight * BORDER_BOTTOM_RATIO}px`,
+              left: `${boardStartX}px`,
+              top: `${boardStartY}px`,
+              width: `${boardWidth}px`,
+              height: `${boardHeight}px`,
               border: '2px dashed rgba(255, 0, 0, 0.3)',
             }} />
             
@@ -218,10 +262,10 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 key={`vline-${col}`}
                 style={{
                   position: 'absolute',
-                  left: `${offsetLeft + col * cellWidth}px`,
-                  top: `${offsetTop}px`,
+                  left: `${boardStartX + col * cellWidth}px`,
+                  top: `${boardStartY}px`,
                   width: '1px',
-                  height: `${containerHeight - offsetTop - containerHeight * BORDER_BOTTOM_RATIO}px`,
+                  height: `${boardHeight}px`,
                   backgroundColor: 'rgba(0, 255, 0, 0.1)',
                 }}
               />
@@ -231,9 +275,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 key={`hline-${row}`}
                 style={{
                   position: 'absolute',
-                  left: `${offsetLeft}px`,
-                  top: `${offsetTop + row * cellHeight}px`,
-                  width: `${containerWidth - offsetLeft - containerWidth * BORDER_RIGHT_RATIO}px`,
+                  left: `${boardStartX}px`,
+                  top: `${boardStartY + row * cellHeight}px`,
+                  width: `${boardWidth}px`,
                   height: '1px',
                   backgroundColor: 'rgba(0, 255, 0, 0.1)',
                 }}
@@ -251,10 +295,10 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               padding: '5px',
               fontFamily: 'monospace',
             }}>
-              <div>容器: {containerWidth.toFixed(0)}x{containerHeight.toFixed(0)}</div>
-              <div>左:{(BORDER_LEFT_RATIO*100).toFixed(1)}% 右:{(BORDER_RIGHT_RATIO*100).toFixed(1)}%</div>
-              <div>上:{(BORDER_TOP_RATIO*100).toFixed(1)}% 下:{(BORDER_BOTTOM_RATIO*100).toFixed(1)}%</div>
-              <div>格子: {cellWidth.toFixed(1)}x{cellHeight.toFixed(1)}</div>
+              <div>图片:{finalImageWidth.toFixed(0)}x{finalImageHeight.toFixed(0)}</div>
+              <div>偏移:({offsetX.toFixed(0)},{offsetY.toFixed(0)})</div>
+              <div>棋盘:({boardWidth.toFixed(0)}x{boardHeight.toFixed(0)})</div>
+              <div>格子:{cellWidth.toFixed(1)}x{cellHeight.toFixed(1)}</div>
             </div>
           </div>
 
@@ -263,8 +307,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             <div
               className="absolute border-blue-500 rounded pointer-events-none transition-all"
               style={{
-                left: `${offsetLeft + selectedPiece.col * cellWidth}px`,
-                top: `${offsetTop + selectedPiece.row * cellHeight}px`,
+                left: `${boardStartX + selectedPiece.col * cellWidth}px`,
+                top: `${boardStartY + selectedPiece.row * cellHeight}px`,
                 width: `${cellWidth}px`,
                 height: `${cellHeight}px`,
                 borderWidth: `${Math.max(2, cellWidth * 0.15)}px`,
