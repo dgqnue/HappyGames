@@ -300,19 +300,32 @@ export function ChessBoardKit({
               </div>
             )}
 
-            {/* 选中棋子的高亮边框 */}
+            {/* 选中棋子的高亮效果 */}
             {selectedPiece && showPieces && (
               <div
-                className="absolute border-blue-500 rounded pointer-events-none transition-all"
+                className="absolute pointer-events-none transition-all"
                 style={{
                   left: `${boardStartX + selectedPiece.col * cellWidth}px`,
                   top: `${boardStartY + selectedPiece.row * cellHeight}px`,
                   width: `${cellWidth}px`,
                   height: `${cellHeight}px`,
-                  borderWidth: `${Math.max(2, cellWidth * 0.15)}px`,
                   transform: 'translate(-50%, -50%)',
+                  zIndex: 9,
                 }}
-              />
+              >
+                <div className="relative w-full h-full">
+                  <Image
+                    src={pieces.find(p => p.row === selectedPiece.row && p.col === selectedPiece.col)?.color === 'red' 
+                      ? '/images/chinesechess/select/r_select/r_select.png'
+                      : '/images/chinesechess/select/b_select/b_select.png'
+                    }
+                    alt="selected"
+                    fill
+                    className="object-contain"
+                    priority={false}
+                  />
+                </div>
+              </div>
             )}
           </div>
         </div>

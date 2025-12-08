@@ -171,7 +171,15 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   };
 
   return (
-    <div className="relative w-full h-screen bg-gradient-to-b from-amber-50 to-amber-100 overflow-hidden">
+    <div 
+      className="relative w-full h-screen overflow-hidden"
+      style={{
+        backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       {/* 返回按钮 */}
       <button
         onClick={onLeaveTable}
