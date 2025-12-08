@@ -170,11 +170,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 p-4 flex items-center justify-center">
-      <div className="w-full max-w-md flex flex-col items-center gap-4">
+    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 flex items-center justify-center">
+      <div className="w-full h-full flex flex-col items-center justify-center">
         <button
           onClick={onLeaveTable}
-          className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
+          className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
           aria-label="返回并离座"
         >
           <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +182,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           </svg>
         </button>
         
-        <div className="w-full bg-white rounded-lg shadow-lg border-4 border-orange-500 p-0 overflow-hidden">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg border-4 border-orange-500 m-0 p-0 overflow-hidden">
           <ChessBoard 
             pieces={pieces}
             selectedPiece={selectedPiece}

@@ -32,6 +32,17 @@ const PIECE_NAMES: Record<string, string> = {
 const BOARD_COLS = 9;
 const BOARD_ROWS = 10;
 
+// 棋盘边框配置（像素比例）
+// 根据棋盘图片的实际结构调整这些值
+// 左边框占比
+const BORDER_LEFT_RATIO = 0.08;
+// 右边框占比
+const BORDER_RIGHT_RATIO = 0.08;
+// 顶部边框占比
+const BORDER_TOP_RATIO = 0.08;
+// 底部边框占比
+const BORDER_BOTTOM_RATIO = 0.08;
+
 export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: ChessBoardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -63,9 +74,13 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
     };
   }, []);
 
-  // 计算动态单元格尺寸
-  const cellWidth = dimensions ? dimensions.width / BOARD_COLS : 0;
-  const cellHeight = dimensions ? dimensions.height / BOARD_ROWS : 0;
+  // 计算实际可用区域和单元格尺寸
+  const boardWidth = dimensions ? dimensions.width * (1 - BORDER_LEFT_RATIO - BORDER_RIGHT_RATIO) : 0;
+  const boardHeight = dimensions ? dimensions.height * (1 - BORDER_TOP_RATIO - BORDER_BOTTOM_RATIO) : 0;
+  const cellWidth = boardWidth / BOARD_COLS;
+  const cellHeight = boardHeight / BOARD_ROWS;
+  const offsetLeft = dimensions ? dimensions.width * BORDER_LEFT_RATIO : 0;
+  const offsetTop = dimensions ? dimensions.height * BORDER_TOP_RATIO : 0;
 
   const handleCellClick = (row: number, col: number) => {
     if (isMyTable) {
@@ -133,18 +148,23 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
 
               // 棋子尺寸为格子的85%
               const pieceSize = Math.min(cellWidth, cellHeight) * 0.85;
+              
+              // 计算棋子中心位置（像素值），考虑边框偏移
+              const pieceX = offsetLeft + (piece.col + 0.5) * cellWidth;
+              const pieceY = offsetTop + (piece.row + 0.5) * cellHeight;
 
               return (
                 <div
                   key={`piece-${index}`}
-                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all ${
+                  className={`absolute cursor-pointer transition-all ${
                     isSelected ? 'ring-4 ring-blue-500 scale-110 z-10' : 'hover:scale-105'
                   }`}
                   style={{
-                    left: `${((piece.col + 0.5) / BOARD_COLS) * 100}%`,
-                    top: `${((piece.row + 0.5) / BOARD_ROWS) * 100}%`,
+                    left: `${pieceX}px`,
+                    top: `${pieceY}px`,
                     width: `${pieceSize}px`,
                     height: `${pieceSize}px`,
+                    transform: 'translate(-50%, -50%)',
                   }}
                   onClick={() => handleCellClick(piece.row, piece.col)}
                   title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
@@ -167,12 +187,12 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
           {/* 选中指示器 */}
           {selectedPiece && (
             <div
-              className="absolute border-4 border-blue-500 rounded pointer-events-none transition-all"
+              className="absolute border-blue-500 rounded pointer-events-none transition-all"
               style={{
-                left: `${(selectedPiece.col / BOARD_COLS) * 100}%`,
-                top: `${(selectedPiece.row / BOARD_ROWS) * 100}%`,
-                width: `${(1 / BOARD_COLS) * 100}%`,
-                aspectRatio: '1',
+                left: `${offsetLeft + selectedPiece.col * cellWidth}px`,
+                top: `${offsetTop + selectedPiece.row * cellHeight}px`,
+                width: `${cellWidth}px`,
+                height: `${cellHeight}px`,
                 borderWidth: `${Math.max(2, cellWidth * 0.15)}px`,
               }}
             />
