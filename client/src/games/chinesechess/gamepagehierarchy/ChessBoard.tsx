@@ -79,18 +79,22 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
       className="w-full"
       style={{
         aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
-        maxWidth: '100%'
+        maxWidth: '100%',
+        padding: 0,
+        margin: 0
       }}
     >
       {dimensions ? (
         <div
-          className="relative w-full h-full"
+          className="w-full h-full"
           style={{
             backgroundImage: 'url(/images/chinesechess/board/board.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             backgroundColor: '#DEB887',
+            padding: 0,
+            margin: 0
           }}
         >
           {/* 棋格网格（用于点击检测） */}
