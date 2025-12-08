@@ -170,19 +170,21 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 flex items-center justify-center">
-      <div className="w-full h-full flex flex-col items-center justify-center">
-        <button
-          onClick={onLeaveTable}
-          className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-          aria-label="返回并离座"
-        >
-          <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </button>
-        
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg m-0 p-0 overflow-hidden">
+    <div className="relative w-full h-screen bg-gradient-to-b from-amber-50 to-amber-100 overflow-hidden">
+      {/* 返回按钮 */}
+      <button
+        onClick={onLeaveTable}
+        className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors z-20"
+        aria-label="返回并离座"
+      >
+        <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </button>
+
+      {/* 棋盘容器 - 直接铺满中心区域 */}
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full max-w-md aspect-[9/10]">
           <ChessBoard 
             pieces={pieces}
             selectedPiece={selectedPiece}
@@ -191,7 +193,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           />
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 

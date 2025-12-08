@@ -108,7 +108,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
     >
       {dimensions ? (
         <div
-          className="w-full h-full"
+          className="absolute inset-0"
           style={{
             backgroundImage: 'url(/images/chinesechess/board/board.png)',
             backgroundSize: 'cover',
@@ -117,8 +117,6 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             backgroundColor: '#DEB887',
             padding: 0,
             margin: 0,
-            position: 'absolute',
-            inset: 0,
             cursor: 'pointer'
           }}
           onClick={(e) => {
