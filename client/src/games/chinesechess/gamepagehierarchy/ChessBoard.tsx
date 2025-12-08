@@ -367,7 +367,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     left: `${boardStartX + col * cellWidth}px`,
                     top: `${boardStartY}px`,
                     width: '1px',
-                    height: `${boardHeight + BOARD_ROWS + 2.8 * BOARD_ROWS}px`,
+                    height: `${boardHeight + 2.8 * BOARD_ROWS}px`,
                     backgroundColor: 'rgba(0, 200, 0, 0.7)',
                   }}
                 />
