@@ -234,7 +234,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             {/* 边框指示线 - 已移除 */}
             
             {/* 网格线 */}
-            {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
+            {Array.from({ length: BOARD_COLS }).map((_, col) => (
               <div
                 key={`vline-${col}`}
                 style={{
