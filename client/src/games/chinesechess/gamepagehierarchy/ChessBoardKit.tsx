@@ -65,8 +65,8 @@ const BORDER_BOTTOM_RATIO = 0.08;
 /**
  * 棋盘偏移量（像素，用于精细调整）
  */
-const OFFSET_X = -5;  // X方向总偏移
-const OFFSET_Y = -5.5;  // Y方向总偏移（向下移动0.5像素）
+const OFFSET_X = -4.5;  // X方向总偏移（向右移动0.5像素）
+const OFFSET_Y = -5.5;  // Y方向总偏移
 
 /**
  * 棋格尺寸增加量（像素）
