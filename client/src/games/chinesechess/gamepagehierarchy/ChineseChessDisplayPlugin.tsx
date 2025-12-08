@@ -5,8 +5,9 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
+import { ChessBoard } from './ChessBoard';
 
 // 棋子类型定义
 interface ChessPiece {
@@ -34,12 +35,6 @@ const CHAR_TO_PIECE: Record<string, { type: ChessPiece['type'], color: ChessPiec
   'p': { type: 'pawn', color: 'black' },
 };
 
-// 棋盘尺寸配置
-const BOARD_WIDTH = 540;
-const BOARD_HEIGHT = 600;
-const CELL_SIZE = 60;
-const PIECE_SIZE = 50;
-
 interface ChineseChessDisplayProps {
   tableClient: any;
   isMyTable: boolean;
@@ -58,7 +53,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [gameState, setGameState] = useState<any>({ winner: null });
   const [playerNames, setPlayerNames] = useState<any>({ r: '红方', b: '黑方' });
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -201,84 +195,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     }
   };
 
-  // 绘制棋盘
-  useEffect(() => {
-    if (!isMyTable || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    try {
-      ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-
-      if (!boardData || boardData.length === 0) {
-        ctx.fillStyle = '#f5f5f5';
-        ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-        ctx.fillStyle = '#999';
-        ctx.font = '18px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('游戏初始化中...', BOARD_WIDTH / 2, BOARD_HEIGHT / 2);
-        return;
-      }
-
-      // 绘制棋盘网格
-      ctx.fillStyle = '#DEB887';
-      ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
-
-      ctx.strokeStyle = '#8B4513';
-      ctx.lineWidth = 2;
-
-      for (let i = 0; i < 9; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * CELL_SIZE, 0);
-        ctx.lineTo(i * CELL_SIZE, BOARD_HEIGHT);
-        ctx.stroke();
-      }
-
-      for (let i = 0; i < 10; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, i * CELL_SIZE);
-        ctx.lineTo(BOARD_WIDTH, i * CELL_SIZE);
-        ctx.stroke();
-      }
-
-      // 绘制棋子
-      pieces.forEach((piece: ChessPiece) => {
-        const x = piece.col * CELL_SIZE + CELL_SIZE / 2;
-        const y = piece.row * CELL_SIZE + CELL_SIZE / 2;
-        const radius = PIECE_SIZE / 2 - 5;
-
-        ctx.fillStyle = piece.color === 'red' ? '#FF6B6B' : '#4ECDC4';
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        if (selectedPiece && selectedPiece.row === piece.row && selectedPiece.col === piece.col) {
-          ctx.strokeStyle = '#3b82f6';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(x - PIECE_SIZE / 2 + 2, y - PIECE_SIZE / 2 + 2, PIECE_SIZE - 4, PIECE_SIZE - 4);
-        }
-
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const typeChar = Object.keys(CHAR_TO_PIECE).find(
-          key => CHAR_TO_PIECE[key].type === piece.type && CHAR_TO_PIECE[key].color === piece.color
-        ) || '?';
-        ctx.fillText(typeChar, x, y);
-      });
-
-    } catch (error) {
-      console.error('[ChineseChessDisplay] Error drawing board:', error);
-    }
-  }, [pieces, selectedPiece, boardData, isMyTable]);
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -316,22 +232,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             <div className="flex-1">
               <div className="flex flex-col items-center">
                 {/* 棋盘容器 */}
-                <div className="relative mb-6">
-                  <canvas
-                    ref={canvasRef}
-                    width={BOARD_WIDTH}
-                    height={BOARD_HEIGHT}
-                    className="border-4 border-amber-800 rounded-lg cursor-pointer shadow-xl"
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const x = e.clientX - rect.left;
-                      const y = e.clientY - rect.top;
-
-                      const col = Math.floor(x / CELL_SIZE);
-                      const row = Math.floor(y / CELL_SIZE);
-
-                      handleBoardClick(row, col);
-                    }}
+                <div className="w-full max-w-2xl mb-6">
+                  <ChessBoard 
+                    pieces={pieces}
+                    selectedPiece={selectedPiece}
+                    onPieceClick={handleBoardClick}
+                    isMyTable={isMyTable}
                   />
                 </div>
 
@@ -340,7 +246,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                   <div className="text-sm text-blue-800">
                     <div className="font-medium mb-1">操作提示：</div>
                     <ul className="text-xs space-y-1">
-                      <li>• 点击己方棋子选中（蓝色边框）</li>
+                      <li>• 点击己方棋子选中（高亮显示）</li>
                       <li>• 再次点击目标位置移动</li>
                       <li>• 只有轮到你时才能移动</li>
                       <li>• 你是：{mySide === 'r' ? '红方 (下方)' : mySide === 'b' ? '黑方 (上方)' : '观众'}</li>
@@ -412,6 +318,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                   </div>
                 </div>
               )}
+
+              {/* 错误提示 */}
+              {gameError && (
+                <div className="bg-red-100 border border-red-400 p-4 rounded-xl text-red-800 text-sm">
+                  {gameError}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -426,7 +339,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               我的身份：{mySide === 'r' ? '红方' : mySide === 'b' ? '黑方' : '观众'}
             </div>
             <div>
-              当前选中：{selectedPiece ? `(${selectedPiece.row}, ${selectedPiece.col})` : '无'}
+              当前选中：{selectedPiece ? `(行${selectedPiece.row} 列${selectedPiece.col})` : '无'}
             </div>
           </div>
         </div>
