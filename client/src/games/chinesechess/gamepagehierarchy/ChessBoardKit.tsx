@@ -72,7 +72,7 @@ const OFFSET_Y = -6;  // Y方向总偏移
  * 棋格尺寸增加量（像素）
  */
 const CELL_WIDTH_EXTRA = 1.1;   // 每个棋格额外宽度
-const CELL_HEIGHT_EXTRA = 2.6;  // 每个棋格额外高度（减少0.2像素，共两次）
+const CELL_HEIGHT_EXTRA = 2.5;  // 每个棋格额外高度
 
 /**
  * 棋子显示尺寸比例
@@ -278,7 +278,7 @@ export function ChessBoardKit({
                       left: `${boardStartX + col * cellWidth}px`,
                       top: `${boardStartY}px`,
                       width: '1px',
-                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS - 0.2 * BOARD_ROWS}px`,
+                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS - 0.3 * BOARD_ROWS}px`,
                       backgroundColor: 'rgba(0, 200, 0, 0.7)',
                     }}
                   />
