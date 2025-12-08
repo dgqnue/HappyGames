@@ -384,7 +384,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     backgroundColor: 'rgba(0, 200, 0, 0.7)',
                   }}
                 />
-              ))}}
+              ))}
               
               {/* 调试信息面板已削除 */}
             </div>
