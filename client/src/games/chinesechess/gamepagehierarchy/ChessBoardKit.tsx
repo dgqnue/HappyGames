@@ -71,8 +71,8 @@ const OFFSET_Y = -5.5;  // Y方向总偏移
 /**
  * 棋格尺寸增加量（像素）
  */
-const CELL_WIDTH_EXTRA = 0.9;   // 每个棋格额外宽度
-const CELL_HEIGHT_EXTRA = 2.4;  // 每个棋格额外高度
+const CELL_WIDTH_EXTRA = 0.8;   // 每个棋格额外宽度
+const CELL_HEIGHT_EXTRA = 2.3;  // 每个棋格额外高度
 
 /**
  * 棋子显示尺寸比例
