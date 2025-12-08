@@ -76,7 +76,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   return (
     <div
       ref={containerRef}
-      className="w-full rounded-lg shadow-2xl overflow-hidden"
+      className="w-full overflow-hidden"
       style={{
         aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
       }}

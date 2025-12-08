@@ -232,7 +232,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             <div className="flex-1">
               <div className="flex flex-col items-center">
                 {/* 棋盘容器 */}
-                <div className="w-full max-w-2xl mb-6">
+                <div className="w-full mb-6">
                   <ChessBoard 
                     pieces={pieces}
                     selectedPiece={selectedPiece}
