@@ -389,13 +389,14 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               {/* 调试信息面板：显示当前的尺寸和位置计算结果 */}
               <div style={{
                 position: 'absolute',
-                top: '10px',
-                right: '10px',
+                top: `${boardStartY + boardHeight + 10}px`,
+                left: `${boardStartX}px`,
                 fontSize: '10px',
                 color: 'red',
                 backgroundColor: 'rgba(255, 255, 255, 0.8)',
                 padding: '5px',
                 fontFamily: 'monospace',
+                border: '1px solid red',
               }}>
                 {/* 棋盘背景图的实际尺寸 */}
                 <div>图片:{finalImageWidth.toFixed(0)}x{finalImageHeight.toFixed(0)}</div>
