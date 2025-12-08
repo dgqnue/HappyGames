@@ -97,12 +97,13 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   return (
     <div
       ref={containerRef}
-      className="w-full"
+      className="w-full relative"
       style={{
         aspectRatio: `${BOARD_COLS} / ${BOARD_ROWS}`,
         maxWidth: '100%',
         padding: 0,
-        margin: 0
+        margin: 0,
+        position: 'relative'  // 确保是定位上下文
       }}
     >
       {dimensions ? (
@@ -152,15 +153,12 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 return `/images/chinesechess/pieces/${piece.color}/${piece.type}.png`;
               };
 
-              // 棋子尺寸为格子的75%，确保不超出网格
+              // 棋子尺寸为格子的75%
               const pieceSize = Math.min(cellWidth, cellHeight) * 0.75;
               
-              // 计算棋子中心位置
-              // 棋子应该放在网格线交叉点上，即每个格子的中心
-              const pieceX = offsetLeft + (piece.col + 0.5) * cellWidth;
-              const pieceY = offsetTop + (piece.row + 0.5) * cellHeight;
-
-              console.log(`[ChessBoard] Piece ${piece.type} at (${piece.row},${piece.col}) -> pixel (${pieceX.toFixed(1)}, ${pieceY.toFixed(1)})`);
+              // 相对于容器的百分比位置（考虑边框）
+              const pieceLeftPercent = BORDER_LEFT_RATIO + (piece.col + 0.5) * (1 - BORDER_LEFT_RATIO - BORDER_RIGHT_RATIO) / BOARD_COLS;
+              const pieceTopPercent = BORDER_TOP_RATIO + (piece.row + 0.5) * (1 - BORDER_TOP_RATIO - BORDER_BOTTOM_RATIO) / BOARD_ROWS;
 
               return (
                 <div
@@ -169,8 +167,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     isSelected ? 'ring-4 ring-blue-500 scale-110 z-10' : 'hover:scale-105'
                   }`}
                   style={{
-                    left: `${pieceX}px`,
-                    top: `${pieceY}px`,
+                    left: `${pieceLeftPercent * 100}%`,
+                    top: `${pieceTopPercent * 100}%`,
                     width: `${pieceSize}px`,
                     height: `${pieceSize}px`,
                     transform: 'translate(-50%, -50%)',
