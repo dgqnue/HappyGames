@@ -77,7 +77,7 @@ const CELL_HEIGHT_EXTRA = 2.1;  // 每个棋格额外高度
 /**
  * 棋子显示尺寸比例
  */
-const PIECE_SIZE_RATIO = 0.9;  // 相对于棋格的90%
+const PIECE_SIZE_RATIO = 0.93;  // 相对于棋格的93%
 
 export function ChessBoardKit({
   pieces,
