@@ -230,8 +230,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           <div className="flex flex-col lg:flex-row gap-8">
             {/* 棋盘区域 */}
             <div className="flex-1 flex flex-col items-center">
-              {/* 棋盘容器 */}
-              <div className="w-full max-w-2xl mb-6">
+              {/* 棋盘容器 - 确保显示完整的棋盘 */}
+              <div className="w-full max-w-xl mb-6">
                 <ChessBoard 
                   pieces={pieces}
                   selectedPiece={selectedPiece}
