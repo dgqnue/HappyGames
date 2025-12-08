@@ -247,7 +247,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 }}
               />
             ))}
-            {Array.from({ length: BOARD_ROWS + 1 }).map((_, row) => (
+            {Array.from({ length: BOARD_ROWS }).map((_, row) => (
               <div
                 key={`hline-${row}`}
                 style={{
