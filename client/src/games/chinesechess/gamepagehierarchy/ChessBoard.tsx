@@ -238,7 +238,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               top: `${boardStartY}px`,
               width: `${boardWidth}px`,
               height: `${boardHeight}px`,
-              border: '2px dashed rgba(255, 0, 0, 0.3)',
+              border: '2px dashed rgba(255, 0, 0, 0.8)',
             }} />
             
             {/* 网格线 */}
@@ -251,7 +251,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                   top: `${boardStartY}px`,
                   width: '1px',
                   height: `${boardHeight}px`,
-                  backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                  backgroundColor: 'rgba(0, 200, 0, 0.7)',
                 }}
               />
             ))}
@@ -264,7 +264,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                   top: `${boardStartY + row * cellHeight}px`,
                   width: `${boardWidth}px`,
                   height: '1px',
-                  backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                  backgroundColor: 'rgba(0, 200, 0, 0.7)',
                 }}
               />
             ))}
