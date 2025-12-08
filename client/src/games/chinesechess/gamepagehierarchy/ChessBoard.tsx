@@ -70,7 +70,7 @@ const BOARD_ROWS = 9;
 let BORDER_LEFT_RATIO = 0.055;   // 左边框占图片宽度的比例
 let BORDER_RIGHT_RATIO = 0.055;  // 右边框占图片宽度的比例
 let BORDER_TOP_RATIO = 0.055;    // 顶部边框占图片高度的比例
-let BORDER_BOTTOM_RATIO = 0.08;  // 底部边框占图片高度的比例
+let BORDER_BOTTOM_RATIO = 0.055;  // 底部边框占图片高度的比例
 
 /**
  * 调试函数：用于测量和校准棋盘背景图片的尺寸
