@@ -191,7 +191,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
    * 单个棋格的宽度
    * 计算公式：棋盘宽度 ÷ 列数(8列)
    */
-  const cellWidth = boardWidth / BOARD_COLS + 1;
+  const cellWidth = boardWidth / BOARD_COLS;
   
   /** 
    * 单个棋格的高度
@@ -350,49 +350,13 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             </div>
 
             {/* ======================== 网格线绘制层（SVG） ======================== */}
-            <svg
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'none', // SVG不捕获鼠标事件
-                zIndex: 5
-              }}
-            >
-              {/* 竖线：从左到右，共9条（列数+1） */}
-              {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
-                <line
-                  key={`vline-${col}`}
-                  x1={boardStartX + col * cellWidth}
-                  y1={boardStartY}
-                  x2={boardStartX + col * cellWidth}
-                  y2={boardStartY + boardHeight}
-                  stroke="rgb(0, 128, 0)"
-                  strokeWidth="1"
-                />
-              ))}
-              
-              {/* 横线：从上到下，共10条（行数+1） */}
-              {Array.from({ length: BOARD_ROWS + 1 }).map((_, row) => (
-                <line
-                  key={`hline-${row}`}
-                  x1={boardStartX}
-                  y1={boardStartY + row * cellHeight}
-                  x2={boardStartX + boardWidth}
-                  y2={boardStartY + row * cellHeight}
-                  stroke="rgb(0, 128, 0)"
-                  strokeWidth="1"
-                />
-              ))}
-            </svg>
+            {/* 主棋盘网格线已隐藏，使用下方的绿色调试网格代替 */}
 
             {/* ======================== 调试信息层 ======================== */}
             {/* 
               此层可用于开发时校准棋盘位置，如不需要可完全删除
             */}
-            {false && (
+            {true && (
             <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
               {/* 绿色辅助网格线（用于调试定位） */}
               {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
