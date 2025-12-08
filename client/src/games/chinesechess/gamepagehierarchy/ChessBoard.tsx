@@ -240,9 +240,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 style={{
                   position: 'absolute',
                   left: `${boardStartX + col * cellWidth}px`,
-                  top: `${boardStartY - 4}px`,
+                  top: `${boardStartY - 8}px`,
                   width: '1px',
-                  height: `${boardHeight + 8}px`,
+                  height: `${boardHeight + 16}px`,
                   backgroundColor: 'rgba(0, 200, 0, 0.7)',
                 }}
               />
@@ -252,9 +252,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 key={`hline-${row}`}
                 style={{
                   position: 'absolute',
-                  left: `${boardStartX - 1}px`,
+                  left: `${boardStartX - 1.5}px`,
                   top: `${boardStartY + row * cellHeight}px`,
-                  width: `${boardWidth + 2}px`,
+                  width: `${boardWidth + 5}px`,
                   height: '1px',
                   backgroundColor: 'rgba(0, 200, 0, 0.7)',
                 }}
