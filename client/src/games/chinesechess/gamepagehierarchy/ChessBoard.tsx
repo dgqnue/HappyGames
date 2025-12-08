@@ -194,9 +194,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
               // 棋子尺寸为格子的75%
               const pieceSize = Math.min(cellWidth, cellHeight) * 0.75;
               
-              // 棋子在容器中的像素位置（相对于棋盘内容区域的起始点）
-              const piecePixelX = boardStartX + (piece.col + 0.5) * cellWidth;
-              const piecePixelY = boardStartY + (piece.row + 0.5) * cellHeight;
+              // 棋子在网格交叉点上（不是格子中心）
+              const piecePixelX = boardStartX + piece.col * cellWidth;
+              const piecePixelY = boardStartY + piece.row * cellHeight;
 
               return (
                 <div
@@ -231,15 +231,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
 
           {/* 调试网格 - 显示边框和网格线，帮助校准 */}
           <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
-            {/* 边框指示线 */}
-            <div style={{
-              position: 'absolute',
-              left: `${boardStartX}px`,
-              top: `${boardStartY}px`,
-              width: `${boardWidth}px`,
-              height: `${boardHeight}px`,
-              border: '2px dashed rgba(255, 0, 0, 0.8)',
-            }} />
+            {/* 边框指示线 - 已移除 */}
             
             {/* 网格线 */}
             {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
