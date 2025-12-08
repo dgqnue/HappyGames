@@ -335,8 +335,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     onClick={() => handleCellClick(piece.row, piece.col)}
                     title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                   >
-                    {/* 棋子图片容器 */}
-                    <div className="relative w-full h-full">
+                    {/* 棋子图片容器（隐藏棋子） */}
+                    <div className="relative w-full h-full opacity-0">
                       <Image
                         src={getPieceImagePath()}
                         alt={`${piece.color}-${piece.type}`}
@@ -358,7 +358,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
             {/* 
               此层可用于开发时校准棋盘位置，如不需要可完全删除
             */}
-            {false && (
+            {true && (
             <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
               {/* 绿色辅助网格线（用于调试定位） */}
               {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
