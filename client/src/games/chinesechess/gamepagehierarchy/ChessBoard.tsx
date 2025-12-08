@@ -207,9 +207,9 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
   
   /** 
    * 棋盘游戏区域相对于容器的Y坐标（像素）
-   * 即顶部边框的高度，向上移动 5 像素
+   * 即顶部边框的高度，向上移动 6 像素
    */
-  const boardStartY = finalImageHeight * BORDER_TOP_RATIO - 5;
+  const boardStartY = finalImageHeight * BORDER_TOP_RATIO - 6;
 
   // ======================== 事件处理 ========================
 
@@ -386,29 +386,7 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 />
               ))}
               
-              {/* 调试信息面板：显示当前的尺寸和位置计算结果 */}
-              <div style={{
-                position: 'absolute',
-                top: `${boardStartY + boardHeight + 10}px`,
-                left: `${boardStartX}px`,
-                fontSize: '10px',
-                color: 'red',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                padding: '5px',
-                fontFamily: 'monospace',
-                border: '1px solid red',
-              }}>
-                {/* 棋盘背景图的实际尺寸 */}
-                <div>图片:{finalImageWidth.toFixed(0)}x{finalImageHeight.toFixed(0)}</div>
-                {/* 左右边框占图片宽度的百分比 */}
-                <div>边框L:{(BORDER_LEFT_RATIO*100).toFixed(1)}% R:{(BORDER_RIGHT_RATIO*100).toFixed(1)}%</div>
-                {/* 上下边框占图片高度的百分比 */}
-                <div>边框T:{(BORDER_TOP_RATIO*100).toFixed(1)}% B:{(BORDER_BOTTOM_RATIO*100).toFixed(1)}%</div>
-                {/* 实际棋盘游戏区域的尺寸 */}
-                <div>棋盘:({boardWidth.toFixed(0)}x{boardHeight.toFixed(0)})</div>
-                {/* 每个棋格的尺寸 */}
-                <div>格子:{cellWidth.toFixed(1)}x{cellHeight.toFixed(1)}</div>
-              </div>
+              {/* 调试信息面板已削除 */}
             </div>
             )}
 
