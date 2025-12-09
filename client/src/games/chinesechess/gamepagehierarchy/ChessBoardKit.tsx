@@ -195,15 +195,17 @@ export function ChessBoardKit({
               boxSizing: 'border-box'
             }}
             onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const clickY = e.clientY - rect.top;
-                const col = Math.floor((clickX - boardStartX) / cellWidth);
-                const row = Math.floor((clickY - boardStartY) / cellHeight);
-                if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
-                  handleCellClick(row, col);
-                }
+              // 移除 e.target === e.currentTarget 检查，允许点击穿透子元素（如背景图）
+              // 只要是在这个容器内的点击，都计算坐标
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              const clickY = e.clientY - rect.top;
+              const col = Math.floor((clickX - boardStartX) / cellWidth);
+              const row = Math.floor((clickY - boardStartY) / cellHeight);
+              
+              // 确保点击在有效范围内
+              if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+                handleCellClick(row, col);
               }
             }}
           >
@@ -249,7 +251,10 @@ export function ChessBoardKit({
                         height: `${pieceSize}px`,
                         transform: `translate(-50%, -50%) ${mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'}`,
                       }}
-                      onClick={() => handleCellClick(piece.row, piece.col)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // 防止冒泡到棋盘容器导致二次触发
+                        handleCellClick(piece.row, piece.col);
+                      }}
                       title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                     >
                       <div className="relative w-full h-full">
