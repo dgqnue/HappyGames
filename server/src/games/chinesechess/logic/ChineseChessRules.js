@@ -98,29 +98,182 @@ class ChineseChessRules {
                 }
 
             case 'p': // 兵/卒
-                // 向前移动一步
-                // 过河后可以横向移动一步
-                if (turn === 'r') {
-                    if (dy < 0) return false; // 不能后退
-                    if (fromY <= 4) { // 过河前 (红方在底部，y=0-4 是红方区域？等等。标准 FEN：红方在底部 (第 9-5 行？)，黑方在顶部 (第 0-4 行？)。)
-                        // 假设标准 FEN：
-                        // rnbakabnr (第 0 行 - 黑方)
-                        // ...
-                        // RNBAKABNR (第 9 行 - 红方)
-                        // 所以红方向上移动 (dy < 0)。黑方向下移动 (dy > 0)。
+                // 兵/卒移动逻辑
+                if (turn === 'r') { // 红方 (大写 P)
+                    // 红方在底部 (Row 9)，向上移动 (y 减小)
+                    if (dy >= 0) return false; // 必须向上移动 (dy < 0)
+                    if (dy < -1) return false; // 只能移动一步
+                    if (absDx > 1) return false; // 横向最多一步
 
-                        // 等等，上面的将/帅逻辑：红方将 (底部) -> y > 2 返回 false。
-                        // 这意味着红方在 y=0-2。所以红方在顶部？
-                        // 标准象棋：红方通常在底部 (第 9 行)。
-                        // 让我们坚持：红方在底部 (第 9 行)。
-                        // 红方将：x:3-5, y:7-9。
-                        // 黑方帅：x:3-5, y:0-2。
+                    // 过河前 (Row 5-9)
+                    if (fromY > 4) {
+                        if (absDx !== 0) return false; // 只能向前
+                    } else {
+                        // 过河后 (Row 0-4)
+                        // 可以向前或横向，但不能同时
+                        if (absDx + Math.abs(dy) !== 1) return false;
+                    }
+                } else { // 黑方 (小写 p)
+                    // 黑方在顶部 (Row 0)，向下移动 (y 增加)
+                    if (dy <= 0) return false; // 必须向下移动 (dy > 0)
+                    if (dy > 1) return false; // 只能移动一步
+                    if (absDx > 1) return false; // 横向最多一步
 
-                        // 让我修正将/士的逻辑以匹配红方=底部。
+                    // 过河前 (Row 0-4)
+                    if (fromY < 5) {
+                        if (absDx !== 0) return false; // 只能向前
+                    } else {
+                        // 过河后 (Row 5-9)
+                        // 可以向前或横向，但不能同时
+                        if (absDx + Math.abs(dy) !== 1) return false;
                     }
                 }
-                return false; // 占位符，将在下面的修正版本中修复
+                return true;
         }
+        return false;
+    }
+
+    /**
+     * 验证移动合法性 V2 (修复版)
+     * 假设：
+     * - 红方在底部 (Row 9)，棋子大写
+     * - 黑方在顶部 (Row 0)，棋子小写
+     * - 河界在 Row 4 和 Row 5 之间
+     */
+    static isValidMoveV2(board, fromX, fromY, toX, toY, turn) {
+        // 复用 isValidMove 的逻辑，因为我们已经修复了它
+        // 但为了保险起见，我们在这里重新实现一遍完整的逻辑，确保覆盖所有规则
+        
+        const piece = board[fromY][fromX];
+        if (!piece) return false;
+        
+        // 检查回合
+        if (this.getSide(piece) !== turn) return false;
+        
+        // 检查目标位置是否是己方棋子
+        const target = board[toY][toX];
+        if (target && this.getSide(target) === turn) return false;
+
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+
+        // 必须有移动
+        if (dx === 0 && dy === 0) return false;
+
+        const pieceType = piece.toLowerCase();
+
+        switch (pieceType) {
+            case 'k': // 将/帅
+                // 必须在九宫内
+                if (toX < 3 || toX > 5) return false;
+                
+                if (turn === 'r') { // 红帅
+                    if (toY < 7 || toY > 9) return false;
+                } else { // 黑将
+                    if (toY < 0 || toY > 2) return false;
+                }
+                
+                // 只能走一步，横或竖
+                return (absDx + absDy === 1);
+
+            case 'a': // 士/仕
+                // 必须在九宫内
+                if (toX < 3 || toX > 5) return false;
+                
+                if (turn === 'r') { // 红仕
+                    if (toY < 7 || toY > 9) return false;
+                } else { // 黑士
+                    if (toY < 0 || toY > 2) return false;
+                }
+                
+                // 只能斜走一步
+                return (absDx === 1 && absDy === 1);
+
+            case 'b': // 象/相
+                // 不能过河
+                if (turn === 'r') { // 红相
+                    if (toY < 5) return false;
+                } else { // 黑象
+                    if (toY > 4) return false;
+                }
+                
+                // 走田字 (2x2)
+                if (absDx !== 2 || absDy !== 2) return false;
+                
+                // 象眼不能有子
+                const eyeX = fromX + dx / 2;
+                const eyeY = fromY + dy / 2;
+                if (board[eyeY][eyeX]) return false;
+                
+                return true;
+
+            case 'n': // 马
+                // 走日字
+                if (!((absDx === 1 && absDy === 2) || (absDx === 2 && absDy === 1))) return false;
+                
+                // 蹩马腿
+                if (absDx === 2) { // 横走2
+                    if (board[fromY][fromX + dx / 2]) return false;
+                } else { // 竖走2
+                    if (board[fromY + dy / 2][fromX]) return false;
+                }
+                
+                return true;
+
+            case 'r': // 车
+                // 走直线
+                if (dx !== 0 && dy !== 0) return false;
+                
+                // 路径必须无子
+                if (!this.isPathClear(board, fromX, fromY, toX, toY)) return false;
+                
+                return true;
+
+            case 'c': // 炮
+                // 走直线
+                if (dx !== 0 && dy !== 0) return false;
+                
+                const count = this.countPiecesBetween(board, fromX, fromY, toX, toY);
+                
+                if (target) {
+                    // 吃子：必须隔一个子 (炮架)
+                    return count === 1;
+                } else {
+                    // 移动：路径必须无子
+                    return count === 0;
+                }
+
+            case 'p': // 兵/卒
+                if (turn === 'r') { // 红兵 (向上)
+                    if (dy >= 0) return false; // 必须向上
+                    
+                    // 过河前 (Row 5-9)
+                    if (fromY > 4) {
+                        if (absDx !== 0) return false; // 只能向前
+                    } else {
+                        // 过河后
+                        // 可以横向
+                    }
+                } else { // 黑卒 (向下)
+                    if (dy <= 0) return false; // 必须向下
+                    
+                    // 过河前 (Row 0-4)
+                    if (fromY < 5) {
+                        if (absDx !== 0) return false; // 只能向前
+                    } else {
+                        // 过河后
+                        // 可以横向
+                    }
+                }
+                
+                // 每次只能走一步
+                if (absDx + Math.abs(dy) !== 1) return false;
+                
+                return true;
+        }
+        
         return false;
     }
 

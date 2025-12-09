@@ -52,10 +52,22 @@ class ChineseChessTable extends GameTable {
     // --- 委托给 MatchPlayers 的方法 ---
 
     async playerJoin(socket, matchSettings) {
-        return await this.matchPlayers.playerJoin(socket, matchSettings);
+        const success = await this.matchPlayers.playerJoin(socket, matchSettings);
+        if (success) {
+            // 绑定游戏特定事件
+            socket.on(`${this.gameType}_move`, (data) => this.handleMove(socket, data));
+            
+            // 绑定状态一致性检查
+            socket.on(`${this.gameType}_check_state_consistency`, (data) => this.handleStateConsistencyCheck(socket, data));
+        }
+        return success;
     }
 
     playerLeave(socket) {
+        // 移除游戏特定事件监听
+        socket.removeAllListeners(`${this.gameType}_move`);
+        socket.removeAllListeners(`${this.gameType}_check_state_consistency`);
+        
         return this.matchPlayers.playerLeave(socket);
     }
 
@@ -69,6 +81,48 @@ class ChineseChessTable extends GameTable {
 
     playerUnready(socket) {
         return this.matchPlayers.playerUnready(socket);
+    }
+
+    /**
+     * 处理状态一致性检查
+     */
+    handleStateConsistencyCheck(socket, data) {
+        // 简单实现：如果发现状态不一致，发送最新状态
+        // 这里可以添加更复杂的逻辑
+        if (data.tableId !== this.tableId) return;
+        
+        // 如果客户端认为在 playing 但服务器不在 playing，或者反之
+        // 或者 board hash 不一致等
+        // 目前简单起见，不强制同步，只是记录日志或在严重不一致时同步
+        
+        // 例如：如果服务器在 playing，但客户端不在
+        if (this.status === 'playing' && data.clientStatus !== 'playing') {
+            console.log(`[ChineseChessTable] State mismatch detected for ${socket.user.username}, resyncing...`);
+            this.sendTableState(socket);
+        }
+    }
+
+    /**
+     * 发送完整游戏桌状态给特定玩家
+     */
+    sendTableState(socket) {
+        const redPlayer = this.players[0];
+        const blackPlayer = this.players[1];
+        const isRed = redPlayer && socket.user._id.toString() === redPlayer.userId;
+        
+        socket.emit('table_update', {
+            status: this.status,
+            board: this.board,
+            turn: this.turn,
+            mySide: isRed ? 'r' : (blackPlayer && socket.user._id.toString() === blackPlayer.userId ? 'b' : null),
+            players: this.players.map(p => ({
+                userId: p.userId,
+                nickname: p.nickname,
+                avatar: p.avatar,
+                ready: p.ready
+            })),
+            winner: null // TODO: 如果已结束，需要发送 winner
+        });
     }
 
     // --- 游戏逻辑 ---
