@@ -198,9 +198,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 棋盘套件容器 - 下移页面高度的三分之一 */}
       <div 
-        className="w-full h-full flex items-center justify-center"
+        className="w-full h-full flex flex-col items-center justify-start"
         style={{
-          paddingTop: '33.33vh'
+          paddingTop: 'calc(33.33% * 1)'
         }}
       >
         <div 
