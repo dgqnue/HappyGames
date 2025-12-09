@@ -37,8 +37,9 @@ let globalDialogHandler: GlobalDialogHandler | null = null;
 
 // 设置全局对话框处理器的静态方法
 export function setGlobalDialogHandler(handler: GlobalDialogHandler) {
+    console.log('[GameTableClient] setGlobalDialogHandler called with:', handler);
     globalDialogHandler = handler;
-    console.log('[GameTableClient] Global dialog handler set');
+    console.log('[GameTableClient] Global dialog handler set:', !!globalDialogHandler);
 }
 
 // 获取全局对话框处理器
@@ -324,11 +325,15 @@ export abstract class GameTableClient {
         // 使用全局对话框显示错误
         const message = data?.message || '加入失败';
         const handler = getGlobalDialogHandler();
+        console.log(`[${this.gameType}TableClient] Global dialog handler:`, handler);
+        console.log(`[${this.gameType}TableClient] Handler showError exists:`, !!(handler && handler.showError));
+        
         if (handler && handler.showError) {
             console.log(`[${this.gameType}TableClient] Using global dialog to show error:`, message);
             handler.showError('无法入座', message);
         } else {
             console.warn(`[${this.gameType}TableClient] Global dialog not available, falling back to alert`);
+            console.warn(`[${this.gameType}TableClient] Please ensure setGlobalDialogHandler was called before joining table`);
             alert(`无法入座: ${message}`);
         }
     }

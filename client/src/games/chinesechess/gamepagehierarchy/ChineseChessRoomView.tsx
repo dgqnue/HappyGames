@@ -28,12 +28,25 @@ export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomVie
         
         // 设置全局对话框处理器，供基类 GameTableClient 使用
         console.log('[ChineseChessRoomView] Setting global dialog handler');
+        console.log('[ChineseChessRoomView] Dialog functions:', { 
+            showError: typeof showError, 
+            showSuccess: typeof showSuccess, 
+            showWarning: typeof showWarning, 
+            showInfo: typeof showInfo 
+        });
+        
         setGlobalDialogHandler({
             showError,
             showSuccess, 
             showWarning,
             showInfo
         });
+        
+        console.log('[ChineseChessRoomView] Global dialog handler set successfully');
+        
+        // 立即测试全局对话框是否工作
+        console.log('[ChineseChessRoomView] Testing showError directly...');
+        showError('测试对话框', '如果你能看到这个对话框，说明自定义对话框工作正常');
         
         // 不需要清理函数 - 插件和全局处理器应该保持注册状态
         return undefined;
