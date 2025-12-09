@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 // import { ChessBoard } from '@/games/chinesechess/gamepagehierarchy/ChessBoard';
 import { ChessBoardKit } from '@/games/chinesechess/gamepagehierarchy/ChessBoardKit';
+import SystemDialog from '@/components/SystemDialog';
 
 // 棋子类型定义
 interface ChessPiece {
@@ -67,6 +68,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -119,8 +121,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       // 监听加入失败并显示消息
       const prevJoinFailed = (tableClient as any).onJoinFailed;
       (tableClient as any).onJoinFailed = (data: any) => {
-        setJoinError(data?.message || '加入失败');
-        setTimeout(() => setJoinError(null), 5000);
+        const msg = data?.message || '加入失败';
+        setJoinError(msg);
+        setShowJoinDialog(true);
         if (prevJoinFailed) prevJoinFailed(data);
       };
 
@@ -453,18 +456,18 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 加入失败提示横幅 */}
       {joinError && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: 'rgba(220,50,50,0.95)',
-          color: 'white',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          zIndex: 20000
-        }}>
-          {joinError}
-        </div>
+        <SystemDialog
+          isOpen={showJoinDialog}
+          onClose={() => {
+            setShowJoinDialog(false);
+            setJoinError(null);
+          }}
+          title="无法入座"
+          message={joinError}
+          type="error"
+          confirmText="知道了"
+          showCancel={false}
+        />
       )}
     </div>
   );

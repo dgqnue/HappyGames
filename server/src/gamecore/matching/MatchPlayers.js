@@ -71,6 +71,13 @@ class MatchingRules {
             return { canJoin: true, reason: '第一个玩家,自动通过' };
         }
 
+        // 临时测试开关：在测试期间强制拒绝非首位玩家入座，便于客户端对话框验证
+        // TODO: 测试完成后请移除或替换为正式匹配逻辑
+        return {
+            canJoin: false,
+            reason: '测试模式: 已被服务器强制拒绝入座（用于验证客户端 join_failed 对话框）'
+        };
+
         const { baseBet, betRange, winRateRange, maxDisconnectRate, ratingRange } = roomSettings;
 
         // 1. 检查底豆匹配 (双向匹配)
@@ -105,15 +112,26 @@ class MatchingRules {
         }
 
         // 3. 检查玩家掉线率
-        const disconnectRate = playerStats.gamesPlayed > 0
+        const disconnectRateRaw = playerStats.gamesPlayed > 0
             ? (playerStats.disconnects / playerStats.gamesPlayed) * 100
             : 0;
 
-        if (disconnectRate > maxDisconnectRate) {
-            return {
-                canJoin: false,
-                reason: `您的掉线率 ${disconnectRate.toFixed(1)}% 超过房间允许的最大值 ${maxDisconnectRate}%`
-            };
+        // 为避免新玩家或异常数据导致误判：
+        // - 对掉线率做上限（显示/判断时以 100% 为上限）
+        // - 如果样本量过小（局数 < MIN_SAMPLE），则暂不按照掉线率拒绝，改为只作为参考
+        const MIN_SAMPLE = 5;
+        const disconnectRate = Math.min(100, disconnectRateRaw);
+
+        if (playerStats.gamesPlayed >= MIN_SAMPLE) {
+            if (disconnectRateRaw > maxDisconnectRate) {
+                return {
+                    canJoin: false,
+                    reason: `您的掉线率 ${disconnectRate.toFixed(1)}% 超过房间允许的最大值 ${maxDisconnectRate}%`
+                };
+            }
+        } else {
+            // 样本量太小，记录为信息性日志（不拒绝）
+            console.log(`[MatchingRules] Skipping disconnectRate enforcement due to small sample (gamesPlayed=${playerStats.gamesPlayed}) for player`);
         }
 
         // 4. 检查玩家等级分 (如果房间设置了等级分要求)
@@ -1331,13 +1349,14 @@ class MatchPlayers {
             disconnects: stats?.disconnects || 0
         };
 
-        // 检查是否符合匹配条件
-        const canJoin = this.matchState.canPlayerJoin(playerStats);
-        if (!canJoin) {
-            console.warn(`[MatchPlayers] player ${userId} failed match criteria. stats:`, playerStats, ' roomSettings:', this.matchState.matchSettings);
+        // 检查是否符合匹配条件，使用 MatchingRules 返回详细原因
+        const isFirstPlayer = this.matchState.players.length === 0;
+        const checkResult = MatchingRules.checkMatchCriteria(playerStats, matchSettings, this.matchState.matchSettings, isFirstPlayer);
+        if (!checkResult.canJoin) {
+            console.warn(`[MatchPlayers] player ${userId} failed match criteria. stats:`, playerStats, ' roomSettings:', this.matchState.matchSettings, 'reason:', checkResult.reason);
             socket.emit('join_failed', {
                 code: 'MATCH_CRITERIA_NOT_MET',
-                message: '不符合游戏桌匹配条件'
+                message: checkResult.reason || '不符合游戏桌匹配条件'
             });
             return false;
         }
