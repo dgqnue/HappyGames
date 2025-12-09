@@ -180,7 +180,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
         margin: 0,
-        padding: 0
+        padding: 0,
+        minHeight: '100vh',
+        minWidth: '100vw'
       }}
     >
       {/* 返回按钮 */}
@@ -200,8 +202,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           style={{ 
             width: '90vw', 
             maxWidth: '500px',
-            transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.3s ease-in-out'
+            transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'
           }}
         >
           {/* 原棋盘组件代码已注释掉，改用棋盘套件 */}
@@ -222,6 +223,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             isMyTable={isMyTable}
             showGridLines={false}
             showPieces={true}
+            mySide={mySide}
           />
         </div>
       </div>
