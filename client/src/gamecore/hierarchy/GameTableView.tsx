@@ -533,7 +533,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                   className="px-3 py-1 rounded-full text-sm font-normal"
                   style={{
                     color: isPlaying ? '#ef4444' :
-                           isMatching ? '#eab308' :
+                           isMatching ? '#ffcc00' :
                            isWaiting ? '#22c55e' :
                            isMyTableLocal ? '#22c55e' :
                            '#000000'
