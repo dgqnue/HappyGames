@@ -93,10 +93,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogData, setDialogData] = useState<any>(null);
     
-    // 当开始倒计时（321倒计时）或游戏进行中时，隐藏离开和取消按钮
-    // 此时玩家不能取消匹配，不能离开游戏桌
-    // countdown.type === 'start' 表示所有玩家都已就绪，正在进行321倒计时
-    const shouldHideButtons = localState?.countdown?.type === 'start' || localState?.status === 'playing';
+    // 检查倒计时是否活动，或者游戏是否结束（再来一局）
+    // 这两种情况下都隐藏游戏桌上的离开和取消按钮
+    const shouldHideButtons = localState?.countdown?.type === 'start' || localState?.countdown?.type === 'rematch' || localState?.status === 'playing';
 
     // 玩家信息 - 支持多种数据结构
     // 数据源：如果是我所在的桌子，优先使用localState.players；否则使用table.playerList或table.players
@@ -477,17 +476,16 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const componentHeight = '280px'; // 再降低一点高度
 
     // ========== 游戏界面显示逻辑 - 使用插件系统 ==========
-    // 查找合适的游戏显示插件 - 为我的桌子始终尝试获取插件（不仅在playing时）
-    const gameDisplayPlugin = tableClient && isMyTableLocal ? getGameDisplayPluginForClient(tableClient) : null;
-    
-    if (isMyTableLocal && tableClient && !gameDisplayPlugin) {
-        console.warn('[GameTableView] ⚠️ My table but no plugin found!');
+    // 查找合适的游戏显示插件
+    const gameDisplayPlugin = tableClient && isPlaying ? getGameDisplayPluginForClient(tableClient) : null;
+
+    if (isPlaying && isMyTableLocal && tableClient && !gameDisplayPlugin) {
+        console.warn('[GameTableView] ⚠️ Game is playing but no plugin found!');
     }
 
-    // 只有在游戏真正开始后（status === 'playing'）才显示游戏界面
-    // 这确保了玩家在准备阶段看到的是游戏桌卡片，而不是棋盘
-    if (isMyTableLocal && isPlaying && tableClient && gameDisplayPlugin) {
-        console.log('[GameTableView] ✅ Rendering game display with plugin:', gameDisplayPlugin.gameType, 'isPlaying:', isPlaying);
+    // 如果在游戏中且是我的游戏桌，显示游戏界面
+    if (isPlaying && isMyTableLocal && tableClient && gameDisplayPlugin) {
+        console.log('[GameTableView] ✅ Rendering game display with plugin:', gameDisplayPlugin.gameType);
         const { Component: GameDisplay } = gameDisplayPlugin;
         return (
             <GameDisplay
