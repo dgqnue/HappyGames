@@ -277,6 +277,24 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           zIndex: 9999
         }}
       >
+        {/* 调试信息栏 */}
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          left: '10px',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          padding: '5px',
+          fontSize: '12px',
+          zIndex: 10000,
+          pointerEvents: 'none'
+        }}>
+          <div>Status: {isPlaying ? 'Playing' : 'Not Playing'}</div>
+          <div>Turn: {currentTurn === 'r' ? 'Red' : 'Black'}</div>
+          <div>My Side: {mySide === 'r' ? 'Red' : (mySide === 'b' ? 'Black' : 'Spectator')}</div>
+          <div>Is My Turn: {currentTurn === mySide ? 'Yes' : 'No'}</div>
+        </div>
+
         {/* 催促 */}
         <div 
           style={{

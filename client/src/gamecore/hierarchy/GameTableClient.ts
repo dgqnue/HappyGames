@@ -218,6 +218,12 @@ export abstract class GameTableClient {
             baseBet: data.baseBet,
             players: players,
             maxPlayers: data.maxPlayers,
+            // 保留可能存在的游戏状态数据
+            board: data.board,
+            turn: data.turn,
+            winner: data.winner,
+            // 如果 data 中包含 mySide (通常不包含在广播中，但可能在单播中)，也更新
+            ...(data.mySide ? { mySide: data.mySide } : {})
         });
     }
 
@@ -239,7 +245,11 @@ export abstract class GameTableClient {
                 players: players,
                 canStart: false, // 游戏开始后不能再开始
                 ready: false, // 重置准备状态
-                countdown: null // 清除倒计时
+                countdown: null, // 清除倒计时
+                // 关键：更新游戏数据
+                board: data.board,
+                turn: data.turn,
+                winner: data.winner
             });
             
             // 额外广播一次状态更新，确保所有客户端收到
@@ -249,7 +259,10 @@ export abstract class GameTableClient {
             this.updateState({
                 status: data.status,
                 players: players,
-                canStart: canStart
+                canStart: canStart,
+                // 即使不是 playing，也可能更新了部分数据
+                ...(data.board ? { board: data.board } : {}),
+                ...(data.turn ? { turn: data.turn } : {})
             });
         }
     }

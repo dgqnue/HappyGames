@@ -383,7 +383,12 @@ class ChineseChessTable extends GameTable {
                 winRate: p.winRate,
                 disconnectRate: p.disconnectRate,
                 seatIndex: p.seatIndex
-            }))
+            })),
+            // 如果正在游戏中，附带游戏状态
+            ...(this.status === 'playing' ? {
+                board: this.board,
+                turn: this.turn
+            } : {})
         };
 
         console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${this.status}`);
