@@ -530,7 +530,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 </h3>
 
                 <div className={`px-3 py-1 rounded-full text-sm font-normal ${isPlaying ? 'text-red-500' :
-                    isMatching ? 'text-orange-500' :
+                    isMatching ? 'text-yellow-500' :
                         isWaiting ? 'text-green-500' :
                             isMyTableLocal ? 'text-green-500' :
                                 'text-black'
