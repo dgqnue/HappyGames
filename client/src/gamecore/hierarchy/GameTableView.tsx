@@ -575,8 +575,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 <span>{playerCount}/{maxPlayers}</span>
             </div>
 
-            {/* 底部：操作区域 */}
-            <div className="mt-auto w-full flex items-center justify-center gap-2">
+            {/* 底部：操作区域 - 固定高度，防止隐藏按钮时页面抖动 */}
+            <div className="w-full flex items-center justify-center gap-2" style={{ height: '48px' }}>
                 {isMyTableLocal ? (
                     <>
                         {/* 离开按钮 - 倒计时和游戏结束后都隐藏 */}
