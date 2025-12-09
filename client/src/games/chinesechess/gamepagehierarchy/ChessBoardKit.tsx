@@ -191,7 +191,7 @@ export function ChessBoardKit({
               margin: 0,
               cursor: 'pointer',
               overflow: 'hidden',
-              border: '2px solid transparent',
+              border: 'none',
               boxSizing: 'border-box'
             }}
             onClick={(e) => {
