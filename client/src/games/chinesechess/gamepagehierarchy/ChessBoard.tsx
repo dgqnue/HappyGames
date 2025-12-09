@@ -271,8 +271,8 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                 const clickX = e.clientX - rect.left;
                 const clickY = e.clientY - rect.top;
                 // 将像素坐标转换为棋格坐标
-                const col = Math.floor((clickX - boardStartX) / cellWidth);
-                const row = Math.floor((clickY - boardStartY) / cellHeight);
+                const col = Math.round((clickX - boardStartX) / cellWidth);
+                const row = Math.round((clickY - boardStartY) / cellHeight);
                 // 检查点击位置是否在有效的棋盘范围内
                 if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
                   handleCellClick(row, col);

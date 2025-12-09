@@ -215,8 +215,8 @@ export function ChessBoardKit({
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               const clickX = e.clientX - rect.left;
               const clickY = e.clientY - rect.top;
-              const col = Math.floor((clickX - boardStartX) / cellWidth);
-              const row = Math.floor((clickY - boardStartY) / cellHeight);
+              const col = Math.round((clickX - boardStartX) / cellWidth);
+              const row = Math.round((clickY - boardStartY) / cellHeight);
               
               // 确保点击在有效范围内
               if (row >= 0 && row < BOARD_ROWS_POINTS && col >= 0 && col < BOARD_COLS_POINTS) {
