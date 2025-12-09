@@ -93,9 +93,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogData, setDialogData] = useState<any>(null);
     
-    // 检查倒计时是否活动，或者游戏是否结束（再来一局）
-    // 这两种情况下都隐藏游戏桌上的离开和取消按钮
-    const shouldHideButtons = localState?.countdown?.type === 'start' || localState?.countdown?.type === 'rematch' || localState?.status === 'playing';
+    // 当开始倒计时（321倒计时）或游戏进行中时，隐藏离开和取消按钮
+    // 此时玩家不能取消匹配，不能离开游戏桌
+    // countdown.type === 'start' 表示所有玩家都已就绪，正在进行321倒计时
+    const shouldHideButtons = localState?.countdown?.type === 'start' || localState?.status === 'playing';
 
     // 玩家信息 - 支持多种数据结构
     // 数据源：如果是我所在的桌子，优先使用localState.players；否则使用table.playerList或table.players
