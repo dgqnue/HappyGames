@@ -381,15 +381,7 @@ export abstract class GameTableClient {
         console.log(`[${this.gameType}TableClient] Joining table:`, { tier, tableId });
         this.socket.emit(`${this.gameType}_join`, { tier, roomId: tableId });
         // 不要立即更新 tableId，等待服务器确认加入成功后再更新
-        // 请求服务器返回该桌的最新状态，避免因广播订阅或延迟导致的数据不同步
-        setTimeout(() => {
-            try {
-                console.log(`[${this.gameType}TableClient] Requesting table state after join`);
-                this.socket.emit('request_table_state');
-            } catch (err) {
-                console.error(`[${this.gameType}TableClient] Failed to request table state:`, err);
-            }
-        }, 100);
+        // this.updateState({ tableId });
     }
 
     /**

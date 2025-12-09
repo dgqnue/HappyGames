@@ -81,17 +81,6 @@ class ChineseChessCenter extends GameCenter {
             room.setupRoomListeners(socket, this.gameType);
         }
 
-        // 自动加入本游戏中心的所有广播房间，以便接收 table_list 更新
-        try {
-            for (const roomType of this.gameRooms.keys()) {
-                const broadcastRoom = `${this.gameType}_${roomType}`;
-                socket.join(broadcastRoom);
-                console.log(`[${this.gameType}] Socket ${socket.id} joined broadcast room ${broadcastRoom}`);
-            }
-        } catch (err) {
-            console.error(`[${this.gameType}] Error joining broadcast rooms:`, err);
-        }
-
         // ========== GameCenter 层事件监听 ==========
 
         // 1. 监听获取房间列表请求

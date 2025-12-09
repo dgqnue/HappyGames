@@ -1420,26 +1420,32 @@ class MatchPlayers {
      */
     _playerLeave(socket) {
         const userId = socket.user._id.toString();
+        const statusBefore = this.matchState.status;
+        const playerCountBefore = this.matchState.players.length;
+        
         console.log(`[MatchPlayers] playerLeave called for userId: ${userId}, roomId: ${this.roomId}`);
+        console.log(`[MatchPlayers] Before leave - players: ${playerCountBefore}, status: ${statusBefore}`);
 
         // 记录之前的状态
-        const wasMatching = this.matchState.status === MatchingRules.TABLE_STATUS.MATCHING;
-        console.log(`[MatchPlayers] Before leave - status: ${this.matchState.status}, wasMatching: ${wasMatching}`);
+        const wasMatching = statusBefore === MatchingRules.TABLE_STATUS.MATCHING;
 
-        // 从玩家列表移除
+        // 从玩家列表移除（这个方法会自动计算新的状态）
         const wasPlayer = this.matchState.removePlayer(userId);
 
         // 从观众列表移除
         const wasSpectator = this.matchState.removeSpectator(userId);
 
-        console.log(`[MatchPlayers] After removePlayer - wasPlayer: ${wasPlayer}, wasSpectator: ${wasSpectator}`);
+        const statusAfter = this.matchState.status;
+        const playerCountAfter = this.matchState.players.length;
+        
+        console.log(`[MatchPlayers] After removePlayer - wasPlayer: ${wasPlayer}, wasSpectator: ${wasSpectator}, players: ${playerCountBefore}→${playerCountAfter}, status: ${statusBefore}→${statusAfter}`);
 
         if (wasPlayer || wasSpectator) {
             socket.leave(this.roomId);
-            console.log(`[MatchPlayers] Socket left room, broadcasting room state. Current players: ${this.matchState.players.length}, status: ${this.matchState.status}`);
+            console.log(`[MatchPlayers] Socket left room, will broadcast room state. Current players: ${playerCountAfter}, status: ${statusAfter}`);
             
             // 如果所有玩家都离座了，重置游戏桌的所有状态
-            if (this.matchState.players.length === 0) {
+            if (playerCountAfter === 0) {
                 console.log(`[MatchPlayers] All players left the table, resetting table state`);
                 // 重置为初始状态
                 this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
@@ -1448,6 +1454,8 @@ class MatchPlayers {
                 this.isLocked = false;
             }
             
+            // 广播新的房间状态
+            console.log(`[MatchPlayers] Broadcasting room state: status=${this.matchState.status}, players=${playerCountAfter}`);
             this.table.broadcastRoomState();
 
             // 如果之前是匹配中，现在取消了，通知客户端取消倒计时
@@ -1455,7 +1463,7 @@ class MatchPlayers {
                 console.log(`[MatchPlayers] Broadcasting ready_check_cancelled because matching was interrupted`);
                 this.table.broadcast('ready_check_cancelled', {
                     reason: '玩家离开，匹配中断',
-                    remainingPlayers: this.matchState.players.length
+                    remainingPlayers: playerCountAfter
                 });
             }
 

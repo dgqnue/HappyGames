@@ -74,6 +74,7 @@ class ChineseChessTable extends GameTable {
                  const redPlayer = this.players[0];
                  const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
                  this.handleWin(winnerSide);
+                 // handleWin 会调用 endGame -> onGameEnd，该方法会将状态设为 MATCHING 并广播
              }
         }
 
@@ -81,7 +82,11 @@ class ChineseChessTable extends GameTable {
         socket.removeAllListeners(`${this.gameType}_move`);
         socket.removeAllListeners(`${this.gameType}_check_state_consistency`);
         
-        return this.matchPlayers.playerLeave(socket);
+        console.log(`[ChineseChess] playerLeave: calling matchPlayers.playerLeave for ${socket.user._id}`);
+        const result = this.matchPlayers.playerLeave(socket);
+        console.log(`[ChineseChess] playerLeave: returned result=${result}, table status now=${this.matchPlayers.matchState.status}, players count=${this.matchPlayers.matchState.players.length}`);
+        
+        return result;
     }
 
     handlePlayerDisconnect(socket) {
@@ -381,13 +386,15 @@ class ChineseChessTable extends GameTable {
      */
     broadcastRoomState() {
         const roomInfo = this.matchPlayers.matchState.getRoomInfo();
+        const currentStatus = this.status;  // 使用 getter，确保获取正确的状态
+        const currentPlayers = this.players;
         
         const state = {
             ...roomInfo,
             tableId: this.tableId,              // 确保 tableId 被设置
             roomId: this.tableId,               // 保留 roomId 作为备选
-            status: this.status,                // 游戏桌状态（idle, waiting, matching, playing）
-            players: this.players.map(p => ({
+            status: currentStatus,              // 游戏桌状态（idle, waiting, matching, playing）
+            players: currentPlayers.map(p => ({
                 userId: p.userId,
                 socketId: p.socketId,
                 nickname: p.nickname,
@@ -399,13 +406,13 @@ class ChineseChessTable extends GameTable {
                 seatIndex: p.seatIndex
             })),
             // 如果正在游戏中，附带游戏状态
-            ...(this.status === 'playing' ? {
+            ...(currentStatus === 'playing' ? {
                 board: this.board,
                 turn: this.turn
             } : {})
         };
 
-        console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${this.status}`);
+        console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${currentStatus}, players=${currentPlayers.length}`);
 
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
@@ -529,17 +536,6 @@ class ChineseChessTable extends GameTable {
             }
             socket.currentRoomId = null;
             socket.currentGameId = null;
-        });
-
-        // 客户端请求强制同步表格状态（用于客户端主动刷新）
-        socket.on('request_table_state', () => {
-            try {
-                // 仅当 socket 在此表内或有权限时返回状态
-                console.log(`[ChineseChessTable] request_table_state received from ${socket.user?.username}`);
-                this.sendTableState(socket);
-            } catch (err) {
-                console.error('[ChineseChessTable] Error handling request_table_state:', err);
-            }
         });
 
         // 断线处理
