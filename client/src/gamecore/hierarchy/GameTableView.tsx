@@ -480,18 +480,13 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 查找合适的游戏显示插件 - 为我的桌子始终尝试获取插件（不仅在playing时）
     const gameDisplayPlugin = tableClient && isMyTableLocal ? getGameDisplayPluginForClient(tableClient) : null;
     
-    // 检查是否所有玩家都已就绪（ready状态）
-    // 只有当所有玩家都进入ready状态后，才显示游戏界面
-    const allPlayersReady = playerList.length === maxPlayers && 
-                           playerList.every((p: any) => p.ready === true);
-    const isActuallySeated = isMyTableLocal && localState.tableId != null && allPlayersReady;
-    
     if (isMyTableLocal && tableClient && !gameDisplayPlugin) {
         console.warn('[GameTableView] ⚠️ My table but no plugin found!');
     }
 
-    // 只有在所有玩家都ready后才显示游戏界面
-    if (isMyTableLocal && tableClient && gameDisplayPlugin && isActuallySeated) {
+    // 只有在游戏真正开始后（status === 'playing'）才显示游戏界面
+    // 这确保了玩家在准备阶段看到的是游戏桌卡片，而不是棋盘
+    if (isMyTableLocal && isPlaying && tableClient && gameDisplayPlugin) {
         console.log('[GameTableView] ✅ Rendering game display with plugin:', gameDisplayPlugin.gameType, 'isPlaying:', isPlaying);
         const { Component: GameDisplay } = gameDisplayPlugin;
         return (
