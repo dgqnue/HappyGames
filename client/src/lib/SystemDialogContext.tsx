@@ -58,6 +58,7 @@ export function SystemDialogProvider({ children }: SystemDialogProviderProps) {
     };
 
     const showError = (title: string, message: string) => {
+        console.log('[SystemDialogProvider] showError called:', { title, message });
         showDialog({
             title,
             message,

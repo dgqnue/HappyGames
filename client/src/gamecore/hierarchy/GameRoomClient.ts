@@ -345,6 +345,13 @@ export abstract class GameRoomClient {
     }
 
     /**
+     * 获取Socket实例
+     */
+    public getSocket(): Socket {
+        return this.socket;
+    }
+
+    /**
      * 获取游戏桌客户端
      */
     public getTableClient(): GameTableClient | null {
