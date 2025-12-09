@@ -111,6 +111,14 @@ export abstract class GameRoomClient {
             console.log(`[${this.gameType}RoomClient] Game start event received:`, data);
             this.handleGameStart(data);
         });
+
+        // 在连接建立或重连时，确保如果当前已在某个房间，刷新该房间的游戏桌列表
+        this.socket.on('connect', () => {
+            if (this.state.currentRoom) {
+                console.log(`[${this.gameType}RoomClient] Socket connected - refreshing table list for room ${this.state.currentRoom.id}`);
+                this.getTableList(this.state.currentRoom.id);
+            }
+        });
     }
 
     /**

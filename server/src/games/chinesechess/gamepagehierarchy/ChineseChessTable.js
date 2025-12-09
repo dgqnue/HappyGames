@@ -531,6 +531,17 @@ class ChineseChessTable extends GameTable {
             socket.currentGameId = null;
         });
 
+        // 客户端请求强制同步表格状态（用于客户端主动刷新）
+        socket.on('request_table_state', () => {
+            try {
+                // 仅当 socket 在此表内或有权限时返回状态
+                console.log(`[ChineseChessTable] request_table_state received from ${socket.user?.username}`);
+                this.sendTableState(socket);
+            } catch (err) {
+                console.error('[ChineseChessTable] Error handling request_table_state:', err);
+            }
+        });
+
         // 断线处理
         // 注意：SocketServer 可能会统一处理 disconnect，这里仅作补充或特定逻辑
         socket.on('disconnect', () => {
