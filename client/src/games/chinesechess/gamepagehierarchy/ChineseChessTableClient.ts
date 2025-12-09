@@ -9,10 +9,21 @@ import { Socket } from 'socket.io-client';
 import { GameTableClient } from '../../../gamecore/hierarchy/GameTableClient';
 
 export class ChineseChessTableClient extends GameTableClient {
+    // 本地状态：选中的棋子 (用于在组件重挂载时保持状态)
+    private selectedPiece: { row: number; col: number } | null = null;
+
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
         // 象棋游戏桌最多2个玩家
         this.state.maxPlayers = 2;
+    }
+
+    public getSelectedPiece() {
+        return this.selectedPiece;
+    }
+
+    public setSelectedPiece(piece: { row: number; col: number } | null) {
+        this.selectedPiece = piece;
     }
 
     /**

@@ -48,7 +48,20 @@ interface ChineseChessDisplayProps {
  */
 function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseChessDisplayProps) {
   console.log('[ChineseChessDisplay] Component mounted, isMyTable:', isMyTable);
-  const [selectedPiece, setSelectedPiece] = useState<{ row: number; col: number } | null>(null);
+  
+  // 使用 tableClient 保存的选中状态初始化，防止组件重挂载导致状态丢失
+  const [selectedPiece, setSelectedPieceState] = useState<{ row: number; col: number } | null>(
+    () => (tableClient as any).getSelectedPiece?.() || null
+  );
+
+  // 包装 setSelectedPiece，同步更新到 tableClient
+  const setSelectedPiece = (piece: { row: number; col: number } | null) => {
+    setSelectedPieceState(piece);
+    if (tableClient && typeof (tableClient as any).setSelectedPiece === 'function') {
+      (tableClient as any).setSelectedPiece(piece);
+    }
+  };
+
   const [boardData, setBoardData] = useState<(string | null)[][] | null>(null);
   const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
