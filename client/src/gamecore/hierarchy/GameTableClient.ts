@@ -213,7 +213,7 @@ export abstract class GameTableClient {
         const players = data.playerList || data.players || [];
 
         this.updateState({
-            tableId: data.roomId,
+            tableId: data.roomId,  // 加入成功后设置 tableId
             status: data.status,
             baseBet: data.baseBet,
             players: players,
@@ -316,7 +316,8 @@ export abstract class GameTableClient {
     public joinTable(tier: string, tableId: string): void {
         console.log(`[${this.gameType}TableClient] Joining table:`, { tier, tableId });
         this.socket.emit(`${this.gameType}_join`, { tier, roomId: tableId });
-        this.updateState({ tableId });
+        // 不要立即更新 tableId，等待服务器确认加入成功后再更新
+        // this.updateState({ tableId });
     }
 
     /**

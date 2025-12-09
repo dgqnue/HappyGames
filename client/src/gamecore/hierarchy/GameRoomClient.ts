@@ -285,14 +285,21 @@ export abstract class GameRoomClient {
             this.tableClient.init((tableState) => {
                 // 将游戏桌状态合并到房间状态
                 this.updateState({ ...tableState });
+                // 只有当tableState中有tableId时，才设置selectedTableId
+                // 这确保了只有服务器确认加入成功后才会更新UI状态
+                if (tableState.tableId) {
+                    console.log(`[${this.gameType}RoomClient] Server confirmed join, setting selectedTableId to:`, tableState.tableId);
+                    this.updateState({ selectedTableId: tableState.tableId });
+                }
             });
         }
 
-        // 加入游戏桌
+        // 加入游戏桌（不立即设置selectedTableId，等待服务器确认）
         const roomId = this.state.currentRoom.id;
         this.tableClient.joinTable(roomId, tableId);
 
-        this.updateState({ selectedTableId: tableId });
+        // 不要立即设置selectedTableId，等待服务器确认
+        // this.updateState({ selectedTableId: tableId });
     }
 
     /**
