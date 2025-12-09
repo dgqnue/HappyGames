@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 // import { ChessBoard } from '@/games/chinesechess/gamepagehierarchy/ChessBoard';
 import { ChessBoardKit } from '@/games/chinesechess/gamepagehierarchy/ChessBoardKit';
@@ -230,6 +231,31 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             showGridLines={false}
             showPieces={true}
             mySide={mySide}
+          />
+        </div>
+      </div>
+
+      {/* 游戏操作按钮栏 */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4"
+        style={{
+          zIndex: 10
+        }}
+      >
+        <div 
+          style={{
+            width: '90vw',
+            maxWidth: '500px',
+            height: '80px',
+            position: 'relative'
+          }}
+        >
+          <Image
+            src="/images/chinesechess/buttom/buttom.png"
+            alt="游戏按钮"
+            fill
+            className="object-contain"
+            priority={false}
           />
         </div>
       </div>
