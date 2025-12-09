@@ -1,4 +1,5 @@
 const DisconnectTracker = require('../DisconnectTracker');
+const GameConfig = require('./GameConfig');
 
 /**
  * ============================================================================
@@ -288,6 +289,355 @@ class MatchingRules {
             return this.TABLE_STATUS.WAITING;
         }
     }
+
+    /**
+     * ============================================================================
+     * 多人游戏支持方法（NEW）
+     * ============================================================================
+     */
+
+    /**
+     * 检查多人场景下是否满足开始条件
+     * 用于支持麻将、扑克等多人游戏（可能不需要所有人都准备）
+     * 
+     * @param {Array} players - 玩家列表
+     * @param {number} maxPlayers - 最大玩家数
+     * @param {Object} gameConfig - 游戏配置 { minPlayers, requireAllReady }
+     * @returns {Object} { canStart: boolean, reason: string }
+     */
+    static canStartMultiplayer(players, maxPlayers, gameConfig = {}) {
+        const { 
+            minPlayers = maxPlayers, 
+            requireAllReady = true 
+        } = gameConfig;
+
+        // 玩家数量检查
+        if (players.length < minPlayers) {
+            return {
+                canStart: false,
+                reason: `玩家数不足。需要 ${minPlayers} 人，当前 ${players.length} 人`
+            };
+        }
+
+        // 如果要求所有人都准备
+        if (requireAllReady && !players.every(p => p.ready)) {
+            const unreadyCount = players.filter(p => !p.ready).length;
+            return {
+                canStart: false,
+                reason: `${unreadyCount} 个玩家未准备`
+            };
+        }
+
+        // 如果允许部分玩家准备（检查活跃玩家）
+        const activePlayers = players.filter(p => p.isActive !== false);
+        const readyCount = activePlayers.filter(p => p.ready).length;
+        
+        if (!requireAllReady && readyCount < minPlayers) {
+            return {
+                canStart: false,
+                reason: `就绪玩家数不足。需要 ${minPlayers} 人，当前 ${readyCount} 人`
+            };
+        }
+
+        return { canStart: true, reason: '满足开始条件' };
+    }
+
+    /**
+     * 座位分配策略
+     * 支持多种座位分配策略：顺序、平衡、随机、团队
+     * 
+     * @param {string} strategy - 座位策略 ('sequential', 'balanced', 'random', 'team')
+     * @param {Array<number>} existingSeats - 已使用的座位索引
+     * @param {number} maxPlayers - 最大玩家数
+     * @returns {number} 分配的座位索引，-1 表示没有可用座位
+     */
+    static assignSeat(strategy, existingSeats, maxPlayers) {
+        const usedSeats = new Set(existingSeats);
+
+        switch (strategy) {
+            case 'sequential':
+                // 顺序分配：找到第一个未使用的座位
+                for (let i = 0; i < maxPlayers; i++) {
+                    if (!usedSeats.has(i)) return i;
+                }
+                return -1;  // 座位满
+
+            case 'balanced':
+                // 平衡分配：尽可能让玩家均匀分布
+                // 优先分配"对面"座位，避免相邻（特别是4人或6人桌）
+                if (maxPlayers >= 4) {
+                    const opposite = Math.floor(maxPlayers / 2);
+                    // 4人桌优先分配：0, 2, 1, 3（尽可能对面分布）
+                    // 6人桌优先分配：0, 3, 1, 4, 2, 5（对面优先）
+                    const preferredOrder = [];
+                    for (let i = 0; i < opposite; i++) {
+                        preferredOrder.push(i);
+                        if (opposite + i < maxPlayers) {
+                            preferredOrder.push(opposite + i);
+                        }
+                    }
+                    
+                    for (let seat of preferredOrder) {
+                        if (seat < maxPlayers && !usedSeats.has(seat)) {
+                            return seat;
+                        }
+                    }
+                }
+                // 回退到顺序分配
+                for (let i = 0; i < maxPlayers; i++) {
+                    if (!usedSeats.has(i)) return i;
+                }
+                return -1;
+
+            case 'random':
+                // 随机分配：增加游戏趣味性
+                const available = [];
+                for (let i = 0; i < maxPlayers; i++) {
+                    if (!usedSeats.has(i)) available.push(i);
+                }
+                return available.length > 0 
+                    ? available[Math.floor(Math.random() * available.length)]
+                    : -1;
+
+            case 'team':
+                // 团队配对：用于2v2或3v3模式
+                // 座位分配：同队玩家尽可能对面（0和2为一队，1和3为一队）
+                if (maxPlayers === 4) {
+                    const preferredTeamOrder = [0, 2, 1, 3];
+                    for (let seat of preferredTeamOrder) {
+                        if (!usedSeats.has(seat)) return seat;
+                    }
+                } else if (maxPlayers === 6) {
+                    // 3v3 配对：0,2,4 为一队，1,3,5 为另一队
+                    const preferredTeamOrder = [0, 1, 2, 3, 4, 5];
+                    for (let seat of preferredTeamOrder) {
+                        if (!usedSeats.has(seat)) return seat;
+                    }
+                }
+                // 回退到顺序分配
+                for (let i = 0; i < maxPlayers; i++) {
+                    if (!usedSeats.has(i)) return i;
+                }
+                return -1;
+
+            default:
+                // 未知策略，回退到顺序分配
+                console.warn(`[MatchingRules] 未知座位策略: ${strategy}，使用顺序分配`);
+                for (let i = 0; i < maxPlayers; i++) {
+                    if (!usedSeats.has(i)) return i;
+                }
+                return -1;
+        }
+    }
+
+    /**
+     * 获取缺失的玩家数
+     * 用于UI显示"还需要X人"
+     * 
+     * @param {number} playerCount - 当前玩家数
+     * @param {number} minPlayers - 最小玩家数
+     * @param {number} maxPlayers - 最大玩家数
+     * @returns {number} 缺失的玩家数（如果已满返回0）
+     */
+    static getMissingPlayers(playerCount, minPlayers, maxPlayers) {
+        if (playerCount < minPlayers) {
+            return minPlayers - playerCount;
+        }
+        return 0;
+    }
+
+    /**
+     * 获取游戏进度描述文本
+     * 用于UI显示当前的进度信息
+     * 
+     * @param {number} playerCount - 当前玩家数
+     * @param {number} minPlayers - 最小玩家数
+     * @param {number} maxPlayers - 最大玩家数
+     * @param {number} readyCount - 已准备的玩家数
+     * @returns {string} 进度描述
+     */
+    static getProgressText(playerCount, minPlayers, maxPlayers, readyCount = 0) {
+        const missing = this.getMissingPlayers(playerCount, minPlayers, maxPlayers);
+        
+        if (playerCount === 0) {
+            return `等待玩家入座（${maxPlayers}/${maxPlayers}）`;
+        }
+        
+        if (playerCount < minPlayers) {
+            return `等待中（${playerCount}/${minPlayers}）- 还需 ${missing} 人`;
+        }
+        
+        if (playerCount < maxPlayers) {
+            return `等待中（${playerCount}/${maxPlayers}）`;
+        }
+        
+        if (readyCount < playerCount) {
+            return `准备中（${readyCount}/${playerCount} 已准备）`;
+        }
+        
+        return '游戏进行中';
+    }
+
+    /**
+     * 检查玩家是否可以作为替补加入（在游戏进行中）
+     * 用于观众晋升为玩家的场景
+     * 
+     * @param {Array} players - 当前玩家列表
+     * @param {number} maxPlayers - 最大玩家数
+     * @returns {boolean} 是否有替补位置
+     */
+    static hasReserveSlot(players, maxPlayers) {
+        const activePlayers = players.filter(p => p.isActive !== false);
+        return activePlayers.length < maxPlayers;
+    }
+
+    /**
+     * 按座位索引排序玩家列表
+     * 用于确保玩家顺序一致
+     * 
+     * @param {Array} players - 玩家列表
+     * @returns {Array} 排序后的玩家列表
+     */
+    static sortPlayersBySeat(players) {
+        return [...players].sort((a, b) => (a.seatIndex || 0) - (b.seatIndex || 0));
+    }
+
+    /**
+     * 改进1: 验证状态转换是否合法
+     * 确保状态机只按照预定义的转换规则进行转换
+     * @param {string} fromStatus - 当前状态
+     * @param {string} toStatus - 目标状态
+     * @returns {Object} { valid: boolean, reason: string }
+     */
+    static isValidTransition(fromStatus, toStatus) {
+        const validTransitions = {
+            'idle': ['waiting'],                    // idle只能转为waiting（玩家入座）
+            'waiting': ['matching', 'idle'],        // waiting可以转为matching（满座）或idle（所有人离座）
+            'matching': ['playing', 'waiting', 'idle'],  // matching可以转为playing（游戏开始）、waiting（有人离座）或idle（全部离座）
+            'playing': ['matching', 'idle']         // playing可以转为matching（游戏结束）或idle（所有人离座）
+        };
+
+        const allowedTargets = validTransitions[fromStatus];
+        
+        if (!allowedTargets) {
+            return { 
+                valid: false, 
+                reason: `未知的源状态: ${fromStatus}` 
+            };
+        }
+
+        if (!allowedTargets.includes(toStatus)) {
+            return { 
+                valid: false, 
+                reason: `非法的状态转换: ${fromStatus} → ${toStatus}（允许的目标: ${allowedTargets.join(', ')})` 
+            };
+        }
+
+        return { 
+            valid: true, 
+            reason: `合法的状态转换: ${fromStatus} → ${toStatus}` 
+        };
+    }
+
+    /**
+     * 改进2: 验证状态一致性
+     * 确保客户端和服务器的状态同步
+     * @param {string} clientStatus - 客户端状态
+     * @param {string} serverStatus - 服务器状态
+     * @param {Object} context - 额外的上下文信息
+     * @returns {Object} { consistent: boolean, recommendation: string }
+     */
+    static validateStateConsistency(clientStatus, serverStatus, context = {}) {
+        if (clientStatus === serverStatus) {
+            return {
+                consistent: true,
+                recommendation: '状态一致，无需同步'
+            };
+        }
+
+        // 分析状态不一致的原因
+        const { playerCount = 0, wasPlayingBefore = false } = context;
+        
+        let recommendation = '';
+        
+        // 常见的不一致场景处理建议
+        if (serverStatus === 'idle' && clientStatus !== 'idle') {
+            recommendation = '服务器已重置为idle（所有玩家离座），建议客户端重新加载游戏房间列表';
+        } else if (serverStatus === 'playing' && clientStatus !== 'playing') {
+            recommendation = '游戏已在服务器开始，建议客户端立即同步游戏状态';
+        } else if (serverStatus === 'matching' && clientStatus === 'waiting') {
+            recommendation = '桌子已满座进入匹配状态，建议客户端显示准备倒计时';
+        } else {
+            recommendation = `状态不一致（客户端: ${clientStatus}, 服务器: ${serverStatus}），建议强制同步到服务器状态`;
+        }
+
+        return {
+            consistent: false,
+            recommendation,
+            shouldForceSync: true,
+            targetStatus: serverStatus
+        };
+    }
+
+    /**
+     * 改进3: 获取状态转换的详细信息
+     * 用于日志记录和调试，提供完整的转换上下文
+     * @param {string} fromStatus - 源状态
+     * @param {string} toStatus - 目标状态
+     * @param {Object} context - 转换的上下文信息
+     * @returns {Object} 详细的转换信息
+     */
+    static getTransitionDetails(fromStatus, toStatus, context = {}) {
+        const {
+            userId = 'unknown',
+            reason = 'unknown',
+            playerCount = 0,
+            maxPlayers = 2,
+            timestamp = Date.now()
+        } = context;
+
+        const validation = this.isValidTransition(fromStatus, toStatus);
+        
+        // 根据转换类型判断原因
+        let transitionType = 'unknown';
+        let details = '';
+
+        if (fromStatus === 'idle' && toStatus === 'waiting') {
+            transitionType = 'player_join';
+            details = `第一个玩家(${userId})入座`;
+        } else if (fromStatus === 'waiting' && toStatus === 'matching') {
+            transitionType = 'table_full';
+            details = `桌子已满座(${playerCount}/${maxPlayers})，自动进入匹配状态`;
+        } else if (fromStatus === 'matching' && toStatus === 'playing') {
+            transitionType = 'game_start';
+            details = '所有玩家已准备，游戏开始';
+        } else if (fromStatus === 'playing' && toStatus === 'matching') {
+            transitionType = 'game_end';
+            details = '游戏结束，进入再来一局阶段';
+        } else if (toStatus === 'waiting' && playerCount < maxPlayers) {
+            transitionType = 'player_leave';
+            details = `玩家离座，剩余玩家数: ${playerCount}`;
+        } else if (toStatus === 'idle') {
+            transitionType = 'table_reset';
+            details = '所有玩家离座，桌子重置为空闲';
+        } else {
+            transitionType = 'custom';
+            details = reason;
+        }
+
+        return {
+            valid: validation.valid,
+            fromStatus,
+            toStatus,
+            transitionType,
+            details,
+            userId,
+            playerCount,
+            maxPlayers,
+            timestamp,
+            validationReason: validation.reason
+        };
+    }
 }
 
 /**
@@ -450,20 +800,33 @@ class MatchMaker {
  * 管理房间的匹配条件、玩家准备状态、倒计时等
  */
 class MatchRoomState {
-    constructor(roomId, maxPlayers = 2) {
+    /**
+     * 构造函数 - 支持多人游戏配置
+     * 
+     * @param {string} roomId - 房间ID
+     * @param {number} maxPlayers - 最大玩家数（默认2）
+     * @param {Object} gameConfig - 游戏配置对象（可选）
+     */
+    constructor(roomId, maxPlayers = 2, gameConfig = null) {
         this.roomId = roomId;
         this.maxPlayers = maxPlayers;
+        
+        // NEW: 游戏配置
+        this.gameConfig = gameConfig || {};
+        this.minPlayers = this.gameConfig.minPlayers || maxPlayers;
+        this.seatStrategy = this.gameConfig.seatStrategy || 'sequential';
+        
         this.players = [];
-        this.spectators = [];
+        this.spectators = [];  // NEW: 观众列表
         this.status = MatchingRules.TABLE_STATUS.IDLE;
 
-        console.log(`[MatchRoomState] Room ${roomId} initialized with status: ${this.status}`);
+        console.log(`[MatchRoomState] Room ${roomId} initialized (maxPlayers: ${maxPlayers}, minPlayers: ${this.minPlayers}, strategy: ${this.seatStrategy})`);
 
         this.matchSettings = { ...MatchingRules.DEFAULT_SETTINGS };
 
         // 倒计时定时器
         this.readyTimer = null;
-        this.readyTimeout = MatchingRules.COUNTDOWN_CONFIG.readyTimeout;
+        this.readyTimeout = this.gameConfig.readyTimeout || MatchingRules.COUNTDOWN_CONFIG.readyTimeout;
 
         this.zombieTimer = null;
         this.zombieTimeout = MatchingRules.COUNTDOWN_CONFIG.zombieTimeout;
@@ -500,28 +863,13 @@ class MatchRoomState {
             return { success: false, error: '已在房间中' };
         }
 
-        // 分配座位索引
-        let seatIndex;
-        if (this.maxPlayers === 2) {
-            // 两人桌：如果已经有一个玩家，检查他的座位，分配另一个
-            if (this.players.length === 1) {
-                const firstPlayerSeat = this.players[0].seatIndex;
-                seatIndex = firstPlayerSeat === 0 ? 1 : 0;
-            } else {
-                seatIndex = 0;
-            }
-        } else {
-            // 多人桌：分配最小的未使用索引
-            const usedSeatIndices = this.players.map(p => p.seatIndex);
-            seatIndex = 0;
-            while (usedSeatIndices.includes(seatIndex) && seatIndex < this.maxPlayers) {
-                seatIndex++;
-            }
+        // 改进版本：使用配置的座位策略进行分配
+        const existingSeats = this.players.map(p => p.seatIndex);
+        const seatIndex = MatchingRules.assignSeat(this.seatStrategy, existingSeats, this.maxPlayers);
 
-            if (seatIndex >= this.maxPlayers) {
-                console.error(`[MatchRoom] No available seat index for player ${playerData.userId}, used indices:`, usedSeatIndices);
-                return { success: false, error: '没有可用座位' };
-            }
+        if (seatIndex === -1) {
+            console.error(`[MatchRoom] 无可用座位用于玩家 ${playerData.userId}，已用座位:`, existingSeats);
+            return { success: false, error: '没有可用座位' };
         }
 
         const playerWithSeat = {
@@ -596,6 +944,94 @@ class MatchRoomState {
         if (index === -1) return false;
         this.spectators.splice(index, 1);
         return true;
+    }
+
+    /**
+     * ============================================================================
+     * 多人游戏支持方法（NEW）
+     * ============================================================================
+     */
+
+    /**
+     * 观众转换为玩家（填补空位）
+     * 用于游戏进行中，玩家掉线场景
+     */
+    promoteSpectatorToPlayer(spectatorData) {
+        if (this.players.length >= this.maxPlayers) {
+            return { success: false, error: '座位已满' };
+        }
+
+        // 从观众列表移除
+        this.removeSpectator(spectatorData.userId);
+
+        // 添加为玩家（重新使用 addPlayer 逻辑）
+        spectatorData.ready = false;  // 新加入的玩家需要重新准备
+        spectatorData.isActive = true;
+        return this.addPlayer(spectatorData);
+    }
+
+    /**
+     * 获取就绪状态概览（多人版本）
+     * 用于UI显示准备进度
+     */
+    getReadyStatus() {
+        const activePlayers = this.players.filter(p => p.isActive !== false);
+        const ready = activePlayers.filter(p => p.ready).length;
+        const total = activePlayers.length;
+
+        return {
+            ready,
+            total,
+            inactive: this.players.length - total,
+            percentage: total > 0 ? Math.round((ready / total) * 100) : 0,
+            canStart: this.allPlayersReady()
+        };
+    }
+
+    /**
+     * 改进版本：支持多人的 allPlayersReady
+     * 考虑游戏配置中的最小玩家数要求
+     */
+    allPlayersReady() {
+        // 活跃玩家数必须满足最小要求
+        const activePlayers = this.players.filter(p => p.isActive !== false);
+        
+        if (activePlayers.length < this.minPlayers) {
+            return false;
+        }
+
+        // 检查是否要求所有玩家准备
+        if (this.gameConfig.requireAllReady === false) {
+            // 只需最小玩家数都准备
+            const readyCount = activePlayers.filter(p => p.ready).length;
+            return readyCount >= this.minPlayers;
+        }
+
+        // 要求所有活跃玩家都准备
+        return activePlayers.every(p => p.ready);
+    }
+
+    /**
+     * 获取进度文本（用于UI显示）
+     */
+    getProgressText() {
+        return MatchingRules.getProgressText(
+            this.players.length,
+            this.minPlayers,
+            this.maxPlayers,
+            this.players.filter(p => p.ready && p.isActive !== false).length
+        );
+    }
+
+    /**
+     * 获取缺失玩家数
+     */
+    getMissingPlayers() {
+        return MatchingRules.getMissingPlayers(
+            this.players.length,
+            this.minPlayers,
+            this.maxPlayers
+        );
     }
 
     setPlayerReady(userId, ready = true) {
@@ -675,6 +1111,51 @@ class MatchRoomState {
         };
     }
 
+    /**
+     * 状态转换辅助方法 - 包含日志记录和验证
+     * @param {string} newStatus - 新状态
+     * @param {Object} context - 转换上下文 { userId, reason, ... }
+     * @returns {boolean} 转换是否成功
+     */
+    transitionStatus(newStatus, context = {}) {
+        const oldStatus = this.status;
+        
+        // 检查状态转换是否合法
+        const validation = MatchingRules.isValidTransition(oldStatus, newStatus);
+        if (!validation.valid) {
+            console.warn(`[MatchRoomState] ${validation.reason}`, {
+                roomId: this.roomId,
+                fromStatus: oldStatus,
+                toStatus: newStatus,
+                context
+            });
+            return false;
+        }
+
+        // 获取转换详细信息并记录
+        const transitionDetails = MatchingRules.getTransitionDetails(oldStatus, newStatus, {
+            userId: context.userId,
+            reason: context.reason,
+            playerCount: this.players.length,
+            maxPlayers: this.maxPlayers,
+            timestamp: Date.now()
+        });
+
+        // 记录状态转换
+        console.log(`[MatchRoomState] Status transition: ${oldStatus} → ${newStatus}`, {
+            roomId: this.roomId,
+            type: transitionDetails.transitionType,
+            details: transitionDetails.details,
+            playerCount: this.players.length,
+            userId: context.userId || 'system'
+        });
+
+        // 执行状态转换
+        this.status = newStatus;
+        
+        return true;
+    }
+
     cleanup() {
         if (this.readyTimer) clearTimeout(this.readyTimer);
         if (this.zombieTimer) clearTimeout(this.zombieTimer);
@@ -705,8 +1186,11 @@ class MatchPlayers {
         this.gameType = table.gameType;
         this.maxPlayers = table.maxPlayers;
 
-        // 使用匹配状态管理器
-        this.matchState = new MatchRoomState(this.roomId, this.maxPlayers);
+        // NEW: 获取游戏配置
+        this.gameConfig = GameConfig.getConfig(this.gameType) || {};
+
+        // 使用匹配状态管理器（传入游戏配置）
+        this.matchState = new MatchRoomState(this.roomId, this.maxPlayers, this.gameConfig);
 
         // 状态动作队列：确保玩家动作按顺序处理
         this.actionQueue = [];
@@ -1423,6 +1907,69 @@ class MatchPlayers {
     cleanup() {
         this.matchState.cleanup();
         if (this.countdownTimer) clearInterval(this.countdownTimer);
+    }
+
+    /**
+     * 改进3: 状态同步检查和修复方法
+     * 定期检查和修复客户端与服务器状态的不一致
+     * @param {Array<{userId, clientStatus}>} clientStates - 客户端状态列表
+     * @returns {Array<{userId, needsSync, recommendation}>} 需要同步的玩家列表
+     */
+    validateAndFixStateConsistency(clientStates = []) {
+        const syncResults = [];
+        const serverStatus = this.status;
+
+        for (const clientState of clientStates) {
+            const { userId, clientStatus } = clientState;
+            const socket = this.matchState.players
+                .find(p => p.userId === userId)
+                ?.socketId;
+
+            if (!socket) continue;
+
+            const validation = MatchingRules.validateStateConsistency(
+                clientStatus,
+                serverStatus,
+                {
+                    playerCount: this.matchState.players.length,
+                    wasPlayingBefore: serverStatus === 'playing'
+                }
+            );
+
+            if (!validation.consistent) {
+                console.warn(`[MatchPlayers] State mismatch detected for user ${userId}:`, {
+                    roomId: this.roomId,
+                    clientStatus,
+                    serverStatus,
+                    recommendation: validation.recommendation
+                });
+
+                // 发送强制同步消息给客户端
+                if (validation.shouldForceSync) {
+                    this.io.sockets.sockets.get(socket)?.emit('force_state_sync', {
+                        newStatus: validation.targetStatus,
+                        reason: '服务器与客户端状态不一致，已强制同步',
+                        recommendation: validation.recommendation
+                    });
+                }
+            }
+
+            syncResults.push({
+                userId,
+                needsSync: !validation.consistent,
+                recommendation: validation.recommendation,
+                targetStatus: validation.targetStatus || serverStatus
+            });
+        }
+
+        if (syncResults.some(r => r.needsSync)) {
+            console.log(`[MatchPlayers] State consistency check completed for room ${this.roomId}:`, {
+                totalPlayers: clientStates.length,
+                needsSyncCount: syncResults.filter(r => r.needsSync).length
+            });
+        }
+
+        return syncResults;
     }
 }
 

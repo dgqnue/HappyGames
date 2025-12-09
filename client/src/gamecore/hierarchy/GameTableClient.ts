@@ -441,10 +441,54 @@ export abstract class GameTableClient {
     }
 
     /**
+     * 改进3: 报告本地状态供服务器验证
+     * 定期将客户端状态发送给服务器进行一致性检查
+     * @param interval - 检查间隔（毫秒），默认30秒
+     */
+    public startStateConsistencyCheck(interval: number = 30000): void {
+        if (!this.state.tableId) {
+            console.warn(`[${this.gameType}TableClient] Cannot start consistency check without tableId`);
+            return;
+        }
+
+        console.log(`[${this.gameType}TableClient] Starting state consistency check (interval: ${interval}ms)`);
+
+        const checkTimer = setInterval(() => {
+            // 发送当前客户端状态给服务器
+            this.socket.emit(`${this.gameType}_check_state_consistency`, {
+                tableId: this.state.tableId,
+                clientStatus: this.state.status,
+                playerCount: this.state.players.length,
+                ready: this.state.ready,
+                timestamp: Date.now()
+            });
+        }, interval);
+
+        // 保存定时器ID，以便后续清理
+        (this as any)._consistencyCheckTimer = checkTimer;
+    }
+
+    /**
+     * 停止状态一致性检查
+     */
+    public stopStateConsistencyCheck(): void {
+        const timer = (this as any)._consistencyCheckTimer;
+        if (timer) {
+            clearInterval(timer);
+            (this as any)._consistencyCheckTimer = null;
+            console.log(`[${this.gameType}TableClient] Stopped state consistency check`);
+        }
+    }
+
+    /**
      * 清理资源
      */
     public dispose(): void {
         console.log(`[${this.gameType}TableClient] Disposing`);
+        
+        // 停止状态一致性检查
+        this.stopStateConsistencyCheck();
+        
         this.removeCommonListeners();
         this.removeTableListeners();
         this.onStateUpdate = null;

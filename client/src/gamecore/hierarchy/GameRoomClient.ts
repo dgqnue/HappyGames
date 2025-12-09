@@ -362,11 +362,50 @@ export abstract class GameRoomClient {
     }
 
     /**
+     * 改进3: 客户端状态同步处理
+     * 监听服务器的强制同步事件并处理
+     */
+    public setupStateSyncListener(): void {
+        this.socket.on('force_state_sync', (data: any) => {
+            console.warn(`[${this.gameType}RoomClient] Forced state sync received:`, data);
+            
+            const { newStatus, reason, recommendation } = data;
+            
+            // 如果当前有选中的桌子，重新加载其状态
+            if (this.state.selectedTableId && this.tableClient) {
+                console.log(`[${this.gameType}RoomClient] Re-syncing table state to ${newStatus}`);
+                
+                // 通知应用层需要同步
+                if (this.onStateUpdate) {
+                    this.updateState({
+                        ...this.state,
+                        syncWarning: {
+                            reason,
+                            recommendation,
+                            newStatus
+                        }
+                    });
+                }
+
+                // 自动处理一些常见的同步情况
+                if (newStatus === 'idle') {
+                    // 服务器重置为idle，意味着桌子已经清空
+                    this.deselectTable();
+                } else if (newStatus === 'playing') {
+                    // 游戏已开始，需要快速同步游戏状态
+                    console.log(`[${this.gameType}RoomClient] Game is playing, requesting game state`);
+                }
+            }
+        });
+    }
+
+    /**
      * 移除通用事件监听
      */
     protected removeCommonListeners(): void {
         this.socket.off('room_list');
         this.socket.off('table_list');
+        this.socket.off('force_state_sync');
     }
 
     /**
