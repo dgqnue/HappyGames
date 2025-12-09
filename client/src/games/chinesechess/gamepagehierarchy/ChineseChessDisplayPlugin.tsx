@@ -235,130 +235,134 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       </div>
 
       {/* 游戏操作按钮栏 */}
-      {/* 催促 */}
       <div 
         style={{
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: '10px',
           zIndex: 9999
         }}
       >
-        <img
-          src="/images/chinesechess/buttoms/urge.png"
-          alt="催促"
-          title="催促"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={() => console.log('催促')}
-        />
-      </div>
+        {/* 催促 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/urge.png"
+            alt="催促"
+            title="催促"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={() => console.log('催促')}
+          />
+        </div>
 
-      {/* 复盘 */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}
-      >
-        <img
-          src="/images/chinesechess/buttoms/review.png"
-          alt="复盘"
-          title="复盘"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={() => console.log('复盘')}
-        />
-      </div>
+        {/* 复盘 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/review.png"
+            alt="复盘"
+            title="复盘"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={() => console.log('复盘')}
+          />
+        </div>
 
-      {/* 开始 */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}
-      >
-        <img
-          src="/images/chinesechess/buttoms/start.png"
-          alt="开始"
-          title="开始"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={() => console.log('开始')}
-        />
-      </div>
+        {/* 开始 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/start.png"
+            alt="开始"
+            title="开始"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={() => console.log('开始')}
+          />
+        </div>
 
-      {/* 悔棋 */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}
-      >
-        <img
-          src="/images/chinesechess/buttoms/undo.png"
-          alt="悔棋"
-          title="悔棋"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={() => console.log('悔棋')}
-        />
-      </div>
+        {/* 悔棋 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/undo.png"
+            alt="悔棋"
+            title="悔棋"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={() => console.log('悔棋')}
+          />
+        </div>
 
-      {/* 认输 */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}
-      >
-        <img
-          src="/images/chinesechess/buttoms/resign.png"
-          alt="认输"
-          title="认输"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={() => console.log('认输')}
-        />
-      </div>
+        {/* 认输 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/resign.png"
+            alt="认输"
+            title="认输"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={() => console.log('认输')}
+          />
+        </div>
 
-      {/* 讲和 */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}
-      >
-        <img
-          src="/images/chinesechess/buttoms/draw.png"
-          alt="讲和"
-          title="讲和"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={() => console.log('讲和')}
-        />
-      </div>
+        {/* 讲和 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/draw.png"
+            alt="讲和"
+            title="讲和"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={() => console.log('讲和')}
+          />
+        </div>
 
-      {/* 退出 */}
-      <div 
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}
-      >
-        <img
-          src="/images/chinesechess/buttoms/exit.png"
-          alt="退出"
-          title="退出"
-          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-          onClick={onLeaveTable}
-        />
+        {/* 退出 */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            src="/images/chinesechess/buttoms/exit.png"
+            alt="退出"
+            title="退出"
+            style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
+            onClick={onLeaveTable}
+          />
+        </div>
       </div>
     </div>
   );
