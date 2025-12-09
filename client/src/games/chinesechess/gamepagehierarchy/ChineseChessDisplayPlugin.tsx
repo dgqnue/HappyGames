@@ -196,7 +196,14 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 棋盘套件容器 - 直接铺满中心区域 */}
       <div className="w-full h-full flex items-center justify-center">
-        <div style={{ width: '90vw', maxWidth: '500px' }}>
+        <div 
+          style={{ 
+            width: '90vw', 
+            maxWidth: '500px',
+            transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease-in-out'
+          }}
+        >
           {/* 原棋盘组件代码已注释掉，改用棋盘套件 */}
           {/*
           <ChessBoard 
@@ -215,7 +222,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             isMyTable={isMyTable}
             showGridLines={false}
             showPieces={true}
-            mySide={mySide}
           />
         </div>
       </div>

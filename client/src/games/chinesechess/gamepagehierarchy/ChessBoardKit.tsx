@@ -33,7 +33,6 @@ interface ChessBoardKitProps {
   isMyTable: boolean;
   showGridLines?: boolean; // 是否显示网格线
   showPieces?: boolean;    // 是否显示棋子
-  mySide?: 'r' | 'b';      // 玩家阵营（r红方 b黑方）
 }
 
 // ======================== 常量定义 ========================
@@ -86,8 +85,7 @@ export function ChessBoardKit({
   onPieceClick,
   isMyTable,
   showGridLines = false,
-  showPieces = true,
-  mySide
+  showPieces = true
 }: ChessBoardKitProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -192,9 +190,7 @@ export function ChessBoardKit({
               cursor: 'pointer',
               overflow: 'hidden',
               border: '2px solid transparent',
-              boxSizing: 'border-box',
-              transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.3s ease-in-out'
+              boxSizing: 'border-box'
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -249,7 +245,7 @@ export function ChessBoardKit({
                         top: `${piecePixelY}px`,
                         width: `${pieceSize}px`,
                         height: `${pieceSize}px`,
-                        transform: `translate(-50%, -50%) ${mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'}`,
+                        transform: 'translate(-50%, -50%)',
                       }}
                       onClick={() => handleCellClick(piece.row, piece.col)}
                       title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
