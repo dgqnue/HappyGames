@@ -248,6 +248,7 @@ class ChineseChessTable extends GameTable {
         // 广播移动
         this.broadcast('move', {
             move,
+            captured: captured ? captured : null,
             turn: this.turn,
             board: this.board
         });

@@ -11,6 +11,9 @@ import { GameTableClient } from '../../../gamecore/hierarchy/GameTableClient';
 export class ChineseChessTableClient extends GameTableClient {
     // 本地状态：选中的棋子 (用于在组件重挂载时保持状态)
     private selectedPiece: { row: number; col: number } | null = null;
+    
+    // 移动事件回调
+    public onMove?: (data: any) => void;
 
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
@@ -53,6 +56,11 @@ export class ChineseChessTableClient extends GameTableClient {
             board: data.board,
             turn: data.turn
         });
+        
+        // 触发移动回调
+        if (this.onMove) {
+            this.onMove(data);
+        }
         
         // 如果有获胜者，可能需要处理（通常由 game_ended 处理，但这里也可以更新状态）
         if (data.winner) {

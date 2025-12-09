@@ -102,7 +102,23 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const unsubscribe = tableClient.onStateChange?.(() => {
         updateGameState();
       });
-      return unsubscribe;
+
+      // 订阅移动事件以播放音效
+      if ((tableClient as any).onMove === undefined) {
+         (tableClient as any).onMove = (data: any) => {
+             if (data.captured) {
+                 playSound('eat');
+             } else {
+                 // 可以添加普通移动音效
+                 // playSound('move'); 
+             }
+         };
+      }
+
+      return () => {
+        unsubscribe?.();
+        (tableClient as any).onMove = undefined;
+      };
     } catch (err) {
       console.error('[ChineseChessDisplay] Error in state subscription:', err);
     }
@@ -192,10 +208,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             try {
               tableClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
               setSelectedPiece(null);
-              // 如果目标位置有子，播放吃子音效（这里只是预测，实际以服务器结果为准，但为了即时反馈可以先播）
-              if (clickedPieceChar) {
-                 playSound('eat');
-              }
+              // 音效现在由 onMove 事件触发，确保只有在服务器确认移动后才播放
             } catch (err) {
               console.error('[ChineseChessDisplay] Error sending move:', err);
             }

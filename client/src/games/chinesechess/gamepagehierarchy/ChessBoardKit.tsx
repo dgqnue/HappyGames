@@ -49,11 +49,15 @@ const PIECE_NAMES: Record<string, string> = {
   'pawn': '兵',
 };
 
-/** 棋盘列数 */
-const BOARD_COLS = 8;
+/** 棋盘列数 (格子数) */
+const BOARD_COLS_CELLS = 8;
+/** 棋盘行数 (格子数) */
+const BOARD_ROWS_CELLS = 9;
 
-/** 棋盘行数 */
-const BOARD_ROWS = 9;
+/** 棋盘列数 (交叉点数/棋子数) */
+const BOARD_COLS_POINTS = 9;
+/** 棋盘行数 (交叉点数/棋子数) */
+const BOARD_ROWS_POINTS = 10;
 
 /**
  * 棋盘边框比例（相对于背景图）
@@ -137,8 +141,8 @@ export function ChessBoardKit({
   const boardHeight = containerHeight * (1 - BORDER_TOP_RATIO - BORDER_BOTTOM_RATIO);
 
   // 棋格尺寸（包含增加量）
-  const cellWidth = boardWidth / BOARD_COLS + CELL_WIDTH_EXTRA;
-  const cellHeight = boardHeight / BOARD_ROWS + CELL_HEIGHT_EXTRA;
+  const cellWidth = boardWidth / BOARD_COLS_CELLS + CELL_WIDTH_EXTRA;
+  const cellHeight = boardHeight / BOARD_ROWS_CELLS + CELL_HEIGHT_EXTRA;
 
   // 棋盘起始位置（包含偏移量）
   const boardStartX = containerWidth * BORDER_LEFT_RATIO + OFFSET_X;
@@ -150,7 +154,18 @@ export function ChessBoardKit({
   // 处理棋格点击
   const handleCellClick = (row: number, col: number) => {
     if (isMyTable) {
-      onPieceClick(row, col);
+      // 如果我是黑方，且棋盘被旋转了180度，需要转换坐标
+      // 视觉上的 (row, col) 对应实际逻辑上的 (9-row, 8-col)
+      let actualRow = row;
+      let actualCol = col;
+
+      if (mySide === 'b') {
+        actualRow = (BOARD_ROWS_POINTS - 1) - row;
+        actualCol = (BOARD_COLS_POINTS - 1) - col;
+        console.log(`[ChessBoardKit] Coordinate transform (Black): Visual(${row}, ${col}) -> Actual(${actualRow}, ${actualCol})`);
+      }
+
+      onPieceClick(actualRow, actualCol);
     }
   };
 
@@ -204,7 +219,7 @@ export function ChessBoardKit({
               const row = Math.floor((clickY - boardStartY) / cellHeight);
               
               // 确保点击在有效范围内
-              if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+              if (row >= 0 && row < BOARD_ROWS_POINTS && col >= 0 && col < BOARD_COLS_POINTS) {
                 handleCellClick(row, col);
               }
             }}
@@ -253,7 +268,11 @@ export function ChessBoardKit({
                       }}
                       onClick={(e) => {
                         e.stopPropagation(); // 防止冒泡到棋盘容器导致二次触发
-                        handleCellClick(piece.row, piece.col);
+                        // 棋子点击直接使用棋子的逻辑坐标，不需要转换
+                        // 因为棋子的位置是根据逻辑坐标渲染的
+                        if (isMyTable) {
+                           onPieceClick(piece.row, piece.col);
+                        }
                       }}
                       title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                     >
@@ -277,7 +296,7 @@ export function ChessBoardKit({
             {showGridLines && (
               <div style={{ position: 'relative', pointerEvents: 'none', zIndex: 5 }}>
                 {/* 竖线 - 高度根据减小后的棋格调整 */}
-                {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
+                {Array.from({ length: BOARD_COLS_POINTS }).map((_, col) => (
                   <div
                     key={`vline-${col}`}
                     style={{
@@ -285,20 +304,20 @@ export function ChessBoardKit({
                       left: `${boardStartX + col * cellWidth}px`,
                       top: `${boardStartY}px`,
                       width: '1px',
-                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS}px`,
+                      height: `${boardHeight + CELL_HEIGHT_EXTRA * BOARD_ROWS_CELLS}px`,
                       backgroundColor: 'rgba(0, 200, 0, 0.7)',
                     }}
                   />
                 ))}
                 {/* 横线 - 宽度根据减小后的棋格调整 */}
-                {Array.from({ length: BOARD_ROWS + 1 }).map((_, row) => (
+                {Array.from({ length: BOARD_ROWS_POINTS }).map((_, row) => (
                   <div
                     key={`hline-${row}`}
                     style={{
                       position: 'absolute',
                       left: `${boardStartX}px`,
                       top: `${boardStartY + row * cellHeight}px`,
-                      width: `${boardWidth + CELL_WIDTH_EXTRA * BOARD_COLS - 0.2 * BOARD_COLS}px`,
+                      width: `${boardWidth + CELL_WIDTH_EXTRA * BOARD_COLS_CELLS - 0.2 * BOARD_COLS_CELLS}px`,
                       height: '1px',
                       backgroundColor: 'rgba(0, 200, 0, 0.7)',
                     }}
