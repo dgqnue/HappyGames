@@ -262,102 +262,73 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center gap-2"
         style={{
           zIndex: 9999,
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
           padding: '10px 20px',
           borderRadius: '10px'
         }}
       >
         {/* 催促 */}
-        <button 
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chinesechess/buttoms/urge.png"
+          alt="催促"
           title="催促"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/urge.png"
-            alt="催促"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={() => console.log('催促')}
+        />
 
         {/* 复盘 */}
-        <button 
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chinesechess/buttoms/review.png"
+          alt="复盘"
           title="复盘"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/review.png"
-            alt="复盘"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={() => console.log('复盘')}
+        />
 
         {/* 开始 */}
-        <button 
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chinesechess/buttoms/start.png"
+          alt="开始"
           title="开始"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/start.png"
-            alt="开始"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={() => console.log('开始')}
+        />
 
         {/* 悔棋 */}
-        <button 
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chinesechess/buttoms/undo.png"
+          alt="悔棋"
           title="悔棋"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/undo.png"
-            alt="悔棋"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={() => console.log('悔棋')}
+        />
 
         {/* 认输 */}
-        <button 
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chinesechess/buttoms/resign.png"
+          alt="认输"
           title="认输"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/resign.png"
-            alt="认输"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={() => console.log('认输')}
+        />
 
         {/* 讲和 */}
-        <button 
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chineseschess/buttoms/draw.png"
+          alt="讲和"
           title="讲和"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/draw.png"
-            alt="讲和"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={() => console.log('讲和')}
+        />
 
         {/* 退出 */}
-        <button 
-          onClick={onLeaveTable}
-          className="hover:opacity-80 transition-opacity"
+        <img
+          src="/images/chinesechess/buttoms/exit.png"
+          alt="退出"
           title="退出"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src="/images/chinesechess/buttoms/exit.png"
-            alt="退出"
-            style={{ width: '50px', height: '50px' }}
-          />
-        </button>
+          style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
+          onClick={onLeaveTable}
+        />
       </div>
     </div>
   );
