@@ -237,107 +237,100 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 游戏操作按钮栏 */}
       <div 
-        className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-3"
+        className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-2"
         style={{
           zIndex: 10
         }}
       >
         {/* 催促 */}
         <button 
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="催促"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/urge.png"
             alt="催促"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
 
         {/* 复盘 */}
         <button 
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="复盘"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/review.png"
             alt="复盘"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
 
         {/* 开始 */}
         <button 
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="开始"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/start.png"
             alt="开始"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
 
         {/* 悔棋 */}
         <button 
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="悔棋"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/undo.png"
             alt="悔棋"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
 
         {/* 认输 */}
         <button 
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="认输"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/resign.png"
             alt="认输"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
 
         {/* 讲和 */}
         <button 
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="讲和"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/draw.png"
             alt="讲和"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
 
         {/* 退出 */}
         <button 
           onClick={onLeaveTable}
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
+          className="hover:opacity-80 transition-opacity"
           title="退出"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <Image
+          <img
             src="/images/chinesechess/buttoms/exit.png"
             alt="退出"
-            width={50}
-            height={50}
-            priority={false}
+            style={{ width: '50px', height: '50px' }}
           />
         </button>
       </div>
