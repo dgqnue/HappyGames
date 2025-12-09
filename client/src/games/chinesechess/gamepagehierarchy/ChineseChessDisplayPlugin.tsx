@@ -237,9 +237,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 游戏操作按钮栏 */}
       <div 
-        className="fixed bottom-8 left-0 right-0 flex items-center justify-center gap-2"
+        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center gap-2"
         style={{
-          zIndex: 50
+          zIndex: 9999,
+          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+          padding: '10px 20px',
+          borderRadius: '10px'
         }}
       >
         {/* 催促 */}
