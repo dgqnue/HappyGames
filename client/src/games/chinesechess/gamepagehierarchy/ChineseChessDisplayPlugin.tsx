@@ -248,7 +248,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="催促"
         >
           <Image
-            src="/images/chinesechess/buttoms/催促.png"
+            src="/images/chinesechess/buttoms/urge.png"
             alt="催促"
             width={50}
             height={50}
@@ -262,7 +262,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="复盘"
         >
           <Image
-            src="/images/chinesechess/buttoms/复盘.png"
+            src="/images/chinesechess/buttoms/review.png"
             alt="复盘"
             width={50}
             height={50}
@@ -276,7 +276,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="开始"
         >
           <Image
-            src="/images/chinesechess/buttoms/开始.png"
+            src="/images/chinesechess/buttoms/start.png"
             alt="开始"
             width={50}
             height={50}
@@ -290,7 +290,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="悔棋"
         >
           <Image
-            src="/images/chinesechess/buttoms/悔棋.png"
+            src="/images/chinesechess/buttoms/undo.png"
             alt="悔棋"
             width={50}
             height={50}
@@ -304,7 +304,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="认输"
         >
           <Image
-            src="/images/chinesechess/buttoms/认输.png"
+            src="/images/chinesechess/buttoms/resign.png"
             alt="认输"
             width={50}
             height={50}
@@ -318,7 +318,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="讲和"
         >
           <Image
-            src="/images/chinesechess/buttoms/讲和.png"
+            src="/images/chinesechess/buttoms/draw.png"
             alt="讲和"
             width={50}
             height={50}
@@ -333,7 +333,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           title="退出"
         >
           <Image
-            src="/images/chinesechess/buttoms/退出.png"
+            src="/images/chinesechess/buttoms/exit.png"
             alt="退出"
             width={50}
             height={50}
