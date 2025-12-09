@@ -173,8 +173,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="relative w-screen h-screen overflow-visible"
+      className="w-screen h-screen overflow-visible"
       style={{
+        position: 'static',
         backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -189,7 +190,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       {/* 返回按钮 */}
       <button
         onClick={onLeaveTable}
-        className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors z-20"
+        className="fixed top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors z-20"
         aria-label="返回并离座"
       >
         <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
