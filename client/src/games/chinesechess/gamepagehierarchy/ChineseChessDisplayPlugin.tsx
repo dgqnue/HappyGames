@@ -237,27 +237,123 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 游戏操作按钮栏 */}
       <div 
-        className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4"
+        className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-3"
         style={{
           zIndex: 10
         }}
       >
-        <div 
-          style={{
-            width: '90vw',
-            maxWidth: '500px',
-            height: '80px',
-            position: 'relative'
-          }}
+        {/* 催促 */}
+        <button 
+          className="hover:opacity-80 transition-opacity"
+          title="催促"
         >
-          <Image
-            src="/images/chinesechess/buttom/buttom.png"
-            alt="游戏按钮"
-            fill
-            className="object-contain"
-            priority={false}
-          />
-        </div>
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/催促.png"
+              alt="催促"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
+
+        {/* 复盘 */}
+        <button 
+          className="hover:opacity-80 transition-opacity"
+          title="复盘"
+        >
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/复盘.png"
+              alt="复盘"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
+
+        {/* 开始 */}
+        <button 
+          className="hover:opacity-80 transition-opacity"
+          title="开始"
+        >
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/开始.png"
+              alt="开始"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
+
+        {/* 悔棋 */}
+        <button 
+          className="hover:opacity-80 transition-opacity"
+          title="悔棋"
+        >
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/悔棋.png"
+              alt="悔棋"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
+
+        {/* 认输 */}
+        <button 
+          className="hover:opacity-80 transition-opacity"
+          title="认输"
+        >
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/认输.png"
+              alt="认输"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
+
+        {/* 讲和 */}
+        <button 
+          className="hover:opacity-80 transition-opacity"
+          title="讲和"
+        >
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/讲和.png"
+              alt="讲和"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
+
+        {/* 退出 */}
+        <button 
+          onClick={onLeaveTable}
+          className="hover:opacity-80 transition-opacity"
+          title="退出"
+        >
+          <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <Image
+              src="/images/chinesechess/buttoms/退出.png"
+              alt="退出"
+              fill
+              className="object-contain"
+              priority={false}
+            />
+          </div>
+        </button>
       </div>
     </div>
   );
