@@ -200,11 +200,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 棋盘套件容器 - 下移页面高度的六分之一 */}
       <div 
-        className="w-full flex flex-col items-center justify-start"
+        className="w-full flex flex-col items-center justify-start relative"
         style={{
-          minHeight: '100vh',
-          paddingTop: 'calc(100vh / 6)',
-          paddingBottom: '100px'
+          height: '100vh',
+          paddingTop: 'calc(100vh / 6)'
         }}
       >
         <div 
@@ -239,12 +238,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 游戏操作按钮栏 */}
       <div 
-        className="flex items-center justify-center gap-2 relative left-1/2 transform -translate-x-1/2"
+        className="w-full flex items-center justify-center gap-2"
         style={{
-          zIndex: 9999,
+          padding: '20px',
           backgroundColor: 'rgba(0, 0, 0, 0.3)',
-          padding: '10px 20px',
-          borderRadius: '10px'
+          zIndex: 9999
         }}
       >
         {/* 催促 */}
