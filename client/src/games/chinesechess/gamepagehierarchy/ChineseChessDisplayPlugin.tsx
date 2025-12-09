@@ -173,7 +173,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="w-screen h-screen overflow-visible flex flex-col"
+      className="w-screen min-h-screen overflow-visible flex flex-col"
       style={{
         position: 'static',
         backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
@@ -183,7 +183,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         backgroundAttachment: 'fixed',
         margin: 0,
         padding: 0,
-        minHeight: '100vh',
         minWidth: '100vw'
       }}
     >
