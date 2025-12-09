@@ -173,7 +173,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="w-screen h-screen overflow-visible"
+      className="w-screen h-screen overflow-visible flex flex-col"
       style={{
         position: 'static',
         backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
@@ -198,13 +198,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </svg>
       </button>
 
-      {/* 棋盘套件容器 - 下移页面高度的六分之一 */}
+      {/* 棋盘顶部空白占位符 - 实现下移 */}
+      <div style={{ height: 'calc(100vh / 6)' }} />
+
+      {/* 棋盘套件容器 */}
       <div 
-        className="w-full flex flex-col items-center justify-start relative"
-        style={{
-          height: '100vh',
-          paddingTop: 'calc(100vh / 6)'
-        }}
+        className="w-full flex flex-col items-center justify-start"
       >
         <div 
           style={{ 
