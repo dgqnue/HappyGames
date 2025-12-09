@@ -173,7 +173,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="relative w-screen h-screen overflow-hidden"
+      className="relative w-screen h-screen overflow-visible"
       style={{
         backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
         backgroundSize: 'cover',
