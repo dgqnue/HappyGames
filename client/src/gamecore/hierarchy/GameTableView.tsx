@@ -92,6 +92,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogData, setDialogData] = useState<any>(null);
+    
+    // 检查倒计时是否活动，或者游戏是否结束（再来一局）
+    // 这两种情况下都隐藏游戏桌上的离开和取消按钮
+    const shouldHideButtons = localState?.countdown?.type === 'start' || localState?.countdown?.type === 'rematch' || localState?.status === 'playing';
 
     // 玩家信息 - 支持多种数据结构
     // 数据源：如果是我所在的桌子，优先使用localState.players；否则使用table.playerList或table.players
@@ -575,16 +579,19 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             <div className="mt-auto w-full flex items-center justify-center gap-2">
                 {isMyTableLocal ? (
                     <>
+                        {/* 离开按钮 - 倒计时和游戏结束后都隐藏 */}
                         <button
                             onClick={handleLeave}
+                            style={{ display: shouldHideButtons ? 'none' : 'block' }}
                             className="px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm"
                         >
                             离开
                         </button>
 
-                        {/* 开始/取消按钮 - 允许切换 */}
+                        {/* 开始/取消按钮 - 倒计时和游戏结束后都隐藏 */}
                         <button
                             onClick={handleReady}
+                            style={{ display: shouldHideButtons ? 'none' : 'block' }}
                             className={`px-6 py-2 rounded-lg transition-colors shadow-sm text-sm ${isReady
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'bg-red-100 text-red-600 hover:bg-red-200'

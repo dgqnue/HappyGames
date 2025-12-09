@@ -52,7 +52,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [boardData, setBoardData] = useState<(string | null)[][] | null>(null);
   const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
-  const [countdownActive, setCountdownActive] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -67,8 +67,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const newMySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
       
       const state = tableClient.getState?.();
-      const isCountdownActive = state?.countdown?.type === 'start' || state?.status === 'playing';
-      setCountdownActive(isCountdownActive);
+      const isGamePlaying = state?.status === 'playing';
+      setIsPlaying(isGamePlaying);
 
       setBoardData(newBoardData);
       setCurrentTurn(newCurrentTurn);
@@ -344,7 +344,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {/* 退出 */}
         <div 
           style={{
-            display: countdownActive ? 'none' : 'flex',
+            display: isPlaying ? 'flex' : 'none',
             alignItems: 'center',
             justifyContent: 'center'
           }}

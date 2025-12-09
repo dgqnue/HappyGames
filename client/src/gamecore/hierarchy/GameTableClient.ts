@@ -156,10 +156,13 @@ export abstract class GameTableClient {
             });
         });
 
-        // 游戏结束
+        // 游戏结束（再来一局倒计时）
         this.socket.on('game_ended', (data: any) => {
-            // 游戏结束直接离开游戏桌，不显示再来一局选项
-            this.leaveTable();
+            this.updateState({
+                status: 'matching',
+                ready: false,  // 取消准备状态
+                countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
+            });
         });
 
         // 玩家取消准备
