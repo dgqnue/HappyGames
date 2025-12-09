@@ -5,8 +5,6 @@ import { GameRoomView } from '@/gamecore/hierarchy/GameRoomView';
 import { registerGameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 import { ChineseChessRoomClient } from './ChineseChessRoomClient';
 import { ChineseChessDisplayPlugin } from './ChineseChessDisplayPlugin';
-import { useSystemDialog } from '@/lib/SystemDialogContext';
-import { setGlobalDialogHandler } from '@/gamecore/hierarchy/GameTableClient';
 
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
@@ -18,40 +16,17 @@ interface ChineseChessRoomViewProps {
  * 这是一个简单的包装组件，将通用的 GameRoomView 与中国象棋的 RoomClient 和显示插件连接
  */
 export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomViewProps) {
-    const { showError, showSuccess, showWarning, showInfo } = useSystemDialog();
-
-    // 注册显示插件和设置全局对话框处理器
+    // 注册显示插件
     useEffect(() => {
         console.log('[ChineseChessRoomView] 📝 Registering ChineseChessDisplayPlugin...');
         const registeredPlugin = registerGameDisplayPlugin(ChineseChessDisplayPlugin);
         console.log('[ChineseChessRoomView] ✅ Plugin registered successfully:', registeredPlugin);
         
-        // 设置全局对话框处理器，供基类 GameTableClient 使用
-        console.log('[ChineseChessRoomView] Setting global dialog handler');
-        console.log('[ChineseChessRoomView] Dialog functions:', { 
-            showError: typeof showError, 
-            showSuccess: typeof showSuccess, 
-            showWarning: typeof showWarning, 
-            showInfo: typeof showInfo 
-        });
-        
-        setGlobalDialogHandler({
-            showError,
-            showSuccess, 
-            showWarning,
-            showInfo
-        });
-        
-        console.log('[ChineseChessRoomView] Global dialog handler set successfully');
-        
-        // 立即测试全局对话框是否工作
-        console.log('[ChineseChessRoomView] Testing showError directly...');
-        showError('测试对话框', '如果你能看到这个对话框，说明自定义对话框工作正常');
-        
-        // 不需要清理函数 - 插件和全局处理器应该保持注册状态
+        // 不需要清理函数 - 插件应该全局保持注册状态
         return undefined;
-    }, [showError, showSuccess, showWarning, showInfo]); // 依赖对话框函数以确保处理器是最新的
+    }, []); // 空依赖数组确保只运行一次
 
+    // 全局对话框处理器已在根布局的 GlobalDialogInitializer 中设置
     // join_failed 事件现在在基类 GameTableClient 中统一处理
 
     return (
