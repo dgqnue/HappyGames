@@ -150,18 +150,16 @@ export abstract class GameTableClient {
 
         // 游戏开始倒计时
         this.socket.on('game_countdown', (data: any) => {
+            console.log('[GameTableClient] game_countdown event received:', data);
             this.updateState({
                 countdown: { type: 'start', count: data.count, message: data.message }
             });
         });
 
-        // 游戏结束（再来一局倒计时）
+        // 游戏结束
         this.socket.on('game_ended', (data: any) => {
-            this.updateState({
-                status: 'matching',
-                ready: false,  // 取消准备状态
-                countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
-            });
+            // 游戏结束直接离开游戏桌，不显示再来一局选项
+            this.leaveTable();
         });
 
         // 玩家取消准备
@@ -267,13 +265,13 @@ export abstract class GameTableClient {
         console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
 
         try {
-            // 更新状态为 playing，并确保其他相关字段也更新
+            // 更新状态为 playing，保持倒计时状态直到倒计时完成
             this.updateState({
                 status: 'playing',
                 ...data,
                 canStart: false, // 游戏开始后不能再开始
-                ready: false, // 重置准备状态
-                countdown: null // 清除倒计时
+                ready: false // 重置准备状态
+                // 注意：不清除 countdown，让它继续显示直到倒计时完成
             });
             
             console.log(`[${this.gameType}TableClient] State updated to playing, current state:`, this.state);

@@ -66,7 +66,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const mySideValue = tableClient.getMySide?.();
       const newMySide = (mySideValue === 'r' || mySideValue === 'b') ? mySideValue : undefined;
       
-      // 获取倒计时状态 - 检查是否在游戏开始倒计时或正在游戏中
       const state = tableClient.getState?.();
       const isCountdownActive = state?.countdown?.type === 'start' || state?.status === 'playing';
       setCountdownActive(isCountdownActive);
