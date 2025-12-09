@@ -1452,6 +1452,18 @@ class MatchPlayers {
                 this.matchState.resetReadyStatus();
                 this.readyCheckCancelled = false;
                 this.isLocked = false;
+                
+                // 🔧 清除所有活动的定时器，确保状态立即恢复（不需要等待10秒的再来一局倒计时）
+                if (this.matchState.rematchTimer) {
+                    clearTimeout(this.matchState.rematchTimer);
+                    this.matchState.rematchTimer = null;
+                    console.log(`[MatchPlayers] Cleared rematch timer because all players left`);
+                }
+                if (this.countdownTimer) {
+                    clearTimeout(this.countdownTimer);
+                    this.countdownTimer = null;
+                    console.log(`[MatchPlayers] Cleared countdown timer because all players left`);
+                }
             }
             
             // 广播新的房间状态
@@ -1911,9 +1923,23 @@ class MatchPlayers {
      * 游戏结束重置
      */
     reset() {
+        console.log(`[MatchPlayers] Resetting room ${this.roomId}`);
+        
         this.matchState.resetReadyStatus();
         this.matchState.status = MatchingRules.TABLE_STATUS.IDLE;
         this.matchState.rematchRequests.clear();
+        
+        // 🔧 确保清除所有活动的定时器
+        if (this.matchState.rematchTimer) {
+            clearTimeout(this.matchState.rematchTimer);
+            this.matchState.rematchTimer = null;
+            console.log(`[MatchPlayers] Cleared rematch timer in reset()`);
+        }
+        if (this.countdownTimer) {
+            clearTimeout(this.countdownTimer);
+            this.countdownTimer = null;
+            console.log(`[MatchPlayers] Cleared countdown timer in reset()`);
+        }
         
         // 广播房间状态，刷新房间列表
         this.table.broadcastRoomState();
