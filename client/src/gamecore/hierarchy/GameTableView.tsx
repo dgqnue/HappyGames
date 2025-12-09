@@ -479,12 +479,15 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 查找合适的游戏显示插件 - 为我的桌子始终尝试获取插件（不仅在playing时）
     const gameDisplayPlugin = tableClient && isMyTableLocal ? getGameDisplayPluginForClient(tableClient) : null;
     
+    // 检查当前用户是否真的在玩家列表中（已成功入座）
+    const isActuallySeated = playerList.some((p: any) => p.userId === user?._id);
+    
     if (isMyTableLocal && tableClient && !gameDisplayPlugin) {
         console.warn('[GameTableView] ⚠️ My table but no plugin found!');
     }
 
-    // 如果是我的游戏桌且有插件，显示游戏界面（包括处理加入失败等）
-    if (isMyTableLocal && tableClient && gameDisplayPlugin) {
+    // 只有在真正入座后才显示游戏界面（必须同时满足：isMyTableLocal + 在玩家列表中）
+    if (isMyTableLocal && tableClient && gameDisplayPlugin && isActuallySeated) {
         console.log('[GameTableView] ✅ Rendering game display with plugin:', gameDisplayPlugin.gameType, 'isPlaying:', isPlaying);
         const { Component: GameDisplay } = gameDisplayPlugin;
         return (

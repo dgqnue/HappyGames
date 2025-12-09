@@ -36,13 +36,11 @@ export function SystemDialogProvider({ children }: SystemDialogProviderProps) {
     const [dialogData, setDialogData] = useState<SystemDialogData | null>(null);
 
     const showDialog = (data: SystemDialogData) => {
-        console.log('[SystemDialogProvider] Showing dialog:', data);
         setDialogData(data);
         setIsOpen(true);
     };
 
     const hideDialog = () => {
-        console.log('[SystemDialogProvider] Hiding dialog');
         setIsOpen(false);
         setDialogData(null);
     };
@@ -58,7 +56,6 @@ export function SystemDialogProvider({ children }: SystemDialogProviderProps) {
     };
 
     const showError = (title: string, message: string) => {
-        console.log('[SystemDialogProvider] showError called:', { title, message });
         showDialog({
             title,
             message,

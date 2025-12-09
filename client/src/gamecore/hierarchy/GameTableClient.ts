@@ -37,9 +37,7 @@ let globalDialogHandler: GlobalDialogHandler | null = null;
 
 // 设置全局对话框处理器的静态方法
 export function setGlobalDialogHandler(handler: GlobalDialogHandler) {
-    console.log('[GameTableClient] setGlobalDialogHandler called with:', handler);
     globalDialogHandler = handler;
-    console.log('[GameTableClient] Global dialog handler set:', !!globalDialogHandler);
 }
 
 // 获取全局对话框处理器
@@ -241,19 +239,24 @@ export abstract class GameTableClient {
     protected handleTableState(data: any): void {
         const players = data.playerList || data.players || [];
 
-        this.updateState({
+        // 基础状态更新
+        const stateUpdate: any = {
             tableId: data.roomId,  // 加入成功后设置 tableId
             status: data.status,
             baseBet: data.baseBet,
             players: players,
-            maxPlayers: data.maxPlayers,
-            // 保留可能存在的游戏状态数据
-            board: data.board,
-            turn: data.turn,
-            winner: data.winner,
-            // 如果 data 中包含 mySide (通常不包含在广播中，但可能在单播中)，也更新
-            ...(data.mySide ? { mySide: data.mySide } : {})
-        });
+            maxPlayers: data.maxPlayers
+        };
+
+        // 只在游戏进行时才更新游戏状态数据
+        if (data.status === 'playing') {
+            if (data.board) stateUpdate.board = data.board;
+            if (data.turn) stateUpdate.turn = data.turn;
+            if (data.winner !== undefined) stateUpdate.winner = data.winner;
+            if (data.mySide) stateUpdate.mySide = data.mySide;
+        }
+
+        this.updateState(stateUpdate);
     }
 
     /**
@@ -325,11 +328,8 @@ export abstract class GameTableClient {
         // 使用全局对话框显示错误
         const message = data?.message || '加入失败';
         const handler = getGlobalDialogHandler();
-        console.log(`[${this.gameType}TableClient] Global dialog handler:`, handler);
-        console.log(`[${this.gameType}TableClient] Handler showError exists:`, !!(handler && handler.showError));
         
         if (handler && handler.showError) {
-            console.log(`[${this.gameType}TableClient] Using global dialog to show error:`, message);
             handler.showError('无法入座', message);
         } else {
             console.warn(`[${this.gameType}TableClient] Global dialog not available, falling back to alert`);

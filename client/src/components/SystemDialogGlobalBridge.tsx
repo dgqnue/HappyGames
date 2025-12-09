@@ -48,8 +48,6 @@ export function SystemDialogGlobalBridge() {
     const { showError, showSuccess, showWarning, showInfo } = useSystemDialog();
 
     useEffect(() => {
-        console.log('[SystemDialogGlobalBridge] 🌉 开始设置全局对话框桥接...');
-        
         /**
          * 将 React 的对话框函数注册为全局处理器
          * 这样 GameTableClient 等非 React 类就可以通过
@@ -61,9 +59,6 @@ export function SystemDialogGlobalBridge() {
             showWarning,
             showInfo
         });
-        
-        console.log('[SystemDialogGlobalBridge] ✅ 全局对话框桥接设置成功');
-        console.log('[SystemDialogGlobalBridge] 💡 现在所有 GameTableClient 都可以显示对话框了');
     }, [showError, showSuccess, showWarning, showInfo]); // 当对话框函数变化时重新设置
 
     /**
