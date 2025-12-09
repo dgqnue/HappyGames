@@ -6,6 +6,7 @@ import { registerGameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugi
 import { ChineseChessRoomClient } from './ChineseChessRoomClient';
 import { ChineseChessDisplayPlugin } from './ChineseChessDisplayPlugin';
 import { useSystemDialog } from '@/lib/SystemDialogContext';
+import { setGlobalDialogHandler } from '@/gamecore/hierarchy/GameTableClient';
 
 interface ChineseChessRoomViewProps {
     roomClient: ChineseChessRoomClient;
@@ -17,34 +18,28 @@ interface ChineseChessRoomViewProps {
  * 这是一个简单的包装组件，将通用的 GameRoomView 与中国象棋的 RoomClient 和显示插件连接
  */
 export function ChineseChessRoomView({ roomClient, onBack }: ChineseChessRoomViewProps) {
-    const { showError } = useSystemDialog();
+    const { showError, showSuccess, showWarning, showInfo } = useSystemDialog();
 
-    // 在挂载时立即注册插件，不依赖状态
+    // 注册显示插件和设置全局对话框处理器
     useEffect(() => {
         console.log('[ChineseChessRoomView] 📝 Registering ChineseChessDisplayPlugin...');
         const registeredPlugin = registerGameDisplayPlugin(ChineseChessDisplayPlugin);
         console.log('[ChineseChessRoomView] ✅ Plugin registered successfully:', registeredPlugin);
         
-        // 不需要清理函数 - 插件应该全局保持注册状态
-        return undefined;
-    }, []); // 空依赖数组确保只运行一次
-
-    // 监听加入失败事件
-    useEffect(() => {
-        const socket = roomClient.getSocket();
+        // 设置全局对话框处理器，供基类 GameTableClient 使用
+        console.log('[ChineseChessRoomView] Setting global dialog handler');
+        setGlobalDialogHandler({
+            showError,
+            showSuccess, 
+            showWarning,
+            showInfo
+        });
         
-        const handleJoinFailed = (data: any) => {
-            console.log('[ChineseChessRoomView] join_failed received:', data);
-            const message = data?.message || '加入失败';
-            showError('无法入座', message);
-        };
+        // 不需要清理函数 - 插件和全局处理器应该保持注册状态
+        return undefined;
+    }, [showError, showSuccess, showWarning, showInfo]); // 依赖对话框函数以确保处理器是最新的
 
-        socket.on('join_failed', handleJoinFailed);
-
-        return () => {
-            socket.off('join_failed', handleJoinFailed);
-        };
-    }, [roomClient, showError]);
+    // join_failed 事件现在在基类 GameTableClient 中统一处理
 
     return (
         <GameRoomView

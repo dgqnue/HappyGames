@@ -14,8 +14,6 @@ export class ChineseChessTableClient extends GameTableClient {
     
     // 移动事件回调
     public onMove?: (data: any) => void;
-    // 加入失败回调
-    public onJoinFailed?: (data: any) => void;
 
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
@@ -48,31 +46,7 @@ export class ChineseChessTableClient extends GameTableClient {
             // alert(data.message || '操作失败');
         });
 
-        // 监听加入失败
-        this.socket.on('join_failed', (data: any) => {
-            console.warn(`[${this.gameType}TableClient] Join failed:`, data);
-            console.log(`[${this.gameType}TableClient] onJoinFailed callback exists:`, !!this.onJoinFailed);
-            
-            // 立即清理可能的部分状态，防止界面错误显示
-            this.updateState({
-                tableId: null,
-                status: 'idle',
-                players: [],
-                ready: false,
-                canStart: false,
-                board: null,
-                turn: 'r',
-                winner: null,
-                countdown: null
-            });
-            
-            if (this.onJoinFailed) {
-                console.log(`[${this.gameType}TableClient] Calling onJoinFailed with:`, data);
-                this.onJoinFailed(data);
-            } else {
-                console.warn(`[${this.gameType}TableClient] onJoinFailed callback is not set!`);
-            }
-        });
+        // join_failed 监听器现在在基类 GameTableClient 中处理
     }
 
     /**

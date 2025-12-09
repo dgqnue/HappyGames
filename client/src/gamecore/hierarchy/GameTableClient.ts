@@ -24,6 +24,28 @@
 
 import { Socket } from 'socket.io-client';
 
+// 全局对话框处理器类型
+type GlobalDialogHandler = {
+    showError: (title: string, message: string) => void;
+    showSuccess: (title: string, message: string) => void;
+    showWarning: (title: string, message: string) => void;
+    showInfo: (title: string, message: string) => void;
+};
+
+// 全局对话框实例
+let globalDialogHandler: GlobalDialogHandler | null = null;
+
+// 设置全局对话框处理器的静态方法
+export function setGlobalDialogHandler(handler: GlobalDialogHandler) {
+    globalDialogHandler = handler;
+    console.log('[GameTableClient] Global dialog handler set');
+}
+
+// 获取全局对话框处理器
+export function getGlobalDialogHandler(): GlobalDialogHandler | null {
+    return globalDialogHandler;
+}
+
 export interface Player {
     userId: string;
     socketId: string;
@@ -114,6 +136,12 @@ export abstract class GameTableClient {
         this.socket.on('table_update', (data: any) => {
             console.log(`[${this.gameType}TableClient] Table update received:`, data);
             this.handleTableUpdate(data);
+        });
+
+        // 加入失败事件处理
+        this.socket.on('join_failed', (data: any) => {
+            console.warn(`[${this.gameType}TableClient] Join failed:`, data);
+            this.handleJoinFailed(data);
         });
 
         // 兼容旧的 state 事件 (如果还有地方用到)
@@ -275,6 +303,37 @@ export abstract class GameTableClient {
     }
 
     /**
+     * 处理加入失败事件
+     */
+    protected handleJoinFailed(data: any): void {
+        console.warn(`[${this.gameType}TableClient] Join failed:`, data);
+        
+        // 立即清理可能的部分状态，防止界面错误显示
+        this.updateState({
+            tableId: null,
+            status: 'idle',
+            players: [],
+            ready: false,
+            canStart: false,
+            board: null,
+            turn: null,
+            winner: null,
+            countdown: null
+        });
+        
+        // 使用全局对话框显示错误
+        const message = data?.message || '加入失败';
+        const handler = getGlobalDialogHandler();
+        if (handler && handler.showError) {
+            console.log(`[${this.gameType}TableClient] Using global dialog to show error:`, message);
+            handler.showError('无法入座', message);
+        } else {
+            console.warn(`[${this.gameType}TableClient] Global dialog not available, falling back to alert`);
+            alert(`无法入座: ${message}`);
+        }
+    }
+
+    /**
      * 处理游戏开始
      */
     protected handleGameStart(data: any): void {
@@ -349,7 +408,7 @@ export abstract class GameTableClient {
     /**
      * 更新状态并通知UI
      */
-    protected updateState(newState: Partial<GameTableState>): void {
+    public updateState(newState: Partial<GameTableState>): void {
         const oldStatus = this.state.status;
         const oldState = { ...this.state };
         this.state = { ...this.state, ...newState };
