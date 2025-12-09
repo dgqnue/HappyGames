@@ -1,7 +1,51 @@
 'use client';
 
+/**
+ * 系统对话框 UI 组件 (SystemDialog - UI Layer)
+ * 
+ * 这是全局对话框系统的"UI 呈现层"，负责对话框的视觉展示和用户交互。
+ * 
+ * 职责：
+ * 1. 渲染对话框的 UI（标题、消息、按钮等）
+ * 2. 处理用户交互（点击确认/取消、ESC 键关闭、点击遮罩关闭）
+ * 3. 根据类型（error/success/warning/info）显示不同的样式和图标
+ * 4. 提供动画效果和响应式布局
+ * 
+ * 使用位置：
+ * - 被 SystemDialogContext（数据层）自动渲染
+ * - 不需要在其他组件中直接引用
+ * 
+ * 与其他组件的关系：
+ * ┌─────────────────────────────────────────────────────┐
+ * │  全局对话框系统三层架构                               │
+ * ├─────────────────────────────────────────────────────┤
+ * │  1. SystemDialog (本文件)                            │
+ * │     └─ UI 层：负责"如何显示"对话框                    │
+ * │                                                       │
+ * │  2. SystemDialogContext                              │
+ * │     └─ 数据层：负责"状态管理"                         │
+ * │                                                       │
+ * │  3. SystemDialogGlobalBridge                         │
+ * │     └─ 桥接层：负责"谁能调用"（React ↔ 非React）     │
+ * └─────────────────────────────────────────────────────┘
+ * 
+ * 数据流向：
+ * GameTableClient.handleJoinFailed() 
+ *   → getGlobalDialogHandler().showError() [通过桥接层]
+ *   → SystemDialogContext.showError() [数据层更新状态]
+ *   → SystemDialog 重新渲染 [UI 层显示对话框]
+ * 
+ * 注意：
+ * - 这是一个纯 UI 组件，不包含业务逻辑
+ * - 对话框的显示/隐藏由 SystemDialogContext 控制
+ * - 通过 isOpen 属性控制是否显示
+ */
+
 import { useEffect } from 'react';
 
+/**
+ * 对话框组件的属性接口
+ */
 interface SystemDialogProps {
     isOpen: boolean;
     onClose: () => void;
@@ -29,7 +73,13 @@ export default function SystemDialog({
     showCancel = true,
     icon
 }: SystemDialogProps) {
-    // 类型对应的颜色配置
+    /**
+     * 不同对话框类型对应的颜色和样式配置
+     * - info: 蓝色（信息提示）
+     * - warning: 琥珀色（警告）
+     * - error: 红色（错误）
+     * - success: 绿色（成功）
+     */
     const typeConfig = {
         info: {
             bg: 'bg-blue-100',
@@ -127,8 +177,17 @@ export default function SystemDialog({
         };
     }, [isOpen, onClose]);
 
+    // 对话框未打开时不渲染任何内容
     if (!isOpen) return null;
 
+    /**
+     * 对话框结构：
+     * - 全屏遮罩层（半透明黑色背景 + 模糊效果）
+     * - 对话框容器（白色圆角卡片）
+     * - 图标（根据类型显示）
+     * - 标题和消息
+     * - 操作按钮（确认 + 可选的取消按钮）
+     */
     return (
         <div
             className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in"

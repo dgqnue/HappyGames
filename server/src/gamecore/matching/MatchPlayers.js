@@ -118,20 +118,21 @@ class MatchingRules {
 
         // 为避免新玩家或异常数据导致误判：
         // - 对掉线率做上限（显示/判断时以 100% 为上限）
-        // - 如果样本量过小（局数 < MIN_SAMPLE），则暂不按照掉线率拒绝，改为只作为参考
-        const MIN_SAMPLE = 5;
+        // - 只对对局数 >= 20 的玩家检查掉线率，避免新玩家因样本量小被误判
+        //   例如：玩1局掉线1次 = 100%掉线率，但这不代表真实情况
+        const MIN_GAMES_FOR_DISCONNECT_CHECK = 20; // 至少需要20局对战记录才检查掉线率
         const disconnectRate = Math.min(100, disconnectRateRaw);
 
-        if (playerStats.gamesPlayed >= MIN_SAMPLE) {
+        if (playerStats.gamesPlayed >= MIN_GAMES_FOR_DISCONNECT_CHECK) {
             if (disconnectRateRaw > maxDisconnectRate) {
                 return {
                     canJoin: false,
-                    reason: `您的掉线率 ${disconnectRate.toFixed(1)}% 超过房间允许的最大值 ${maxDisconnectRate}%`
+                    reason: `您的掉线率 ${disconnectRate.toFixed(1)}% 超过房间允许的最大值 ${maxDisconnectRate}%（基于 ${playerStats.gamesPlayed} 局对战记录）`
                 };
             }
         } else {
-            // 样本量太小，记录为信息性日志（不拒绝）
-            console.log(`[MatchingRules] Skipping disconnectRate enforcement due to small sample (gamesPlayed=${playerStats.gamesPlayed}) for player`);
+            // 对局数不足20局，暂不检查掉线率
+            console.log(`[MatchingRules] 跳过掉线率检查：玩家对局数仅 ${playerStats.gamesPlayed} 局（需要至少 ${MIN_GAMES_FOR_DISCONNECT_CHECK} 局）`);
         }
 
         // 4. 检查玩家等级分 (如果房间设置了等级分要求)

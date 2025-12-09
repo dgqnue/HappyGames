@@ -22,7 +22,7 @@
  */
 
 import { Socket } from 'socket.io-client';
-import { GameTableClient } from './GameTableClient';
+import { GameTableClient, getGlobalDialogHandler } from './GameTableClient';
 
 export interface TableInfo {
     tableId: string;
@@ -268,6 +268,29 @@ export abstract class GameRoomClient {
     }
 
     /**
+     * 检查用户是否满足房间的积分要求
+     * 
+     * 示例：演示如何在非 React 类中使用全局对话框
+     * 
+     * @param userPoints - 用户当前积分
+     * @param minPoints - 房间最低积分要求
+     * @returns 是否满足要求
+     */
+    protected checkPointsRequirement(userPoints: number, minPoints: number): boolean {
+        if (userPoints < minPoints) {
+            const handler = getGlobalDialogHandler();
+            if (handler && handler.showWarning) {
+                handler.showWarning(
+                    '积分不足',
+                    `进入此房间需要 ${minPoints} 积分，您当前只有 ${userPoints} 积分`
+                );
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * 选择游戏桌
      * @param tableId - 游戏桌ID
      */
@@ -278,6 +301,13 @@ export abstract class GameRoomClient {
             console.error(`[${this.gameType}RoomClient] No room selected`);
             return;
         }
+
+        // 示例：可以在这里添加积分检查
+        // const userPoints = getUserPoints(); // 假设有获取用户积分的方法
+        // const minPoints = this.state.currentRoom.minRating || 0;
+        // if (!this.checkPointsRequirement(userPoints, minPoints)) {
+        //     return; // 积分不足，已显示对话框，不继续加入
+        // }
 
         // 创建游戏桌客户端
         if (!this.tableClient) {
