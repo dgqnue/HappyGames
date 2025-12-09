@@ -529,12 +529,16 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     游戏桌：{String(displayId).padStart(2, '0')}
                 </h3>
 
-                <div className={`px-3 py-1 rounded-full text-sm font-normal ${isPlaying ? 'text-red-500' :
-                    isMatching ? 'text-yellow-500' :
-                        isWaiting ? 'text-green-500' :
-                            isMyTableLocal ? 'text-green-500' :
-                                'text-black'
-                    }`}>
+                <div 
+                  className="px-3 py-1 rounded-full text-sm font-normal"
+                  style={{
+                    color: isPlaying ? '#ef4444' :
+                           isMatching ? '#eab308' :
+                           isWaiting ? '#22c55e' :
+                           isMyTableLocal ? '#22c55e' :
+                           '#000000'
+                  }}
+                >
                     {isPlaying ? '游戏' : isMatching ? '匹配' : isWaiting ? '等待' : isMyTableLocal ? '等待' : '空闲'}
                 </div>
             </div>
