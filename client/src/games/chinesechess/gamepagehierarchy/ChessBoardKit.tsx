@@ -255,7 +255,7 @@ export function ChessBoardKit({
 
                   return (
                     <div
-                      key={`piece-${index}`}
+                      key={`piece-${piece.row}-${piece.col}-${piece.color}-${piece.type}`}
                       className={`absolute cursor-pointer transition-all ${
                         isSelected ? 'ring-4 ring-blue-500 scale-110 z-10' : 'hover:scale-105'
                       }`}
