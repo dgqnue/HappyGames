@@ -551,6 +551,8 @@ class ChineseChessTable extends GameTable {
 
         socket.emit('table_state', {
             ...state,
+            roomId: this.tableId,  // 添加 tableId，客户端用它来确认加入成功
+            tableId: this.tableId, // 同时提供 tableId 字段以保持兼容性
             players: this.players.map(p => ({
                 userId: p.userId,
                 nickname: p.nickname,

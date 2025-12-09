@@ -71,13 +71,6 @@ class MatchingRules {
             return { canJoin: true, reason: '第一个玩家,自动通过' };
         }
 
-        // 临时测试开关：在测试期间强制拒绝非首位玩家入座，便于客户端对话框验证
-        // TODO: 测试完成后请移除或替换为正式匹配逻辑
-        return {
-            canJoin: false,
-            reason: '测试模式: 已被服务器强制拒绝入座（用于验证客户端 join_failed 对话框）'
-        };
-
         const { baseBet, betRange, winRateRange, maxDisconnectRate, ratingRange } = roomSettings;
 
         // 1. 检查底豆匹配 (双向匹配)
