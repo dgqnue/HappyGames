@@ -19,14 +19,41 @@ export class ChineseChessTableClient extends GameTableClient {
      * 设置象棋特定的事件监听
      */
     protected setupTableListeners(): void {
-        // 象棋目前没有额外的特定事件
-        // 所有事件都在基类中处理
+        // 监听移动事件
+        this.socket.on('move', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Move received:`, data);
+            this.handleMove(data);
+        });
+
+        // 监听错误事件
+        this.socket.on('error', (data: any) => {
+            console.error(`[${this.gameType}TableClient] Error:`, data);
+            // 可以选择通过回调通知UI显示错误，或者直接alert
+            // alert(data.message || '操作失败');
+        });
+    }
+
+    /**
+     * 处理移动事件
+     */
+    protected handleMove(data: any): void {
+        // 更新棋盘和回合
+        this.updateState({
+            board: data.board,
+            turn: data.turn
+        });
+        
+        // 如果有获胜者，可能需要处理（通常由 game_ended 处理，但这里也可以更新状态）
+        if (data.winner) {
+            this.updateState({ winner: data.winner });
+        }
     }
 
     /**
      * 移除象棋特定的事件监听
      */
     protected removeTableListeners(): void {
-        // 象棋目前没有额外的特定事件
+        this.socket.off('move');
+        this.socket.off('error');
     }
 }
