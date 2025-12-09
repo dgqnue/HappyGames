@@ -202,8 +202,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       <div 
         className="w-full flex flex-col items-center justify-start"
         style={{
-          height: '100vh',
-          paddingTop: 'calc(100vh / 6)'
+          minHeight: '100vh',
+          paddingTop: 'calc(100vh / 6)',
+          paddingBottom: '100px'
         }}
       >
         <div 
@@ -238,7 +239,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 游戏操作按钮栏 */}
       <div 
-        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center gap-2"
+        className="flex items-center justify-center gap-2 relative left-1/2 transform -translate-x-1/2"
         style={{
           zIndex: 9999,
           backgroundColor: 'rgba(0, 0, 0, 0.3)',
