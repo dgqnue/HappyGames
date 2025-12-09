@@ -64,6 +64,19 @@ class ChineseChessTable extends GameTable {
     }
 
     playerLeave(socket) {
+        // 如果正在游戏中，且离开的是玩家，判负
+        if (this.status === 'playing') {
+             const userId = socket.user._id.toString();
+             const player = this.players.find(p => p.userId === userId);
+             if (player) {
+                 console.log(`[ChineseChess] Player ${userId} left during game, forfeiting.`);
+                 // 判对方获胜
+                 const redPlayer = this.players[0];
+                 const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
+                 this.handleWin(winnerSide);
+             }
+        }
+
         // 移除游戏特定事件监听
         socket.removeAllListeners(`${this.gameType}_move`);
         socket.removeAllListeners(`${this.gameType}_check_state_consistency`);
