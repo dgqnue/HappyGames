@@ -213,6 +213,18 @@ class ChineseChessRoom extends GameRoom {
         // 1. 获取或创建游戏桌
         const table = this.getOrCreateTable(tableId);
 
+        // 临时测试：强制拒绝所有手动加入请求（非自动匹配），便于客户端验证 join_failed 对话框
+        // 测试完成后请移除此块
+        try {
+            socket.emit('join_failed', {
+                code: 'TEST_FORCED_REJECT',
+                message: '测试模式: 服务器已强制拒绝手动入座（用于验证客户端对话框）'
+            });
+        } catch (err) {
+            console.error('[ChineseChessRoom] emit join_failed failed:', err);
+        }
+        return { success: false, error: '测试模式: 已拒绝入座' };
+
         // 2. 获取玩家统计数据
         const stats = await this.getUserStats(socket.user._id);
 
