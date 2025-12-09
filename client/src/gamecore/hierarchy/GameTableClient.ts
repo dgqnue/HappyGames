@@ -241,7 +241,7 @@ export abstract class GameTableClient {
 
         // 基础状态更新
         const stateUpdate: any = {
-            tableId: data.roomId,  // 加入成功后设置 tableId
+            tableId: data.tableId || data.roomId,  // 加入成功后设置 tableId（优先使用tableId字段）
             status: data.status,
             baseBet: data.baseBet,
             players: players,
