@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 // import { ChessBoard } from '@/games/chinesechess/gamepagehierarchy/ChessBoard';
 import { ChessBoardKit } from '@/games/chinesechess/gamepagehierarchy/ChessBoardKit';
-import SystemDialog from '@/components/SystemDialog';
+import { useSystemDialog } from '@/lib/SystemDialogContext';
 
 // 棋子类型定义
 interface ChessPiece {
@@ -50,6 +50,9 @@ interface ChineseChessDisplayProps {
 function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseChessDisplayProps) {
   console.log('[ChineseChessDisplay] Component mounted, isMyTable:', isMyTable);
   
+  // 使用全局对话框服务
+  const { showError } = useSystemDialog();
+  
   // 使用 tableClient 保存的选中状态初始化，防止组件重挂载导致状态丢失
   const [selectedPiece, setSelectedPieceState] = useState<{ row: number; col: number } | null>(
     () => (tableClient as any).getSelectedPiece?.() || null
@@ -67,8 +70,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [joinError, setJoinError] = useState<string | null>(null);
-  const [showJoinDialog, setShowJoinDialog] = useState(false);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -121,9 +122,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       // 监听加入失败并显示消息
       const prevJoinFailed = (tableClient as any).onJoinFailed;
       (tableClient as any).onJoinFailed = (data: any) => {
+        console.log('[ChineseChessDisplay] onJoinFailed callback triggered:', data);
         const msg = data?.message || '加入失败';
-        setJoinError(msg);
-        setShowJoinDialog(true);
+        console.log('[ChineseChessDisplay] Showing error dialog:', msg);
+        showError('无法入座', msg);
         if (prevJoinFailed) prevJoinFailed(data);
       };
 
@@ -453,22 +455,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           />
         </div>
       </div>
-
-      {/* 加入失败提示横幅 */}
-      {joinError && (
-        <SystemDialog
-          isOpen={showJoinDialog}
-          onClose={() => {
-            setShowJoinDialog(false);
-            setJoinError(null);
-          }}
-          title="无法入座"
-          message={joinError}
-          type="error"
-          confirmText="知道了"
-          showCancel={false}
-        />
-      )}
     </div>
   );
 }

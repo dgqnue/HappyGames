@@ -51,7 +51,13 @@ export class ChineseChessTableClient extends GameTableClient {
         // 监听加入失败
         this.socket.on('join_failed', (data: any) => {
             console.warn(`[${this.gameType}TableClient] Join failed:`, data);
-            if (this.onJoinFailed) this.onJoinFailed(data);
+            console.log(`[${this.gameType}TableClient] onJoinFailed callback exists:`, !!this.onJoinFailed);
+            if (this.onJoinFailed) {
+                console.log(`[${this.gameType}TableClient] Calling onJoinFailed with:`, data);
+                this.onJoinFailed(data);
+            } else {
+                console.warn(`[${this.gameType}TableClient] onJoinFailed callback is not set!`);
+            }
         });
     }
 

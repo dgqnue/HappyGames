@@ -26,6 +26,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { LanguageProvider } from '@/lib/i18n';
+import { SystemDialogProvider } from '@/lib/SystemDialogContext';
 
 // 移除 Google 字体以避免构建时的网络超时问题
 // 在 globals.css 中使用系统字体栈
@@ -49,10 +50,13 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body>
-                {/* 多语言 Provider，为所有子组件提供语言切换功能 */}
-                <LanguageProvider>
-                    {children}
-                </LanguageProvider>
+                {/* 系统对话框 Provider，为整个应用提供全局对话框功能 */}
+                <SystemDialogProvider>
+                    {/* 多语言 Provider，为所有子组件提供语言切换功能 */}
+                    <LanguageProvider>
+                        {children}
+                    </LanguageProvider>
+                </SystemDialogProvider>
             </body>
         </html>
     )
