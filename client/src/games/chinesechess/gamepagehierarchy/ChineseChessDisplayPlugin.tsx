@@ -196,8 +196,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </svg>
       </button>
 
-      {/* 棋盘套件容器 - 直接铺满中心区域 */}
-      <div className="w-full h-full flex items-center justify-center">
+      {/* 棋盘套件容器 - 下移页面高度的三分之一 */}
+      <div 
+        className="w-full h-full flex items-center justify-center"
+        style={{
+          paddingTop: '33.33vh'
+        }}
+      >
         <div 
           style={{ 
             width: '90vw', 
