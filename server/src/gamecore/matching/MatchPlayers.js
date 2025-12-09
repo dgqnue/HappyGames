@@ -203,6 +203,27 @@ class MatchingRules {
     }
 
     /**
+     * 判断桌子是否可加入（兼容传入整个 table 对象）
+     * @param {Object} table - 桌子对象或状态参数
+     */
+    static isTableAvailable(table) {
+        try {
+            if (!table) return false;
+            // 支持直接传入 table 或 (status, playersLength, maxPlayers)
+            if (typeof table === 'object' && table.status !== undefined) {
+                const currentPlayers = Array.isArray(table.players) ? table.players.length : (table.currentPlayers || 0);
+                const maxPlayers = table.maxPlayers || (table.capacity || 2);
+                return this.canJoinTable(table.status, currentPlayers, maxPlayers);
+            }
+
+            return false;
+        } catch (err) {
+            console.error('[MatchingRules] isTableAvailable error:', err);
+            return false;
+        }
+    }
+
+    /**
      * 判断是否应该开始准备倒计时
      */
     static shouldStartReadyCheck(currentPlayers, maxPlayers, status) {
@@ -868,7 +889,7 @@ class MatchRoomState {
         const seatIndex = MatchingRules.assignSeat(this.seatStrategy, existingSeats, this.maxPlayers);
 
         if (seatIndex === -1) {
-            console.error(`[MatchRoom] 无可用座位用于玩家 ${playerData.userId}，已用座位:`, existingSeats);
+            console.error(`[MatchRoom] 无可用座位用于玩家 ${playerData.userId}，已用座位:`, existingSeats, `maxPlayers: ${this.maxPlayers}, seatStrategy: ${this.seatStrategy}`);
             return { success: false, error: '没有可用座位' };
         }
 
@@ -1311,7 +1332,9 @@ class MatchPlayers {
         };
 
         // 检查是否符合匹配条件
-        if (!this.matchState.canPlayerJoin(playerStats)) {
+        const canJoin = this.matchState.canPlayerJoin(playerStats);
+        if (!canJoin) {
+            console.warn(`[MatchPlayers] player ${userId} failed match criteria. stats:`, playerStats, ' roomSettings:', this.matchState.matchSettings);
             socket.emit('join_failed', {
                 code: 'MATCH_CRITERIA_NOT_MET',
                 message: '不符合游戏桌匹配条件'

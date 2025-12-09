@@ -66,6 +66,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -115,9 +116,18 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
          };
       }
 
+      // 监听加入失败并显示消息
+      const prevJoinFailed = (tableClient as any).onJoinFailed;
+      (tableClient as any).onJoinFailed = (data: any) => {
+        setJoinError(data?.message || '加入失败');
+        setTimeout(() => setJoinError(null), 5000);
+        if (prevJoinFailed) prevJoinFailed(data);
+      };
+
       return () => {
         unsubscribe?.();
         (tableClient as any).onMove = undefined;
+        (tableClient as any).onJoinFailed = prevJoinFailed;
       };
     } catch (err) {
       console.error('[ChineseChessDisplay] Error in state subscription:', err);
@@ -440,6 +450,22 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           />
         </div>
       </div>
+
+      {/* 加入失败提示横幅 */}
+      {joinError && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: 'rgba(220,50,50,0.95)',
+          color: 'white',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          zIndex: 20000
+        }}>
+          {joinError}
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,8 @@ export class ChineseChessTableClient extends GameTableClient {
     
     // 移动事件回调
     public onMove?: (data: any) => void;
+    // 加入失败回调
+    public onJoinFailed?: (data: any) => void;
 
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
@@ -44,6 +46,12 @@ export class ChineseChessTableClient extends GameTableClient {
             console.error(`[${this.gameType}TableClient] Error:`, data);
             // 可以选择通过回调通知UI显示错误，或者直接alert
             // alert(data.message || '操作失败');
+        });
+
+        // 监听加入失败
+        this.socket.on('join_failed', (data: any) => {
+            console.warn(`[${this.gameType}TableClient] Join failed:`, data);
+            if (this.onJoinFailed) this.onJoinFailed(data);
         });
     }
 
