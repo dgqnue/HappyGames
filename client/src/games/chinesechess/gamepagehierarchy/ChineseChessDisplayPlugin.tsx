@@ -118,9 +118,25 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     return result;
   }, [boardData]);
 
+  // 播放音效
+  const playSound = useCallback((type: 'select' | 'eat') => {
+    try {
+      const audioPath = type === 'select' 
+        ? '/audio/effects/CHESS_SELECT.mp3' 
+        : '/audio/effects/CHESS_EAT.mp3';
+      
+      const audio = new Audio(audioPath);
+      audio.play().catch(err => console.warn('Audio play failed:', err));
+    } catch (err) {
+      console.error('Error playing sound:', err);
+    }
+  }, []);
+
   // 棋盘点击处理
   const handleBoardClick = (row: number, col: number) => {
     try {
+      console.log(`[BoardClick] Clicked at (${row}, ${col}), Current Turn: ${currentTurn}, My Side: ${mySide}`);
+      
       if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
 
       if (!boardData || !Array.isArray(boardData)) {
@@ -131,34 +147,53 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const clickedPieceChar = boardData[row]?.[col];
       const isMyTurn = currentTurn === mySide;
 
+      console.log(`[BoardClick] Clicked Piece: ${clickedPieceChar}, Is My Turn: ${isMyTurn}, Selected:`, selectedPiece);
+
       if (selectedPiece) {
+        // 如果点击的是已选中的棋子，取消选中
         if (selectedPiece.row === row && selectedPiece.col === col) {
           setSelectedPiece(null);
           return;
         }
 
+        // 如果点击了另一个棋子
         if (clickedPieceChar) {
           const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
           if (pieceInfo) {
             const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
               (mySide === 'b' && pieceInfo.color === 'black');
 
+            // 如果是己方棋子，切换选中
             if (isMyPiece) {
               setSelectedPiece({ row, col });
+              playSound('select'); // 播放选中音效
               return;
             }
           }
         }
 
-        if (isMyTurn && tableClient && typeof tableClient.sendMove === 'function') {
-          try {
-            tableClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
-            setSelectedPiece(null);
-          } catch (err) {
-            console.error('[ChineseChessDisplay] Error sending move:', err);
+        // 尝试移动（包括吃子）
+        if (isMyTurn) {
+          if (tableClient && typeof tableClient.sendMove === 'function') {
+            console.log(`[BoardClick] Sending move: (${selectedPiece.col}, ${selectedPiece.row}) -> (${col}, ${row})`);
+            try {
+              tableClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
+              setSelectedPiece(null);
+              // 如果目标位置有子，播放吃子音效（这里只是预测，实际以服务器结果为准，但为了即时反馈可以先播）
+              if (clickedPieceChar) {
+                 playSound('eat');
+              }
+            } catch (err) {
+              console.error('[ChineseChessDisplay] Error sending move:', err);
+            }
+          } else {
+            console.error('[BoardClick] tableClient.sendMove is not a function');
           }
+        } else {
+          console.warn('[BoardClick] Not my turn or invalid state');
         }
       } else {
+        // 没有选中棋子时，尝试选中
         if (clickedPieceChar) {
           const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
           if (pieceInfo) {
@@ -167,6 +202,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
             if (isMyPiece) {
               setSelectedPiece({ row, col });
+              playSound('select'); // 播放选中音效
+            } else {
+              console.log('[BoardClick] Clicked opponent piece');
             }
           }
         }
