@@ -198,27 +198,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </svg>
       </button>
 
-      {/* 测试div - 红色 */}
-      <div 
-        style={{
-          position: 'fixed',
-          bottom: '32px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '400px',
-          height: '100px',
-          backgroundColor: 'red',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: '20px'
-        }}
-      >
-        按钮容器
-      </div>
-
       {/* 棋盘套件容器 - 下移页面高度的六分之一 */}
       <div 
         className="w-full flex flex-col items-center justify-start"
@@ -314,7 +293,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
         {/* 讲和 */}
         <img
-          src="/images/chineseschess/buttoms/draw.png"
+          src="/images/chinesechess/buttoms/draw.png"
           alt="讲和"
           title="讲和"
           style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block', backgroundColor: 'yellow' }}
