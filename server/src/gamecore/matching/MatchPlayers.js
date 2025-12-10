@@ -1135,6 +1135,7 @@ class MatchRoomState {
             playerList: this.players.map(p => ({
                 nickname: p.nickname,
                 title: p.title,
+                titleColor: p.titleColor, // 添加 titleColor
                 winRate: p.winRate,
                 disconnectRate: p.disconnectRate,
                 ready: p.ready,

@@ -437,6 +437,7 @@ class ChineseChessTable extends GameTable {
                 avatar: p.avatar,
                 ready: p.ready,
                 title: p.title,
+                titleColor: p.titleColor, // 添加 titleColor
                 winRate: p.winRate,
                 disconnectRate: p.disconnectRate,
                 seatIndex: p.seatIndex
@@ -607,6 +608,7 @@ class ChineseChessTable extends GameTable {
                 nickname: p.nickname,
                 ready: p.ready,
                 title: p.title,
+                titleColor: p.titleColor, // 添加 titleColor
                 winRate: p.winRate,
                 seatIndex: p.seatIndex
             })),
