@@ -143,6 +143,18 @@ export abstract class GameTableClient {
             this.handleJoinFailed(data);
         });
 
+        // 服务器错误事件处理
+        this.socket.on('error', (data: any) => {
+            console.warn(`[${this.gameType}TableClient] Server error:`, data);
+            const message = data.message || '操作失败，请稍后重试';
+            const handler = getGlobalDialogHandler();
+            if (handler) {
+                handler.showError('操作失败', message);
+            } else {
+                console.error('Global dialog handler not initialized');
+            }
+        });
+
         // 兼容旧的 state 事件 (如果还有地方用到)
         this.socket.on('state', (data: any) => {
             console.log(`[${this.gameType}TableClient] Legacy state update:`, data);
