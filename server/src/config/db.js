@@ -3,21 +3,7 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
     try {
         // 支持 MONGODB_URI 和 MONGO_URI 两个环境变量名
-        let mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/happygames';
-        
-        // 确保URI中包含数据库名
-        if (!mongoUri.includes('/happygames')) {
-            // 如果URI中没有指定数据库，强制添加 /happygames
-            if (mongoUri.endsWith('/')) {
-                mongoUri = mongoUri + 'happygames';
-            } else if (!mongoUri.includes('?')) {
-                mongoUri = mongoUri + '/happygames';
-            } else {
-                // 有查询参数，在?前插入
-                mongoUri = mongoUri.replace('?', '/happygames?');
-            }
-            console.warn('[DB] ⚠️  警告: 原始URI中没有数据库名，已自动添加 /happygames');
-        }
+        const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/happygames';
 
         // 调试日志（隐藏密码）
         const safeUri = mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@');
