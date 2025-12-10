@@ -53,13 +53,8 @@ class ChineseChessTable extends GameTable {
 
     async playerJoin(socket, matchSettings) {
         const success = await this.matchPlayers.playerJoin(socket, matchSettings);
-        if (success) {
-            // 绑定游戏特定事件
-            socket.on(`${this.gameType}_move`, (data) => this.handleMove(socket, data));
-            
-            // 绑定状态一致性检查
-            socket.on(`${this.gameType}_check_state_consistency`, (data) => this.handleStateConsistencyCheck(socket, data));
-        }
+        // 注意：Socket 事件监听器现在由 setupSocketListeners 统一处理
+        // 不在这里注册，避免重复注册
         return success;
     }
 
@@ -243,17 +238,23 @@ class ChineseChessTable extends GameTable {
             return; // 不是你的回合
         }
 
+        // 检查源位置的棋子是否存在
+        const piece = this.board[fromY] ? this.board[fromY][fromX] : null;
+        if (!piece) {
+            console.log(`[ChineseChessTable] handleMove rejected: no piece at (${fromX},${fromY}), board state: ${JSON.stringify(this.board[fromY])}`);
+            return;
+        }
+
         // 验证移动逻辑
         const isValidMove = ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn);
         if (!isValidMove) {
-            console.log(`[ChineseChessTable] handleMove rejected: invalid move from (${fromX},${fromY}) to (${toX},${toY})`);
+            console.log(`[ChineseChessTable] handleMove rejected: invalid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
             socket.emit('error', { message: '非法移动' });
             return;
         }
-        console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY})`);
+        console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
 
         // 执行移动
-        const piece = this.board[fromY][fromX];
         const captured = this.board[toY][toX];
 
         this.board[toY][toX] = piece;
@@ -271,7 +272,7 @@ class ChineseChessTable extends GameTable {
         this.turn = this.turn === 'r' ? 'b' : 'r';
 
         // 广播移动
-        console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY})`);
+        console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}`);
         this.broadcast('move', {
             move,
             captured: captured ? captured : null,
@@ -536,6 +537,12 @@ class ChineseChessTable extends GameTable {
             socket.on(`${this.gameType}_move`, (move) => {
                 this.handleMove(socket, move);
             });
+            
+            // 绑定状态一致性检查
+            socket.on(`${this.gameType}_check_state_consistency`, (data) => {
+                this.handleStateConsistencyCheck(socket, data);
+            });
+            
             socket.on('player_ready', () => this.playerReady(socket));
             socket.on('player_unready', () => this.playerUnready(socket));
 

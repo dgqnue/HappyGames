@@ -92,7 +92,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const isGamePlaying = state?.status === 'playing';
       setIsPlaying(isGamePlaying);
 
-      console.log('[ChineseChessDisplay] updateGameState:', { turn: newCurrentTurn, mySide: newMySide, isPlaying: isGamePlaying, tableState: state });
+      console.log('[ChineseChessDisplay] updateGameState:', { 
+        turn: newCurrentTurn, 
+        mySide: newMySide, 
+        isPlaying: isGamePlaying, 
+        boardRows: newBoardData ? newBoardData.length : 'null',
+        tableState: state?.status
+      });
 
       setBoardData(newBoardData);
       setCurrentTurn(newCurrentTurn);

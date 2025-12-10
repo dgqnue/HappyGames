@@ -63,6 +63,13 @@ export class ChineseChessTableClient extends GameTableClient {
      */
     protected handleMove(data: any): void {
         // 更新棋盘和回合
+        console.log(`[ChineseChessTableClient] handleMove: Received move event from server:`, { 
+            move: data.move, 
+            captured: data.captured, 
+            turn: data.turn,
+            boardSize: data.board ? data.board.length : 'null'
+        });
+        
         this.updateState({
             board: data.board,
             turn: data.turn
