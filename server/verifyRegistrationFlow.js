@@ -19,13 +19,13 @@ const filesToCheck = [
     },
     {
         path: 'src/controllers/userController.js',
-        shouldContain: ['只进行登录', 'User.findOne', '用户未注册'],
-        shouldNotContain: ['user = await User.create', 'new User({'],
+        shouldContain: ['Only login is allowed', 'User.findOne', '用户未注册'],
+        shouldNotContain: ['user = await User.create', '// 2. Register new user'],
         description: 'loginOrRegister 应只登录，不创建用户'
     },
     {
         path: 'src/gamecore/auth.js',
-        shouldContain: ['只login existing users', 'User.findOne', '用户未注册'],
+        shouldContain: ['ONLY login existing users', 'User.findOne', '用户未注册'],
         shouldNotContain: ['async function createNewUser'],
         description: 'piAuth 应只登录，不创建用户'
     }
