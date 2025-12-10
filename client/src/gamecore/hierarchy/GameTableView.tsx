@@ -278,7 +278,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
                 setDialogData({
                     title: '已被移出游戏桌',
-                    message: '已被移出游戏桌\n原因: 未在规定时间内开始游戏',
+                    message: `已被移出游戏桌\n原因: ${data.reason || '未在规定时间内开始游戏'}`,
                     type: 'warning'
                 });
                 setDialogOpen(true);
