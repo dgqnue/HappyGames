@@ -66,12 +66,12 @@ async function piAuth(req, res, next) {
 
         // ========== 强制使用 happygames 数据库 ==========
         const mongoose = require('mongoose');
-        const currentDb = mongoose.connection.db.databaseName || 'unknown';
         const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
-        console.log(`[piAuth] 连接数据库: ${currentDb}, 期望: ${expectedDbName}`);
+        const currentDb = mongoose.connection.name || mongoose.connection.db?.databaseName || expectedDbName;
+        console.log(`[piAuth] DB检查: 当前=${currentDb}, 期望=${expectedDbName}, connection.name=${mongoose.connection.name}`);
 
-        if (currentDb !== expectedDbName && currentDb !== 'unknown') {
-            console.error(`[piAuth] ❌ 错误: 连接到了错误的数据库!`);
+        if (mongoose.connection.name && mongoose.connection.name !== expectedDbName) {
+            console.error(`[piAuth] ❌ 错误: 错误的数据库!`);
             return res.status(500).json({
                 success: false,
                 message: `数据库连接错误: 当前数据库为 ${currentDb}, 应该连接到 ${expectedDbName}`

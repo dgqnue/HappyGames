@@ -83,13 +83,13 @@ exports.loginOrRegister = async (req, res) => {
 
         // ========== 强制使用 happygames 数据库 ==========
         const mongoose = require('mongoose');
-        const currentDb = mongoose.connection.db.databaseName || 'unknown';
         const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
+        const currentDb = mongoose.connection.name || mongoose.connection.db?.databaseName || expectedDbName;
         
-        console.log(`[Pi登录] 连接数据库: ${currentDb}, 期望: ${expectedDbName}`);
+        console.log(`[Pi登录] DB检查: 当前=${currentDb}, 期望=${expectedDbName}, connection.name=${mongoose.connection.name}`);
         
-        if (currentDb !== expectedDbName && currentDb !== 'unknown') {
-            console.error(`[Pi登录] ❌ 警告: 连接到了错误的数据库! 当前: ${currentDb}, 期望: ${expectedDbName}`);
+        if (mongoose.connection.name && mongoose.connection.name !== expectedDbName) {
+            console.error(`[Pi登录] ❌ 错误: 错误的数据库! 当前=${currentDb}`);
             return res.status(500).json({
                 success: false,
                 message: `数据库连接错误: 当前数据库为 ${currentDb}, 应该连接到 ${expectedDbName}`
