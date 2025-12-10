@@ -122,7 +122,7 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
                             </div>
                             <div className="bg-white rounded-xl p-4 shadow-md">
                                 <p className="text-gray-500 text-sm">称号</p>
-                                <p className="text-lg font-bold" style={{ color: centerState.userStats.titleColor || '#000' }}>
+                                <p className="text-lg" style={{ color: centerState.userStats.titleColor || '#000' }}>
                                     {centerState.userStats.title || '初出茅庐'}
                                 </p>
                             </div>

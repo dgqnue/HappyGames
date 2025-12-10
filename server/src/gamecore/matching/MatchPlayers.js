@@ -1802,7 +1802,7 @@ class MatchPlayers {
      * 游戏结束处理
      * @param {Object} result - 游戏结果
      */
-    onGameEnd(result) {
+    async onGameEnd(result) {
         console.log(`[MatchPlayers] Game ended in room ${this.roomId}`);
 
         // 释放游戏锁定状态（游戏结束了，可以进行新的匹配）
@@ -1830,6 +1830,40 @@ class MatchPlayers {
         this.table.broadcast('players_unready', {
             reason: '游戏结束，准备状态已取消'
         });
+
+        // 游戏结束后，向所有玩家发送已更新的用户统计信息
+        // 这样玩家离开游戏桌进入房间时，可以立即看到更新后的称号、等级分等信息
+        try {
+            const UserGameStats = require('../../models/UserGameStats');
+            for (const player of this.matchState.players) {
+                const updatedStats = await UserGameStats.findOne({
+                    userId: player.userId,
+                    gameType: this.gameType
+                }).lean();
+
+                if (updatedStats) {
+                    const socket = this.io.sockets.sockets.get(player.socketId);
+                    if (socket) {
+                        socket.emit('user_stats', {
+                            userId: updatedStats.userId,
+                            rating: updatedStats.rating,
+                            gamesPlayed: updatedStats.gamesPlayed,
+                            wins: updatedStats.wins,
+                            losses: updatedStats.losses,
+                            draws: updatedStats.draws,
+                            disconnects: updatedStats.disconnects,
+                            title: updatedStats.title,
+                            titleRank: updatedStats.titleRank,
+                            titleColor: updatedStats.titleColor,
+                            lastPlayedAt: updatedStats.lastPlayedAt
+                        });
+                        console.log(`[MatchPlayers] Sent updated user_stats to ${player.userId}: rating=${updatedStats.rating}, title=${updatedStats.title}`);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(`[MatchPlayers] Error sending updated user_stats:`, err);
+        }
 
         // 广播房间状态更新，刷新房间列表（从 playing 变为 matching）
         this.table.broadcastRoomState();

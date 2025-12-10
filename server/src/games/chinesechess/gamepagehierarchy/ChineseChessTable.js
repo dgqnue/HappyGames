@@ -418,30 +418,58 @@ class ChineseChessTable extends GameTable {
 
     /**
      * 广播房间状态
+     * 改进版本：从数据库获取最新的玩家称号和等级分
      * MatchPlayers 需要调用此方法
      */
-    broadcastRoomState() {
+    async broadcastRoomState() {
         const roomInfo = this.matchPlayers.matchState.getRoomInfo();
         const currentStatus = this.status;  // 使用 getter，确保获取正确的状态
         const currentPlayers = this.players;
+        
+        // 从数据库获取最新的玩家信息（特别是称号和等级分）
+        const UserGameStats = require('../../../models/UserGameStats');
+        const playerDataMap = {};
+        
+        try {
+            for (const player of currentPlayers) {
+                const stats = await UserGameStats.findOne({
+                    userId: player.userId,
+                    gameType: this.gameType
+                }).lean();
+                
+                if (stats) {
+                    playerDataMap[player.userId] = {
+                        title: stats.title,
+                        titleColor: stats.titleColor,
+                        rating: stats.rating
+                    };
+                }
+            }
+        } catch (err) {
+            console.error(`[ChineseChessTable] Error loading player stats for broadcastRoomState:`, err);
+        }
         
         const state = {
             ...roomInfo,
             tableId: this.tableId,              // 确保 tableId 被设置
             roomId: this.tableId,               // 保留 roomId 作为备选
             status: currentStatus,              // 游戏桌状态（idle, waiting, matching, playing）
-            players: currentPlayers.map(p => ({
-                userId: p.userId,
-                socketId: p.socketId,
-                nickname: p.nickname,
-                avatar: p.avatar,
-                ready: p.ready,
-                title: p.title,
-                titleColor: p.titleColor, // 添加 titleColor
-                winRate: p.winRate,
-                disconnectRate: p.disconnectRate,
-                seatIndex: p.seatIndex
-            })),
+            players: currentPlayers.map(p => {
+                // 优先使用从数据库获取的最新信息
+                const latestData = playerDataMap[p.userId] || {};
+                return {
+                    userId: p.userId,
+                    socketId: p.socketId,
+                    nickname: p.nickname,
+                    avatar: p.avatar,
+                    ready: p.ready,
+                    title: latestData.title || p.title,
+                    titleColor: latestData.titleColor || p.titleColor,
+                    winRate: p.winRate,
+                    disconnectRate: p.disconnectRate,
+                    seatIndex: p.seatIndex
+                };
+            }),
             // 如果正在游戏中，附带游戏状态
             ...(currentStatus === 'playing' ? {
                 board: this.board,
