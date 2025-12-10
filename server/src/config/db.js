@@ -16,7 +16,8 @@ const connectDB = async () => {
             maxPoolSize: 10, // 限制连接池大小，防止耗尽资源
             serverSelectionTimeoutMS: 5000, // 5秒连接超时，避免长时间等待
             socketTimeoutMS: 45000, // Socket 超时
-            family: 4 // 强制使用 IPv4，避免某些环境下的 IPv6 问题
+            family: 4, // 强制使用 IPv4，避免某些环境下的 IPv6 问题
+            dbName: 'happygames' // 强制指定数据库名称，防止连接到 test
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
@@ -31,6 +32,8 @@ const connectDB = async () => {
         
         if (connectedDbName !== expectedDbName && connectedDbName !== 'unknown') {
             console.error(`[DB] ❌ 严重错误: 连接到了错误的数据库 ${connectedDbName}!`);
+            // 立即断开连接，防止写入错误数据库
+            await mongoose.disconnect();
             throw new Error(`数据库连接错误: 连接到了 ${connectedDbName}，应该是 ${expectedDbName}`);
         }
         
