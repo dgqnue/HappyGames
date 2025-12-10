@@ -1,7 +1,6 @@
 // 文件：server/src/cron/eloCron.js
 const cron = require('node-cron');
 const EloService = require('../gamecore/EloService');
-const Grade = require('../games/chinesechess/grade/Grade');
 
 // Define supported game types
 const GAME_TYPES = ['chinesechess', 'gomoku', 'poker'];
@@ -32,15 +31,6 @@ const initCronJobs = () => {
     cron.schedule('0 10 * * *', async () => {
         console.log('[CRON] Starting Time Decay Check...');
         await EloService.applyTimeDecay();
-    });
-
-    // 4. Title Update (Daily 9:00 UTC)
-    // "世界时每日上午9:00后端系统自动统计...按百分比确定玩家段位"
-    cron.schedule('0 9 * * *', async () => {
-        console.log('[CRON] Starting Title Update...');
-        for (const gameType of GAME_TYPES) {
-            await Grade.updateAllPlayerTitles(gameType);
-        }
     });
 
     console.log('[CRON] ELO Jobs Scheduled.');
