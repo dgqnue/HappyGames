@@ -14,6 +14,9 @@ export class ChineseChessTableClient extends GameTableClient {
     
     // 移动事件回调
     public onMove?: (data: any) => void;
+    
+    // 游戏结束事件回调
+    public onGameEnded?: (data: any) => void;
 
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
@@ -37,6 +40,12 @@ export class ChineseChessTableClient extends GameTableClient {
         this.socket.on('move', (data: any) => {
             console.log(`[${this.gameType}TableClient] Move event received from server:`, { move: data.move, captured: data.captured });
             this.handleMove(data);
+        });
+
+        // 监听游戏结束事件
+        this.socket.on('game_ended', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Game ended event received from server:`, data);
+            this.handleGameEnded(data);
         });
 
         // 监听错误事件
@@ -74,10 +83,30 @@ export class ChineseChessTableClient extends GameTableClient {
     }
 
     /**
+     * 处理游戏结束事件
+     */
+    protected handleGameEnded(data: any): void {
+        // 更新游戏状态
+        this.updateState({
+            status: 'matching',  // 游戏结束后状态变为 matching（等待再来一局）
+            winner: data.result?.winner
+        });
+
+        // 触发游戏结束回调
+        if (this.onGameEnded) {
+            console.log(`[ChineseChessTableClient] handleGameEnded: Calling onGameEnded callback, winner=${data.result?.winner}`);
+            this.onGameEnded(data);
+        } else {
+            console.log(`[ChineseChessTableClient] handleGameEnded: No onGameEnded callback registered`);
+        }
+    }
+
+    /**
      * 移除象棋特定的事件监听
      */
     protected removeTableListeners(): void {
         this.socket.off('move');
+        this.socket.off('game_ended');
         this.socket.off('error');
     }
 }

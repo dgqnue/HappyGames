@@ -59,7 +59,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   );
 
   // 跟踪上次播放的音效时间，防止重复播放
-  const lastAudioTimeRef = useRef<{ [key: string]: number }>({ select: 0, eat: 0 });
+  // 支持的音效类型：'select'（选中）、'eat'（吃子）、'win'（胜利）、'lose'（失败）
+  const lastAudioTimeRef = useRef<{ [key: string]: number }>({ select: 0, eat: 0, win: 0, lose: 0 });
 
   // 包装 setSelectedPiece，同步更新到 tableClient
   const setSelectedPiece = (piece: { row: number; col: number } | null) => {
@@ -113,22 +114,34 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         updateGameState();
       });
 
-      // 订阅移动事件以播放音效
+      // 监听服务器广播的移动事件以播放公开音效（吃子）
+      // 注意：选中棋子、胜利、失败的音效是私有的，只在本地播放
+      // 吃子音效是公开的，由服务器广播给所有玩家
       if ((tableClient as any).onMove === undefined) {
-         console.log('[ChineseChessDisplay] Registering onMove callback');
+         console.log('[ChineseChessDisplay] Registering onMove callback for public sound events');
          (tableClient as any).onMove = (data: any) => {
              console.log('[ChineseChessDisplay] onMove callback triggered:', { captured: data.captured });
+             // 吃子音效是公开的，所有玩家都应该听到
+             // 这个事件由服务器广播，所以两个玩家都会接收到
              if (data.captured) {
-                 console.log('[ChineseChessDisplay] Playing eat sound');
+                 console.log('[ChineseChessDisplay] Playing eat sound (public event from server)');
                  playSound('eat');
-             } else {
-                 // 可以添加普通移动音效
-                 // playSound('move'); 
              }
          };
       } else {
          console.log('[ChineseChessDisplay] onMove callback already registered, skipping');
       }
+
+      // 监听游戏结束事件以播放胜利音效
+      const prevGameEnded = (tableClient as any).onGameEnded;
+      (tableClient as any).onGameEnded = (data: any) => {
+        console.log('[ChineseChessDisplay] onGameEnded callback triggered:', data);
+        // 检查是否是己方获胜
+        if (data?.result?.winner === mySide) {
+          console.log('[ChineseChessDisplay] Playing win sound');
+          playSound('win');
+        }
+      };
 
       // 监听加入失败并显示消息
       const prevJoinFailed = (tableClient as any).onJoinFailed;
@@ -143,12 +156,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       return () => {
         unsubscribe?.();
         (tableClient as any).onMove = undefined;
+        (tableClient as any).onGameEnded = prevGameEnded;
         (tableClient as any).onJoinFailed = prevJoinFailed;
       };
     } catch (err) {
       console.error('[ChineseChessDisplay] Error in state subscription:', err);
     }
-  }, [tableClient, updateGameState]);
+  }, [tableClient, updateGameState, mySide]);
 
   // 棋子数据处理
   const pieces = useMemo(() => {
@@ -174,7 +188,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   }, [boardData]);
 
   // 播放音效
-  const playSound = useCallback((type: 'select' | 'eat') => {
+  // 音效分类：
+  // - 私有音效（只有己方能听到）：'select'（选中棋子）、'win'（胜利）、'lose'（失败）
+  // - 公开音效（双方都能听到）：'eat'（吃子，由服务器广播）
+  const playSound = useCallback((type: 'select' | 'eat' | 'win' | 'lose') => {
     try {
       const now = Date.now();
       const lastTime = lastAudioTimeRef.current[type] || 0;
@@ -187,9 +204,16 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       
       lastAudioTimeRef.current[type] = now;
       
-      const audioPath = type === 'select' 
-        ? '/audio/effects/CHESS_SELECT.mp3' 
-        : '/audio/effects/CHESS_EAT.mp3';
+      let audioPath = '';
+      if (type === 'select') {
+        audioPath = '/audio/effects/CHESS_SELECT.mp3';
+      } else if (type === 'eat') {
+        audioPath = '/audio/effects/CHESS_EAT.mp3';
+      } else if (type === 'win') {
+        audioPath = '/audio/effects/CHESS_WIN.mp3'; // 需要准备这个文件
+      } else if (type === 'lose') {
+        audioPath = '/audio/effects/CHESS_LOSE.mp3'; // 需要准备这个文件
+      }
       
       console.log(`[ChineseChessDisplay] Playing ${type} sound at ${now}`);
       const audio = new Audio(audioPath);
