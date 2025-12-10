@@ -292,24 +292,24 @@ class ChineseChessTable extends GameTable {
         const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
         const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
 
-        // 1. ELO 结算
+        // 1. ELO 结算（将更新后的 rating 写入数据库）
         const eloResult = await EloService.processMatchResult(
             this.gameType,
             winnerId,
             loserId,
             1 // Winner gets 1 point
         );
+        console.log(`[ChineseChessTable] ELO updated:`, eloResult);
 
-        // 2. 称号更新（游戏结束后立即更新获胜者和失败者的称号）
+        // 2. 全局重新计算所有玩家的排名和称号
+        //    因为这两个玩家的 rating 改变，可能影响所有玩家的排名
+        console.log(`[ChineseChessTable] Recalculating all player titles...`);
         let titleResult = {};
         try {
-            titleResult = await Grade.updatePlayerTitles(
-                [winnerId, loserId],
-                this.gameType
-            );
-            console.log(`[ChineseChessTable] Title updated after win:`, titleResult);
+            titleResult = await Grade.updateAllPlayerTitles(this.gameType);
+            console.log(`[ChineseChessTable] All player titles updated:`, titleResult);
         } catch (err) {
-            console.error(`[ChineseChessTable] Error updating titles:`, err);
+            console.error(`[ChineseChessTable] Error updating all titles:`, err);
         }
 
         // 3. 游戏豆结算 (非免费室)

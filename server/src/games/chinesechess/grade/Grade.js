@@ -96,28 +96,32 @@ class Grade {
     }
 
     /**
-     * 批量更新所有玩家的称号（定时任务，每天执行一次）
+     * 批量更新所有玩家的称号（定时任务，也在游戏结束后调用）
+     * 关键点：根据数据库中所有玩家的最新 rating 重新计算排名和称号
      * @param {string} gameType 
+     * @returns {object} 返回所有更新的玩家信息
      */
     async updateAllPlayerTitles(gameType) {
-        console.log(`[GRADE] Starting title update for ${gameType}...`);
+        console.log(`[GRADE] Starting title update for all players in ${gameType}...`);
 
         try {
-            // 1. 获取所有玩家，按等级分降序排列
+            // 1. 获取所有玩家，按 rating 降序排列（rating 最高 = rank 1）
             const allStats = await UserGameStats.find({ gameType }).sort({ rating: -1 });
             const totalPlayers = allStats.length;
 
             if (totalPlayers === 0) {
                 console.log(`[GRADE] No players found for ${gameType}`);
-                return;
+                return {};
             }
 
             console.log(`[GRADE] Total players: ${totalPlayers}`);
 
-            // 2. 为每个玩家分配称号
+            const results = {};
+
+            // 2. 为每个玩家分配称号（按照数据库中的排名顺序）
             for (let i = 0; i < totalPlayers; i++) {
                 const stats = allStats[i];
-                const rank = i + 1; // 1-based ranking
+                const rank = i + 1; // 1-based ranking (1 = 最强)
                 const titleConfig = this.getTitleByRank(rank, totalPlayers);
                 
                 // 更新称号信息
@@ -127,12 +131,22 @@ class Grade {
                 
                 await stats.save();
                 
-                console.log(`[GRADE] Updated ${stats.userId}: rank=${rank}, title=${titleConfig.name}, color=${titleConfig.color}`);
+                results[stats.userId] = {
+                    title: titleConfig.name,
+                    titleRank: titleConfig.rank,
+                    titleColor: titleConfig.color,
+                    rank: rank,
+                    rating: stats.rating
+                };
+                
+                console.log(`[GRADE] ✓ Updated userId=${stats.userId}: rank=${rank}/${totalPlayers}, rating=${stats.rating}, title=${titleConfig.name}, color=${titleConfig.color}`);
             }
 
-            console.log(`[GRADE] Title update complete for ${gameType}. Updated ${totalPlayers} players.`);
+            console.log(`[GRADE] ✓ Title update complete for ${gameType}. Updated ${totalPlayers} players.`);
+            return results;
         } catch (err) {
-            console.error(`[GRADE] Error updating titles for ${gameType}:`, err);
+            console.error(`[GRADE] ✗ Error updating titles for ${gameType}:`, err);
+            throw err;
         }
     }
 
@@ -144,13 +158,19 @@ class Grade {
      */
     async updatePlayerTitle(userId, gameType) {
         try {
-            const stats = await UserGameStats.findOne({ userId, gameType });
+            console.log(`[GRADE] updatePlayerTitle: fetching stats for userId=${userId}, gameType=${gameType}`);
+            
+            // 确保获取最新的数据（在计算排名之前刷新）
+            const stats = await UserGameStats.findOne({ userId, gameType }).lean(false);
             if (!stats) {
                 console.warn(`[GRADE] Player stats not found for userId=${userId}, gameType=${gameType}`);
                 return null;
             }
 
+            console.log(`[GRADE] Found stats: rating=${stats.rating}, currentTitle=${stats.title}`);
+
             // 获取该玩家在该游戏中的排名
+            // 注意：这里 stats.rating 已经是 ELO 更新后的新值
             const betterPlayers = await UserGameStats.countDocuments({
                 gameType,
                 rating: { $gt: stats.rating }
@@ -160,16 +180,22 @@ class Grade {
             // 获取总玩家数
             const totalPlayers = await UserGameStats.countDocuments({ gameType });
 
+            console.log(`[GRADE] updatePlayerTitle: rank=${rank}, totalPlayers=${totalPlayers}, currentRating=${stats.rating}`);
+
             // 根据排名获取称号
             const titleConfig = this.getTitleByRank(rank, totalPlayers);
+
+            console.log(`[GRADE] Got titleConfig: ${titleConfig.name}, rank=${titleConfig.rank}`);
 
             // 更新玩家信息
             stats.title = titleConfig.name;
             stats.titleRank = titleConfig.rank;
             stats.titleColor = titleConfig.color;
+            
+            console.log(`[GRADE] Saving stats to DB: userId=${userId}, newTitle=${titleConfig.name}`);
             await stats.save();
 
-            console.log(`[GRADE] Updated title for userId=${userId}: rank=${rank}/${totalPlayers}, title=${titleConfig.name}, color=${titleConfig.color}`);
+            console.log(`[GRADE] ✓ Successfully updated title for userId=${userId}: rank=${rank}/${totalPlayers}, title=${titleConfig.name}, color=${titleConfig.color}`);
 
             return {
                 title: titleConfig.name,
@@ -177,8 +203,8 @@ class Grade {
                 titleColor: titleConfig.color
             };
         } catch (err) {
-            console.error(`[GRADE] Error updating title for userId=${userId}:`, err);
-            return null;
+            console.error(`[GRADE] ✗ Error updating title for userId=${userId}:`, err);
+            throw err;
         }
     }
 
@@ -191,13 +217,23 @@ class Grade {
     async updatePlayerTitles(userIds, gameType) {
         const results = {};
         
+        console.log(`[GRADE] updatePlayerTitles called with userIds:`, userIds, `gameType:`, gameType);
+        
         for (const userId of userIds) {
-            const titleInfo = await this.updatePlayerTitle(userId, gameType);
-            if (titleInfo) {
-                results[userId] = titleInfo;
+            try {
+                const titleInfo = await this.updatePlayerTitle(userId, gameType);
+                if (titleInfo) {
+                    results[userId] = titleInfo;
+                    console.log(`[GRADE] updatePlayerTitles: userId=${userId} updated successfully`);
+                } else {
+                    console.warn(`[GRADE] updatePlayerTitles: userId=${userId} returned null`);
+                }
+            } catch (err) {
+                console.error(`[GRADE] updatePlayerTitles: error updating userId=${userId}:`, err);
             }
         }
 
+        console.log(`[GRADE] updatePlayerTitles completed. Results:`, results);
         return results;
     }
 
