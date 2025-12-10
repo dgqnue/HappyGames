@@ -20,11 +20,15 @@ export class ChineseChessTableClient extends GameTableClient {
 
     // 移动事件监听器列表
     private moveListeners: ((data: any) => void)[] = [];
+    
+    // 实例 ID 用于调试
+    public readonly instanceId: string;
 
     /**
      * 添加移动事件监听器
      */
     public addMoveListener(listener: (data: any) => void) {
+        console.log(`[ChineseChessTableClient:${this.instanceId}] Adding move listener. Total listeners: ${this.moveListeners.length + 1}`);
         this.moveListeners.push(listener);
     }
 
@@ -32,11 +36,15 @@ export class ChineseChessTableClient extends GameTableClient {
      * 移除移动事件监听器
      */
     public removeMoveListener(listener: (data: any) => void) {
+        const initialLength = this.moveListeners.length;
         this.moveListeners = this.moveListeners.filter(l => l !== listener);
+        console.log(`[ChineseChessTableClient:${this.instanceId}] Removing move listener. Count: ${initialLength} -> ${this.moveListeners.length}`);
     }
 
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
+        this.instanceId = Math.random().toString(36).substring(2, 9);
+        console.log(`[ChineseChessTableClient:${this.instanceId}] Created`);
         // 象棋游戏桌最多2个玩家
         this.state.maxPlayers = 2;
     }
@@ -102,14 +110,16 @@ export class ChineseChessTableClient extends GameTableClient {
 
         // 触发所有注册的监听器
         if (this.moveListeners.length > 0) {
-            console.log(`[ChineseChessTableClient] handleMove: Calling ${this.moveListeners.length} move listeners`);
-            this.moveListeners.forEach(listener => {
+            console.log(`[ChineseChessTableClient:${this.instanceId}] handleMove: Calling ${this.moveListeners.length} move listeners`);
+            this.moveListeners.forEach((listener, index) => {
                 try {
                     listener(data);
                 } catch (err) {
-                    console.error('[ChineseChessTableClient] Error in move listener:', err);
+                    console.error(`[ChineseChessTableClient:${this.instanceId}] Error in move listener ${index}:`, err);
                 }
             });
+        } else {
+            console.log(`[ChineseChessTableClient:${this.instanceId}] handleMove: No move listeners registered`);
         }
         
         // 如果有获胜者，可能需要处理（通常由 game_ended 处理，但这里也可以更新状态）

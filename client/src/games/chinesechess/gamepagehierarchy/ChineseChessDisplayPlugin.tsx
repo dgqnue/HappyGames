@@ -124,17 +124,26 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       // 注意：选中棋子、胜利、失败的音效是私有的，只在本地播放
       // 吃子音效是公开的，由服务器广播给所有玩家
       const onMoveHandler = (data: any) => {
-          console.log('[ChineseChessDisplay] onMove callback triggered:', { captured: data.captured });
+          console.log('[ChineseChessDisplay] onMove callback triggered:', { 
+              captured: data.captured, 
+              mySide, 
+              turn: data.turn,
+              tableClientId: (tableClient as any).instanceId 
+          });
           // 吃子音效是公开的，所有玩家都应该听到
           // 这个事件由服务器广播，所以两个玩家都会接收到
           if (data.captured) {
               console.log('[ChineseChessDisplay] Playing eat sound (public event from server)');
               playSound('eat');
+          } else {
+              // 调试：如果 captured 为空，但实际上可能发生了吃子？
+              // 这里我们信任服务器，但打印日志以防万一
+              console.log('[ChineseChessDisplay] No capture detected in move event');
           }
       };
 
       if (typeof (tableClient as any).addMoveListener === 'function') {
-          console.log('[ChineseChessDisplay] Registering move listener via addMoveListener');
+          console.log(`[ChineseChessDisplay] Registering move listener via addMoveListener to TableClient:${(tableClient as any).instanceId}`);
           (tableClient as any).addMoveListener(onMoveHandler);
       } else if ((tableClient as any).onMove === undefined) {
          console.log('[ChineseChessDisplay] Registering onMove callback (legacy)');
@@ -204,6 +213,52 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     return result;
   }, [boardData]);
 
+  // 音频上下文状态
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioBuffersRef = useRef<{ [key: string]: AudioBuffer }>({});
+
+  // 初始化音频上下文
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioContextRef.current = new AudioContextClass();
+          
+          // 预加载音频
+          const loadBuffer = async (url: string, key: string) => {
+            try {
+              const response = await fetch(url);
+              const arrayBuffer = await response.arrayBuffer();
+              const audioBuffer = await audioContextRef.current!.decodeAudioData(arrayBuffer);
+              audioBuffersRef.current[key] = audioBuffer;
+              console.log(`[ChineseChessDisplay] Loaded audio: ${key}`);
+            } catch (e) {
+              console.warn(`[ChineseChessDisplay] Failed to load audio: ${key}`, e);
+            }
+          };
+
+          await Promise.all([
+            loadBuffer('/audio/effects/CHESS_SELECT.mp3', 'select'),
+            loadBuffer('/audio/effects/CHESS_EAT.mp3', 'eat'),
+            loadBuffer('/audio/effects/CHESS_WIN.mp3', 'win'),
+            loadBuffer('/audio/effects/CHESS_LOSE.mp3', 'lose')
+          ]);
+        }
+      } catch (e) {
+        console.error('[ChineseChessDisplay] Audio initialization failed:', e);
+      }
+    };
+
+    initAudio();
+
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
   // 播放音效
   // 音效分类：
   // - 私有音效（只有己方能听到）：'select'（选中棋子）、'win'（胜利）、'lose'（失败）
@@ -221,18 +276,33 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       
       lastAudioTimeRef.current[type] = now;
       
+      // 尝试使用 Web Audio API 播放
+      if (audioContextRef.current && audioBuffersRef.current[type]) {
+        if (audioContextRef.current.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+        
+        const source = audioContextRef.current.createBufferSource();
+        source.buffer = audioBuffersRef.current[type];
+        source.connect(audioContextRef.current.destination);
+        source.start(0);
+        console.log(`[ChineseChessDisplay] Playing ${type} sound via Web Audio API`);
+        return;
+      }
+
+      // 降级回退到 HTML5 Audio
       let audioPath = '';
       if (type === 'select') {
         audioPath = '/audio/effects/CHESS_SELECT.mp3';
       } else if (type === 'eat') {
         audioPath = '/audio/effects/CHESS_EAT.mp3';
       } else if (type === 'win') {
-        audioPath = '/audio/effects/CHESS_WIN.mp3'; // 需要准备这个文件
+        audioPath = '/audio/effects/CHESS_WIN.mp3'; 
       } else if (type === 'lose') {
-        audioPath = '/audio/effects/CHESS_LOSE.mp3'; // 需要准备这个文件
+        audioPath = '/audio/effects/CHESS_LOSE.mp3'; 
       }
       
-      console.log(`[ChineseChessDisplay] Playing ${type} sound at ${now}`);
+      console.log(`[ChineseChessDisplay] Playing ${type} sound via HTML5 Audio at ${now}`);
       const audio = new Audio(audioPath);
       audio.play().catch(err => console.warn('Audio play failed:', err));
     } catch (err) {
@@ -242,6 +312,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   // 棋盘点击处理
   const handleBoardClick = (row: number, col: number) => {
+    // 尝试解锁 AudioContext
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().then(() => {
+        console.log('[ChineseChessDisplay] AudioContext resumed on user interaction');
+      });
+    }
+
     try {
       console.log(`[BoardClick] Clicked at (${row}, ${col}), Current Turn: ${currentTurn}, My Side: ${mySide}`);
       
