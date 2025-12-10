@@ -77,6 +77,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
     if (!tableClient) {
+      console.warn('[ChineseChessDisplay] updateGameState: tableClient is null');
       return;
     }
 
@@ -89,6 +90,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const state = tableClient.getState?.();
       const isGamePlaying = state?.status === 'playing';
       setIsPlaying(isGamePlaying);
+
+      console.log('[ChineseChessDisplay] updateGameState:', { turn: newCurrentTurn, mySide: newMySide, isPlaying: isGamePlaying, tableState: state });
 
       setBoardData(newBoardData);
       setCurrentTurn(newCurrentTurn);
@@ -201,7 +204,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     try {
       console.log(`[BoardClick] Clicked at (${row}, ${col}), Current Turn: ${currentTurn}, My Side: ${mySide}`);
       
-      if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
+      if (row < 0 || row >= 10 || col < 0 || col >= 9) {
+        console.warn(`[BoardClick] Click out of bounds: row=${row}, col=${col}`);
+        return;
+      }
 
       if (!boardData || !Array.isArray(boardData)) {
         console.warn('[ChineseChessDisplay] Board data not available');
@@ -212,31 +218,35 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const isMyTurn = currentTurn === mySide;
 
       console.log(`[BoardClick] Clicked Piece: ${clickedPieceChar}, Is My Turn: ${isMyTurn}, Selected:`, selectedPiece);
+      if (!isMyTurn) {
+        console.log(`[BoardClick] NOT my turn: currentTurn=${currentTurn}, mySide=${mySide}`);
+      }
+
+      // 点击的是己方棋子
+      const clickedPieceInfo = clickedPieceChar ? CHAR_TO_PIECE[clickedPieceChar] : null;
+      const isClickedMyPiece = clickedPieceInfo && (
+        (mySide === 'r' && clickedPieceInfo.color === 'red') ||
+        (mySide === 'b' && clickedPieceInfo.color === 'black')
+      );
 
       if (selectedPiece) {
-        // 如果点击的是已选中的棋子，取消选中
+        // 已有选中的棋子
+        
+        // 如果点击了同一个棋子，允许重新选择它（不取消）
         if (selectedPiece.row === row && selectedPiece.col === col) {
-          setSelectedPiece(null);
+          console.log('[BoardClick] Clicked same piece again, keeping selection');
+          return; // 保持选中状态
+        }
+
+        // 如果点击了另一个己方棋子，切换选中
+        if (isClickedMyPiece) {
+          console.log(`[BoardClick] Switching selection from (${selectedPiece.col},${selectedPiece.row}) to (${col},${row})`);
+          setSelectedPiece({ row, col });
+          playSound('select'); // 播放选中音效
           return;
         }
 
-        // 如果点击了另一个棋子
-        if (clickedPieceChar) {
-          const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
-          if (pieceInfo) {
-            const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
-              (mySide === 'b' && pieceInfo.color === 'black');
-
-            // 如果是己方棋子，切换选中
-            if (isMyPiece) {
-              setSelectedPiece({ row, col });
-              playSound('select'); // 播放选中音效
-              return;
-            }
-          }
-        }
-
-        // 尝试移动（包括吃子）
+        // 尝试移动到目标位置（可能是空地或对方棋子）
         if (isMyTurn) {
           if (tableClient && typeof tableClient.sendMove === 'function') {
             console.log(`[BoardClick] Sending move: (${selectedPiece.col}, ${selectedPiece.row}) -> (${col}, ${row})`);
@@ -251,23 +261,18 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             console.error('[BoardClick] tableClient.sendMove is not a function');
           }
         } else {
-          console.warn('[BoardClick] Not my turn or invalid state');
+          console.warn('[BoardClick] Not my turn, cannot move');
         }
       } else {
-        // 没有选中棋子时，尝试选中
-        if (clickedPieceChar) {
-          const pieceInfo = CHAR_TO_PIECE[clickedPieceChar];
-          if (pieceInfo) {
-            const isMyPiece = (mySide === 'r' && pieceInfo.color === 'red') ||
-              (mySide === 'b' && pieceInfo.color === 'black');
-
-            if (isMyPiece) {
-              setSelectedPiece({ row, col });
-              playSound('select'); // 播放选中音效
-            } else {
-              console.log('[BoardClick] Clicked opponent piece');
-            }
-          }
+        // 没有选中棋子时，尝试选中己方棋子
+        if (isClickedMyPiece) {
+          console.log(`[BoardClick] Selected piece: (${col},${row})`);
+          setSelectedPiece({ row, col });
+          playSound('select'); // 播放选中音效
+        } else if (clickedPieceChar) {
+          console.log('[BoardClick] Clicked opponent piece, cannot select');
+        } else {
+          console.log(`[BoardClick] Clicked empty cell at (${col},${row})`);
         }
       }
     } catch (error) {

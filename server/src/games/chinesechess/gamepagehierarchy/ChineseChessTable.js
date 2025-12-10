@@ -209,7 +209,10 @@ class ChineseChessTable extends GameTable {
      * 处理移动请求
      */
     handleMove(socket, move) {
-        if (this.status !== 'playing') return;
+        if (this.status !== 'playing') {
+            console.log(`[ChineseChessTable] handleMove rejected: status is ${this.status}, not 'playing'`);
+            return;
+        }
 
         const { fromX, fromY, toX, toY } = move;
         const userId = socket.user._id.toString();
@@ -221,16 +224,25 @@ class ChineseChessTable extends GameTable {
         const isRed = userId === redPlayer.userId;
         const isBlack = userId === blackPlayer.userId;
 
-        if (!isRed && !isBlack) return; // 旁观者不能移动
+        if (!isRed && !isBlack) {
+            console.log(`[ChineseChessTable] handleMove rejected: userId ${userId} is neither red player (${redPlayer?.userId}) nor black player (${blackPlayer?.userId})`);
+            return; // 旁观者不能移动
+        }
 
         const side = isRed ? 'r' : 'b';
-        if (side !== this.turn) return; // 不是你的回合
+        if (side !== this.turn) {
+            console.log(`[ChineseChessTable] handleMove rejected: side ${side} is not current turn ${this.turn}`);
+            return; // 不是你的回合
+        }
 
         // 验证移动逻辑
-        if (!ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn)) {
+        const isValidMove = ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn);
+        if (!isValidMove) {
+            console.log(`[ChineseChessTable] handleMove rejected: invalid move from (${fromX},${fromY}) to (${toX},${toY})`);
             socket.emit('error', { message: '非法移动' });
             return;
         }
+        console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY})`);
 
         // 执行移动
         const piece = this.board[fromY][fromX];
