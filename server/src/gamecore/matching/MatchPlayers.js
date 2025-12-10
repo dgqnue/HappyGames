@@ -1364,6 +1364,20 @@ class MatchPlayers {
             ? (playerStats.disconnects / playerStats.gamesPlayed) * 100
             : 0;
 
+        // 从数据库获取用户的最新信息（特别是头像可能在个人资料页面更新过）
+        const User = require('../../models/User');
+        let userFromDb;
+        try {
+            userFromDb = await User.findById(socket.user._id).lean();
+        } catch (err) {
+            console.warn(`[MatchPlayers] Failed to fetch user from DB, using socket.user:`, err.message);
+            userFromDb = null;
+        }
+
+        // 优先使用数据库中的最新信息，回退到 socket.user
+        const userAvatar = userFromDb?.avatar || socket.user.avatar;
+        const userNickname = userFromDb?.nickname || socket.user.nickname || socket.user.username;
+
         // 准备玩家数据
         const playerData = {
             userId,
@@ -1371,11 +1385,11 @@ class MatchPlayers {
             user: {
                 _id: socket.user._id,
                 username: socket.user.username,
-                nickname: socket.user.nickname,
+                nickname: userNickname,
                 piUsername: socket.user.piUsername,
-                avatar: socket.user.avatar
+                avatar: userAvatar
             },
-            nickname: socket.user.nickname || socket.user.username,
+            nickname: userNickname,
             title: stats?.title || '初出茅庐',
             titleColor: stats?.titleColor || '#666',
             winRate: Math.round(winRate),

@@ -418,7 +418,7 @@ class ChineseChessTable extends GameTable {
 
     /**
      * 广播房间状态
-     * 改进版本：从数据库获取最新的玩家称号和等级分
+     * 改进版本：从数据库获取最新的玩家称号、等级分和头像
      * MatchPlayers 需要调用此方法
      */
     async broadcastRoomState() {
@@ -426,8 +426,9 @@ class ChineseChessTable extends GameTable {
         const currentStatus = this.status;  // 使用 getter，确保获取正确的状态
         const currentPlayers = this.players;
         
-        // 从数据库获取最新的玩家信息（特别是称号和等级分）
+        // 从数据库获取最新的玩家信息（特别是称号、等级分和头像）
         const UserGameStats = require('../../../models/UserGameStats');
+        const User = require('../../../models/User');
         const playerDataMap = {};
         
         try {
@@ -437,11 +438,21 @@ class ChineseChessTable extends GameTable {
                     gameType: this.gameType
                 }).lean();
                 
+                // 同时获取用户信息中的头像（用户可能在个人资料页面更新过）
+                let userInfo;
+                try {
+                    userInfo = await User.findById(player.userId).lean();
+                } catch (err) {
+                    console.warn(`[ChineseChessTable] Failed to fetch user avatar for ${player.userId}`);
+                    userInfo = null;
+                }
+                
                 if (stats) {
                     playerDataMap[player.userId] = {
                         title: stats.title,
                         titleColor: stats.titleColor,
-                        rating: stats.rating
+                        rating: stats.rating,
+                        avatar: userInfo?.avatar || player.avatar  // 优先使用数据库中的头像
                     };
                 }
             }
@@ -461,7 +472,7 @@ class ChineseChessTable extends GameTable {
                     userId: p.userId,
                     socketId: p.socketId,
                     nickname: p.nickname,
-                    avatar: p.avatar,
+                    avatar: latestData.avatar || p.avatar,  // 使用最新的头像
                     ready: p.ready,
                     title: latestData.title || p.title,
                     titleColor: latestData.titleColor || p.titleColor,
