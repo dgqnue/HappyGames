@@ -326,12 +326,39 @@ export abstract class GameRoomClient {
             });
         }
 
-        // 立即设置selectedTableId，让UI立即响应
-        this.updateState({ selectedTableId: tableId });
+        // 【关键修改】不要立即更新 selectedTableId
+        // 而是等待服务器确认加入成功后再更新
+        // this.updateState({ selectedTableId: tableId });
 
         // 加入游戏桌
         const roomId = this.state.currentRoom.id;
         this.tableClient.joinTable(roomId, tableId);
+        
+        // 监听加入成功后再更新 UI 状态
+        const onJoined = () => {
+            console.log(`[${this.gameType}RoomClient] Successfully joined table, updating selectedTableId`);
+            this.updateState({ selectedTableId: tableId });
+            // 清理监听器
+            this.socket.off(`${this.gameType}_game_state`, onJoined);
+        };
+        
+        // 监听游戏桌状态更新（这表示已成功加入）
+        this.socket.once(`${this.gameType}_game_state`, onJoined);
+        
+        // 设置超时：如果5秒内没有收到成功确认，则自动更新（或者取消）
+        const timeoutId = setTimeout(() => {
+            this.socket.off(`${this.gameType}_game_state`, onJoined);
+            // 如果没有收到确认，保持原样不更新状态
+            // 这样如果服务器拒绝了，UI就不会改变
+            console.log(`[${this.gameType}RoomClient] No confirmation received for table join, keeping UI unchanged`);
+        }, 5000);
+        
+        // 当 onJoined 被调用时清理超时
+        const originalOnJoined = onJoined;
+        onJoined = () => {
+            clearTimeout(timeoutId);
+            originalOnJoined();
+        };
     }
 
     /**
