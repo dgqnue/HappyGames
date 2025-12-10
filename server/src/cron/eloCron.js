@@ -1,7 +1,7 @@
 // 文件：server/src/cron/eloCron.js
 const cron = require('node-cron');
 const EloService = require('../gamecore/EloService');
-const TitleService = require('../gamecore/TitleService');
+const Grade = require('../games/chinesechess/grade/Grade');
 
 // Define supported game types
 const GAME_TYPES = ['chinesechess', 'gomoku', 'poker'];
@@ -39,7 +39,7 @@ const initCronJobs = () => {
     cron.schedule('0 9 * * *', async () => {
         console.log('[CRON] Starting Title Update...');
         for (const gameType of GAME_TYPES) {
-            await TitleService.updateTitles(gameType);
+            await Grade.updateAllPlayerTitles(gameType);
         }
     });
 

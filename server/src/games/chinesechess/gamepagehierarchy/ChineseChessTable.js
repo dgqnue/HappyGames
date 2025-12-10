@@ -2,6 +2,7 @@ const GameTable = require('../../../gamecore/hierarchy/GameTable');
 const MatchPlayers = require('../../../gamecore/matching/MatchPlayers');
 const ChineseChessRules = require('../logic/ChineseChessRules');
 const EloService = require('../../../gamecore/EloService');
+const Grade = require('../grade/Grade');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -299,7 +300,19 @@ class ChineseChessTable extends GameTable {
             1 // Winner gets 1 point
         );
 
-        // 2. 游戏豆结算 (非免费室)
+        // 2. 称号更新（游戏结束后立即更新获胜者和失败者的称号）
+        let titleResult = {};
+        try {
+            titleResult = await Grade.updatePlayerTitles(
+                [winnerId, loserId],
+                this.gameType
+            );
+            console.log(`[ChineseChessTable] Title updated after win:`, titleResult);
+        } catch (err) {
+            console.error(`[ChineseChessTable] Error updating titles:`, err);
+        }
+
+        // 3. 游戏豆结算 (非免费室)
         if (this.tier !== 'free') {
             const betAmount = this.getBetAmount();
             await this.settle({
@@ -309,11 +322,12 @@ class ChineseChessTable extends GameTable {
             });
         }
 
-        // 结束游戏
+        // 4. 结束游戏，广播包含称号信息的结果
         this.endGame({
             winner: winnerSide, // 'r' or 'b'
             winnerId: winnerId,
-            elo: eloResult
+            elo: eloResult,
+            title: titleResult  // 包含更新后的称号信息
         });
     }
 
