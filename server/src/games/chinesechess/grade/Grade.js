@@ -98,6 +98,7 @@ class Grade {
     /**
      * 批量更新所有玩家的称号（定时任务，也在游戏结束后调用）
      * 关键点：根据数据库中所有玩家的最新 rating 重新计算排名和称号
+     * 更新：排除未参与过游戏（gamesPlayed = 0）的玩家
      * @param {string} gameType 
      * @returns {object} 返回所有更新的玩家信息
      */
@@ -105,16 +106,28 @@ class Grade {
         console.log(`[GRADE] Starting title update for all players in ${gameType}...`);
 
         try {
-            // 1. 获取所有玩家，按 rating 降序排列（rating 最高 = rank 1）
-            const allStats = await UserGameStats.find({ gameType }).sort({ rating: -1 });
+            // 0. 先将所有 gamesPlayed = 0 的玩家称号重置为 "无"
+            await UserGameStats.updateMany(
+                { gameType, gamesPlayed: 0 },
+                { 
+                    $set: { 
+                        title: '无', 
+                        titleRank: 0, 
+                        titleColor: '#999999' 
+                    } 
+                }
+            );
+
+            // 1. 获取所有参与过游戏的玩家，按 rating 降序排列（rating 最高 = rank 1）
+            const allStats = await UserGameStats.find({ gameType, gamesPlayed: { $gt: 0 } }).sort({ rating: -1 });
             const totalPlayers = allStats.length;
 
             if (totalPlayers === 0) {
-                console.log(`[GRADE] No players found for ${gameType}`);
+                console.log(`[GRADE] No active players found for ${gameType}`);
                 return {};
             }
 
-            console.log(`[GRADE] Total players: ${totalPlayers}`);
+            console.log(`[GRADE] Total active players: ${totalPlayers}`);
 
             const results = {};
 
@@ -142,7 +155,7 @@ class Grade {
                 console.log(`[GRADE] ✓ Updated userId=${stats.userId}: rank=${rank}/${totalPlayers}, rating=${stats.rating}, title=${titleConfig.name}, color=${titleConfig.color}`);
             }
 
-            console.log(`[GRADE] ✓ Title update complete for ${gameType}. Updated ${totalPlayers} players.`);
+            console.log(`[GRADE] ✓ Title update complete for ${gameType}. Updated ${totalPlayers} active players.`);
             return results;
         } catch (err) {
             console.error(`[GRADE] ✗ Error updating titles for ${gameType}:`, err);
@@ -167,20 +180,32 @@ class Grade {
                 return null;
             }
 
+            // 如果玩家没有玩过游戏，直接返回无称号（虽然理论上 updatePlayerTitle 是在游戏后调用的）
+            if (stats.gamesPlayed === 0) {
+                console.log(`[GRADE] Player has 0 games played, setting title to None`);
+                stats.title = '无';
+                stats.titleRank = 0;
+                stats.titleColor = '#999999';
+                await stats.save();
+                return { title: '无', titleRank: 0, titleColor: '#999999' };
+            }
+
             console.log(`[GRADE] Found stats: rating=${stats.rating}, currentTitle=${stats.title}`);
 
             // 获取该玩家在该游戏中的排名
             // 注意：这里 stats.rating 已经是 ELO 更新后的新值
+            // 排除 gamesPlayed = 0 的玩家
             const betterPlayers = await UserGameStats.countDocuments({
                 gameType,
-                rating: { $gt: stats.rating }
+                rating: { $gt: stats.rating },
+                gamesPlayed: { $gt: 0 }
             });
             const rank = betterPlayers + 1; // 1-based ranking
 
-            // 获取总玩家数
-            const totalPlayers = await UserGameStats.countDocuments({ gameType });
+            // 获取总活跃玩家数
+            const totalPlayers = await UserGameStats.countDocuments({ gameType, gamesPlayed: { $gt: 0 } });
 
-            console.log(`[GRADE] updatePlayerTitle: rank=${rank}, totalPlayers=${totalPlayers}, currentRating=${stats.rating}`);
+            console.log(`[GRADE] updatePlayerTitle: rank=${rank}, totalActivePlayers=${totalPlayers}, currentRating=${stats.rating}`);
 
             // 根据排名获取称号
             const titleConfig = this.getTitleByRank(rank, totalPlayers);
