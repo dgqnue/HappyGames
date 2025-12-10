@@ -56,9 +56,20 @@ router.post('/register', async (req, res) => {
         // ========== 强制使用 happygames 数据库 ==========
         const mongoose = require('mongoose');
         const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
-        const currentDb = mongoose.connection.name || mongoose.connection.db?.databaseName || 'unknown';
         
-        console.log(`[注册] DB检查: 当前=${currentDb}, 期望=${expectedDbName}, connection.name=${mongoose.connection.name}`);
+        // 多种方式获取当前数据库名
+        const dbName1 = mongoose.connection.name;
+        const dbName2 = mongoose.connection.db?.databaseName;
+        const dbName3 = mongoose.connection.db?.getName?.();
+        const currentDb = dbName1 || dbName2 || 'unknown';
+        
+        console.log(`[注册] 详细DB检查:`);
+        console.log(`  - connection.name: ${dbName1}`);
+        console.log(`  - db.databaseName: ${dbName2}`);
+        console.log(`  - db.getName(): ${dbName3}`);
+        console.log(`  - 期望: ${expectedDbName}`);
+        console.log(`  - 最终确定的DB: ${currentDb}`);
+        console.log(`  - MONGO_URI: ${process.env.MONGO_URI?.substring(0, 50)}...`);
         
         // 严格检查：必须连接到 happygames，否则拒绝
         if (currentDb !== expectedDbName && currentDb !== 'unknown') {

@@ -3,7 +3,21 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
     try {
         // 支持 MONGODB_URI 和 MONGO_URI 两个环境变量名
-        const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/happygames';
+        let mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/happygames';
+        
+        // 确保URI中包含数据库名
+        if (!mongoUri.includes('/happygames')) {
+            // 如果URI中没有指定数据库，强制添加 /happygames
+            if (mongoUri.endsWith('/')) {
+                mongoUri = mongoUri + 'happygames';
+            } else if (!mongoUri.includes('?')) {
+                mongoUri = mongoUri + '/happygames';
+            } else {
+                // 有查询参数，在?前插入
+                mongoUri = mongoUri.replace('?', '/happygames?');
+            }
+            console.warn('[DB] ⚠️  警告: 原始URI中没有数据库名，已自动添加 /happygames');
+        }
 
         // 调试日志（隐藏密码）
         const safeUri = mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@');
@@ -20,6 +34,23 @@ const connectDB = async () => {
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
+        
+        // 验证连接到的数据库名称
+        const connectedDbName = conn.connection.name || 'unknown';
+        const expectedDbName = 'happygames';
+        
+        console.log(`[DB] 连接验证:`);
+        console.log(`  - 连接的数据库: ${connectedDbName}`);
+        console.log(`  - 期望的数据库: ${expectedDbName}`);
+        
+        if (connectedDbName !== expectedDbName && connectedDbName !== 'unknown') {
+            console.error(`[DB] ❌ 严重错误: 连接到了错误的数据库 ${connectedDbName}!`);
+            throw new Error(`数据库连接错误: 连接到了 ${connectedDbName}，应该是 ${expectedDbName}`);
+        }
+        
+        if (connectedDbName === expectedDbName) {
+            console.log(`[DB] ✅ 正确: 已连接到 ${expectedDbName} 数据库`);
+        }
 
         // 自动修复索引：尝试删除旧的 referralCode 索引，以便 Mongoose 重新创建正确的 sparse 索引
         try {
