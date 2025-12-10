@@ -1368,14 +1368,15 @@ class MatchPlayers {
         const User = require('../../models/User');
         let userFromDb;
         try {
-            userFromDb = await User.findById(socket.user._id).lean();
+            userFromDb = await User.findById(socket.user._id).select('avatar nickname').lean();
         } catch (err) {
             console.warn(`[MatchPlayers] Failed to fetch user from DB, using socket.user:`, err.message);
             userFromDb = null;
         }
 
         // 优先使用数据库中的最新信息，回退到 socket.user
-        const userAvatar = userFromDb?.avatar || socket.user.avatar;
+        // 注意：存储相对路径，不做 URL 转换（转换在广播时进行）
+        const userAvatar = userFromDb?.avatar || socket.user.avatar || '/images/default-avatar.png';
         const userNickname = userFromDb?.nickname || socket.user.nickname || socket.user.username;
 
         // 准备玩家数据
@@ -1390,6 +1391,7 @@ class MatchPlayers {
                 avatar: userAvatar
             },
             nickname: userNickname,
+            avatar: userAvatar,  // 在顶级也设置头像，方便 broadcastRoomState 直接访问
             title: stats?.title || '初出茅庐',
             titleColor: stats?.titleColor || '#666',
             winRate: Math.round(winRate),
@@ -1412,8 +1414,8 @@ class MatchPlayers {
         // 加入 Socket.IO 房间
         socket.join(this.roomId);
 
-        // 广播游戏桌状态更新
-        this.table.broadcastRoomState();
+        // 广播游戏桌状态更新（await确保数据库查询完成）
+        await this.table.broadcastRoomState();
 
         // 如果满座，自动开始准备检查
         if (this.matchState.players.length === this.maxPlayers) {

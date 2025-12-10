@@ -421,6 +421,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const userObj = player.user || {};
         const displayName = player.nickname || userObj.nickname || player.username || userObj.username || player.piUsername || userObj.piUsername || '玩家';
         const displayTitle = player.title || '初出茅庐';
+        // 头像优先级：player.avatar > userObj.avatar > 默认头像
+        // player.avatar 来自 broadcastRoomState，已经是完整 URL 并优先级最高
         const avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
         const titleColor = player.titleColor || '#666';
 

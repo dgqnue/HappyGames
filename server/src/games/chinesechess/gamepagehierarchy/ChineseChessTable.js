@@ -426,6 +426,23 @@ class ChineseChessTable extends GameTable {
         const currentStatus = this.status;  // 使用 getter，确保获取正确的状态
         const currentPlayers = this.players;
         
+        // 辅助函数：将头像路径转换为完整 URL
+        const getFullAvatarUrl = (avatarPath) => {
+            if (!avatarPath) return '/images/default-avatar.png';
+            // 如果已经是完整 URL，直接返回
+            if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
+            // 如果是相对路径，需要补全为完整 URL
+            if (avatarPath.startsWith('/')) {
+                if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+                    const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
+                    return `${baseUrl}${avatarPath}`;
+                }
+                return `http://localhost:5000${avatarPath}`;
+            }
+            // 其他情况返回默认头像
+            return '/images/default-avatar.png';
+        };
+        
         // 从数据库获取最新的玩家信息（特别是称号、等级分和头像）
         const UserGameStats = require('../../../models/UserGameStats');
         const User = require('../../../models/User');
@@ -433,28 +450,44 @@ class ChineseChessTable extends GameTable {
         
         try {
             for (const player of currentPlayers) {
+                const playerData = {};
+                
+                // 获取游戏统计数据（称号、等级分）
                 const stats = await UserGameStats.findOne({
                     userId: player.userId,
                     gameType: this.gameType
                 }).lean();
                 
-                // 同时获取用户信息中的头像（用户可能在个人资料页面更新过）
+                if (stats) {
+                    playerData.title = stats.title;
+                    playerData.titleColor = stats.titleColor;
+                    playerData.rating = stats.rating;
+                }
+                
+                // 获取用户信息（头像、昵称等）- 无条件查询
                 let userInfo;
                 try {
-                    userInfo = await User.findById(player.userId).lean();
+                    userInfo = await User.findById(player.userId).select('avatar nickname').lean();
                 } catch (err) {
-                    console.warn(`[ChineseChessTable] Failed to fetch user avatar for ${player.userId}`);
+                    console.warn(`[ChineseChessTable] Failed to fetch user info for ${player.userId}:`, err.message);
                     userInfo = null;
                 }
                 
-                if (stats) {
-                    playerDataMap[player.userId] = {
-                        title: stats.title,
-                        titleColor: stats.titleColor,
-                        rating: stats.rating,
-                        avatar: userInfo?.avatar || player.avatar  // 优先使用数据库中的头像
-                    };
+                // 设置头像和昵称（优先使用数据库中的最新值）
+                if (userInfo?.avatar) {
+                    playerData.avatar = getFullAvatarUrl(userInfo.avatar);
+                } else if (player.avatar) {
+                    // 如果数据库中没有头像，使用玩家对象中的头像（该值是在玩家加入时设置的）
+                    playerData.avatar = getFullAvatarUrl(player.avatar);
+                } else {
+                    playerData.avatar = getFullAvatarUrl('/images/default-avatar.png');
                 }
+                
+                if (userInfo?.nickname) {
+                    playerData.nickname = userInfo.nickname;
+                }
+                
+                playerDataMap[player.userId] = playerData;
             }
         } catch (err) {
             console.error(`[ChineseChessTable] Error loading player stats for broadcastRoomState:`, err);
@@ -468,11 +501,13 @@ class ChineseChessTable extends GameTable {
             players: currentPlayers.map(p => {
                 // 优先使用从数据库获取的最新信息
                 const latestData = playerDataMap[p.userId] || {};
+                // latestData.avatar 已经被 getFullAvatarUrl 转换为完整 URL
+                const finalAvatar = latestData.avatar || getFullAvatarUrl(p.avatar) || getFullAvatarUrl('/images/default-avatar.png');
                 return {
                     userId: p.userId,
                     socketId: p.socketId,
-                    nickname: p.nickname,
-                    avatar: latestData.avatar || p.avatar,  // 使用最新的头像
+                    nickname: latestData.nickname || p.nickname,
+                    avatar: finalAvatar,
                     ready: p.ready,
                     title: latestData.title || p.title,
                     titleColor: latestData.titleColor || p.titleColor,
@@ -489,6 +524,12 @@ class ChineseChessTable extends GameTable {
         };
 
         console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${currentStatus}, players=${currentPlayers.length}`);
+        
+        // 调试日志：显示每个玩家的头像
+        currentPlayers.forEach(p => {
+            const latestData = playerDataMap[p.userId] || {};
+            console.log(`[ChineseChessTable] Player ${p.userId}: db-avatar=${latestData.avatar}, player-avatar=${p.avatar}, final=${latestData.avatar || p.avatar || '/images/default-avatar.png'}`);
+        });
 
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
