@@ -70,6 +70,10 @@ class GameTable {
             }
             // 广播最终的房间状态
             this.broadcastRoomState();
+        } else {
+            // 当有玩家离开时，立即广播房间状态以确保状态立即更新（无论是胜利还是点击退出）
+            console.log(`[${gameType}Table] Player left, broadcasting room state immediately. Remaining players: ${playerCountAfter}, status: ${this.matchPlayers.matchState.status}`);
+            this.broadcastRoomState();
         }
         
         return result;
