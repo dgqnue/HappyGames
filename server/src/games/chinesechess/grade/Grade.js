@@ -2,16 +2,16 @@
 const UserGameStats = require('../../../models/UserGameStats');
 
 const TITLES = [
-    { rank: 1, name: '初出茅庐', percent: 22, color: '#000000' },
-    { rank: 2, name: '小试牛刀', percent: 19, color: '#8f2d56' },
-    { rank: 3, name: '渐入佳境', percent: 16, color: '#00FF00' },
-    { rank: 4, name: '锋芒毕露', percent: 13, color: '#0000FF' },
-    { rank: 5, name: '出类拔萃', percent: 10, color: '#FF0000' },
-    { rank: 6, name: '炉火纯青', percent: 8, color: '#00FFFF' },
-    { rank: 7, name: '名满江湖', percent: 6, color: '#ffee32' },
-    { rank: 8, name: '傲视群雄', percent: 4, color: '#800080' },
-    { rank: 9, name: '登峰造极', percent: 2, color: '#ffba08' },
-    { rank: 10, name: '举世无双', percent: 0, count: 1, color: '#FF6200' } // Special case
+    { rank: 1, name: '初出茅庐', percent: 22, minPercentile: 0.78, color: '#000000' },
+    { rank: 2, name: '小试牛刀', percent: 19, minPercentile: 0.59, color: '#8f2d56' },
+    { rank: 3, name: '渐入佳境', percent: 16, minPercentile: 0.43, color: '#00FF00' },
+    { rank: 4, name: '锋芒毕露', percent: 13, minPercentile: 0.30, color: '#0000FF' },
+    { rank: 5, name: '出类拔萃', percent: 10, minPercentile: 0.20, color: '#FF0000' },
+    { rank: 6, name: '炉火纯青', percent: 8, minPercentile: 0.12, color: '#00FFFF' },
+    { rank: 7, name: '名满江湖', percent: 6, minPercentile: 0.06, color: '#ffee32' },
+    { rank: 8, name: '傲视群雄', percent: 4, minPercentile: 0.02, color: '#800080' },
+    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#ffba08' },
+    { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#FF6200' } // top 1
 ];
 
 class Grade {
@@ -26,31 +26,73 @@ class Grade {
 
     /**
      * 根据排名获取称号配置
-     * @param {number} rank 玩家的排名（1 based）
+     * 核心逻辑：
+     * 1. 第1名玩家：直接授予 "举世无双"，不参与百分比计算
+     * 2. 剩余 N-1 个玩家：按照等级百分比分配 "初出茅庐" 到 "登峰造极" 的9个等级
+     * 
+     * 例如：2个玩家
+     * - rank=1 → 举世无双（特殊）
+     * - rank=2 → 在剩余1个玩家中，按百分比分配，得到相应等级
+     * 
+     * 例如：100个玩家
+     * - rank=1 → 举世无双（特殊）
+     * - rank=2-99 → 在剩余99个玩家中按百分比分配 9 个等级
+     * 
+     * @param {number} rank 玩家的排名（1 based，1=最强）
      * @param {number} totalPlayers 总玩家数
      * @returns {object} { rank, name, color, percent }
      */
     getTitleByRank(rank, totalPlayers) {
-        // 排名百分比 = (排名 - 1) / 总人数
-        const percentile = (rank - 1) / totalPlayers;
+        console.log(`[GRADE] getTitleByRank: rank=${rank}, total=${totalPlayers}`);
         
-        // 特殊情况：排名第1（百分比最高）→ 举世无双
+        // 第1名玩家：直接返回 "举世无双"
         if (rank === 1) {
-            return TITLES[9]; // 举世无双
+            console.log(`  ✓ matched 举世无双 (rank 1)`);
+            return TITLES[9];
         }
-
-        // 从高到低遍历称号配置（百分比从小到大排列）
-        for (let i = 8; i >= 0; i--) {
-            const titleConfig = TITLES[i];
-            const thresholdPercent = titleConfig.percent / 100;
+        
+        // 剩余玩家的相对排名（在剩余 N-1 个玩家中的排名）
+        const remainingRank = rank - 1;  // 在剩余玩家中的排名（1-based）
+        const remainingPlayers = totalPlayers - 1;  // 剩余玩家数
+        
+        // 定义 9 个等级（不含 "举世无双"）的百分比分配
+        const titlePercentages = [
+            { titleIndex: 8, percent: 2, name: '登峰造极' },       // top 2%
+            { titleIndex: 7, percent: 4, name: '傲视群雄' },       // top 4%
+            { titleIndex: 6, percent: 6, name: '名满江湖' },       // top 6%
+            { titleIndex: 5, percent: 8, name: '炉火纯青' },       // top 8%
+            { titleIndex: 4, percent: 10, name: '出类拔萃' },      // top 10%
+            { titleIndex: 3, percent: 13, name: '锋芒毕露' },      // top 13%
+            { titleIndex: 2, percent: 16, name: '渐入佳境' },      // top 16%
+            { titleIndex: 1, percent: 19, name: '小试牛刀' },      // top 19%
+            { titleIndex: 0, percent: 22, name: '初出茅庐' }       // 剩余所有人
+        ];
+        
+        // 从高等级到低等级遍历，找到该玩家对应的等级
+        let currentRankThreshold = 1;  // 从第1名（相对）开始
+        
+        for (let i = 0; i < titlePercentages.length; i++) {
+            const titleInfo = titlePercentages[i];
             
-            if (percentile < thresholdPercent) {
-                return titleConfig;
+            // 计算该等级包含的玩家数（至少1人）
+            const playerCount = Math.max(1, Math.ceil(remainingPlayers * (titleInfo.percent / 100)));
+            
+            // 该等级的名次范围：[currentRankThreshold, currentRankThreshold + playerCount - 1]
+            const maxRankForThisTitle = currentRankThreshold + playerCount - 1;
+            
+            console.log(`  checking ${titleInfo.name}: remaining rank in [${currentRankThreshold}, ${maxRankForThisTitle}]? count=${playerCount}`);
+            
+            if (remainingRank >= currentRankThreshold && remainingRank <= maxRankForThisTitle) {
+                console.log(`  ✓ matched ${titleInfo.name}`);
+                return TITLES[titleInfo.titleIndex];
             }
+            
+            currentRankThreshold += playerCount;
         }
-
-        // 默认返回最低等级
-        return TITLES[0]; // 初出茅庐
+        
+        // 理论上不会到达这里，但以防万一返回最低等级
+        console.log(`  ✓ default to 初出茅庐`);
+        return TITLES[0];
     }
 
     /**
