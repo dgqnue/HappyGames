@@ -49,45 +49,9 @@ function generateReferralCode() {
 }
 
 /**
- * 创建新用户
- */
-async function createNewUser(piUserData) {
-    try {
-        // 生成唯一的 userId
-        const userId = await User.generateUserId();
-
-        // 随机生成性别
-        const gender = Math.random() > 0.5 ? 'male' : 'female';
-
-        // 创建用户
-        const user = new User({
-            userId,
-            username: piUserData.username,
-            piId: piUserData.uid || piUserData.piId,
-            nickname: piUserData.username, // 默认昵称与 Pi 用户名相同
-            avatar: '/images/default-avatar.svg', // 默认头像
-            gender,
-            // happyBeans 使用模型默认值 0
-            referralCode: generateReferralCode(),
-            accountStatus: 'active',
-            loginCount: 1,
-            lastLoginAt: new Date(),
-            gameStats: [] // 初始无游戏数据
-        });
-
-        await user.save();
-
-        console.log(`新用户创建成功: ${user.userId} (${user.username})`);
-
-        return user;
-    } catch (error) {
-        console.error('创建用户失败:', error);
-        throw error;
-    }
-}
-
-/**
  * Pi Network 认证中间件 (Express)
+ * NOTE: This middleware will ONLY login existing users.
+ * New user registration must be done via /api/user/register endpoint first.
  */
 async function piAuth(req, res, next) {
     try {
@@ -100,16 +64,37 @@ async function piAuth(req, res, next) {
             });
         }
 
+        // ========== 强制使用 happygames 数据库 ==========
+        const mongoose = require('mongoose');
+        const currentDb = mongoose.connection.db.databaseName || 'unknown';
+        const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
+        console.log(`[piAuth] 连接数据库: ${currentDb}, 期望: ${expectedDbName}`);
+
+        if (currentDb !== expectedDbName && currentDb !== 'unknown') {
+            console.error(`[piAuth] ❌ 错误: 连接到了错误的数据库!`);
+            return res.status(500).json({
+                success: false,
+                message: `数据库连接错误: 当前数据库为 ${currentDb}, 应该连接到 ${expectedDbName}`
+            });
+        }
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
         let user = await User.findOne({ username: decoded.username });
 
         if (!user) {
-            user = await createNewUser(decoded);
-        } else {
-            user.lastLoginAt = new Date();
-            user.loginCount += 1;
-            await user.save();
+            // User not found - must register via /api/user/register first
+            console.log(`[piAuth] ❌ 用户未注册: ${decoded.username}`);
+            return res.status(401).json({
+                success: false,
+                message: '用户未注册。请先通过 /api/user/register 端点注册账号。'
+            });
         }
+
+        // Update login info
+        user.lastLoginAt = new Date();
+        user.loginCount += 1;
+        await user.save();
+        console.log(`[piAuth] ✅ 成功登录用户: ${user.username}`);
 
         if (user) {
             user.avatar = processAvatarUrl(user.avatar);
@@ -152,6 +137,5 @@ module.exports = {
     verifyToken,
     piAuth,
     optionalAuth,
-    createNewUser,
     processAvatarUrl
 };

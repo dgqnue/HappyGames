@@ -72,13 +72,29 @@ exports.getUserProfile = async (req, res) => {
 
 /**
  * Login or Register
- * Authenticates a user via Pi Network ID. Creates a new account if one doesn't exist.
+ * Authenticates a user via Pi Network ID. 
+ * NOTE: Only login is allowed here. User registration must be done via /api/user/register endpoint.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
 exports.loginOrRegister = async (req, res) => {
     try {
         const { username, referralCode, piId, avatar } = req.body;
+
+        // ========== 强制使用 happygames 数据库 ==========
+        const mongoose = require('mongoose');
+        const currentDb = mongoose.connection.db.databaseName || 'unknown';
+        const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
+        
+        console.log(`[Pi登录] 连接数据库: ${currentDb}, 期望: ${expectedDbName}`);
+        
+        if (currentDb !== expectedDbName && currentDb !== 'unknown') {
+            console.error(`[Pi登录] ❌ 警告: 连接到了错误的数据库! 当前: ${currentDb}, 期望: ${expectedDbName}`);
+            return res.status(500).json({
+                success: false,
+                message: `数据库连接错误: 当前数据库为 ${currentDb}, 应该连接到 ${expectedDbName}`
+            });
+        }
 
         if (!username || !piId) {
             return res.status(400).json({ message: 'Username and Pi ID are required' });
@@ -102,6 +118,8 @@ exports.loginOrRegister = async (req, res) => {
 
             const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
 
+            console.log(`[Pi登录] ✅ 成功登录用户: ${username}`);
+
             return res.json({
                 message: 'Login successful',
                 user,
@@ -110,41 +128,11 @@ exports.loginOrRegister = async (req, res) => {
             });
         }
 
-        // 2. Register new user
-        let referrer = null;
-        let isInvited = false;
-
-        if (referralCode) {
-            referrer = await User.findOne({ referralCode });
-            if (referrer) {
-                isInvited = true;
-                referrer.referralStats.inviteCount += 1;
-                await referrer.save();
-            }
-        }
-
-        // Create User
-        user = await User.create({
-            username,
-            nickname: username,
-            piId,
-            avatar: avatar || '',
-            password: 'pi_user_no_password',
-            referralCode: Math.random().toString(36).substr(2, 8).toUpperCase(),
-            referrer: referrer ? referrer._id : null,
-            isInvited
-        });
-
-        // Create Wallet
-        await Wallet.create({ user: user._id });
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
-
-        res.status(201).json({
-            message: 'Account created',
-            user,
-            token,
-            isNew: true
+        // 2. User not found - must register via /api/user/register first
+        console.log(`[Pi登录] ❌ 用户未注册: ${username}`);
+        return res.status(401).json({
+            success: false,
+            message: '用户未注册。请先通过 /api/user/register 端点注册账号。'
         });
 
     } catch (error) {

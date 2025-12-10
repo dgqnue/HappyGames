@@ -53,6 +53,23 @@ router.post('/register', async (req, res) => {
     try {
         const { username, password } = req.body;
 
+        // ========== 强制使用 happygames 数据库 ==========
+        const mongoose = require('mongoose');
+        const currentDb = mongoose.connection.db.databaseName || mongoose.connection.db.getName?.() || 'unknown';
+        
+        // 获取期望的数据库名称
+        const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
+        
+        console.log(`[注册] 连接数据库: ${currentDb}, 期望: ${expectedDbName}`);
+        
+        if (currentDb !== expectedDbName && currentDb !== 'unknown') {
+            console.error(`[注册] ❌ 警告: 连接到了错误的数据库! 当前: ${currentDb}, 期望: ${expectedDbName}`);
+            return res.status(500).json({
+                success: false,
+                message: `数据库连接错误: 当前数据库为 ${currentDb}, 应该连接到 ${expectedDbName}`
+            });
+        }
+
         // 验证输入
         if (!username || !password) {
             return res.status(400).json({
@@ -96,12 +113,18 @@ router.post('/register', async (req, res) => {
 
         await newUser.save();
 
+        // 为新用户创建钱包
+        const Wallet = require('../models/Wallet');
+        await Wallet.create({ user: newUser._id });
+
         // 生成 JWT Token
         const token = jwt.sign(
             { _id: newUser._id, userId: newUser.userId, username: newUser.username },
             process.env.JWT_SECRET || 'your_jwt_secret', // 建议使用环境变量
             { expiresIn: '7d' }
         );
+
+        console.log(`[注册] ✅ 成功注册用户: ${username}`);
 
         res.status(201).json({
             success: true,
@@ -137,6 +160,21 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+
+        // ========== 强制使用 happygames 数据库 ==========
+        const mongoose = require('mongoose');
+        const currentDb = mongoose.connection.db.databaseName || 'unknown';
+        const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
+        
+        console.log(`[登录] 连接数据库: ${currentDb}, 期望: ${expectedDbName}`);
+        
+        if (currentDb !== expectedDbName && currentDb !== 'unknown') {
+            console.error(`[登录] ❌ 警告: 连接到了错误的数据库! 当前: ${currentDb}, 期望: ${expectedDbName}`);
+            return res.status(500).json({
+                success: false,
+                message: `数据库连接错误: 当前数据库为 ${currentDb}, 应该连接到 ${expectedDbName}`
+            });
+        }
 
         // 验证输入
         if (!username || !password) {
@@ -178,6 +216,8 @@ router.post('/login', async (req, res) => {
             process.env.JWT_SECRET || 'your_jwt_secret',
             { expiresIn: '7d' }
         );
+
+        console.log(`[登录] ✅ 成功登录用户: ${username}`);
 
         res.json({
             success: true,
