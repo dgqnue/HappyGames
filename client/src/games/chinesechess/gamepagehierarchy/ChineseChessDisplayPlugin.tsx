@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 // import { ChessBoard } from '@/games/chinesechess/gamepagehierarchy/ChessBoard';
@@ -58,6 +58,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     () => (tableClient as any).getSelectedPiece?.() || null
   );
 
+  // 跟踪上次播放的音效时间，防止重复播放
+  const lastAudioTimeRef = useRef<{ [key: string]: number }>({ select: 0, eat: 0 });
+
   // 包装 setSelectedPiece，同步更新到 tableClient
   const setSelectedPiece = (piece: { row: number; col: number } | null) => {
     setSelectedPieceState(piece);
@@ -109,14 +112,19 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       // 订阅移动事件以播放音效
       if ((tableClient as any).onMove === undefined) {
+         console.log('[ChineseChessDisplay] Registering onMove callback');
          (tableClient as any).onMove = (data: any) => {
+             console.log('[ChineseChessDisplay] onMove callback triggered:', { captured: data.captured });
              if (data.captured) {
+                 console.log('[ChineseChessDisplay] Playing eat sound');
                  playSound('eat');
              } else {
                  // 可以添加普通移动音效
                  // playSound('move'); 
              }
          };
+      } else {
+         console.log('[ChineseChessDisplay] onMove callback already registered, skipping');
       }
 
       // 监听加入失败并显示消息
@@ -165,10 +173,22 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   // 播放音效
   const playSound = useCallback((type: 'select' | 'eat') => {
     try {
+      const now = Date.now();
+      const lastTime = lastAudioTimeRef.current[type] || 0;
+      
+      // 防止100ms内重复播放同一音效（防止重复触发）
+      if (now - lastTime < 100) {
+        console.log(`[ChineseChessDisplay] Skipping audio ${type} - played too recently`);
+        return;
+      }
+      
+      lastAudioTimeRef.current[type] = now;
+      
       const audioPath = type === 'select' 
         ? '/audio/effects/CHESS_SELECT.mp3' 
         : '/audio/effects/CHESS_EAT.mp3';
       
+      console.log(`[ChineseChessDisplay] Playing ${type} sound at ${now}`);
       const audio = new Audio(audioPath);
       audio.play().catch(err => console.warn('Audio play failed:', err));
     } catch (err) {

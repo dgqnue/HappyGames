@@ -35,7 +35,7 @@ export class ChineseChessTableClient extends GameTableClient {
     protected setupTableListeners(): void {
         // 监听移动事件
         this.socket.on('move', (data: any) => {
-            console.log(`[${this.gameType}TableClient] Move received:`, data);
+            console.log(`[${this.gameType}TableClient] Move event received from server:`, { move: data.move, captured: data.captured });
             this.handleMove(data);
         });
 
@@ -61,7 +61,10 @@ export class ChineseChessTableClient extends GameTableClient {
         
         // 触发移动回调
         if (this.onMove) {
+            console.log(`[ChineseChessTableClient] handleMove: Calling onMove callback, captured=${data.captured}`);
             this.onMove(data);
+        } else {
+            console.log(`[ChineseChessTableClient] handleMove: No onMove callback registered`);
         }
         
         // 如果有获胜者，可能需要处理（通常由 game_ended 处理，但这里也可以更新状态）

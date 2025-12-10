@@ -251,6 +251,7 @@ class ChineseChessTable extends GameTable {
         this.turn = this.turn === 'r' ? 'b' : 'r';
 
         // 广播移动
+        console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY})`);
         this.broadcast('move', {
             move,
             captured: captured ? captured : null,
