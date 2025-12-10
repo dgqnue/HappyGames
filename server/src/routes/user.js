@@ -55,7 +55,8 @@ router.post('/register', async (req, res) => {
 
         // ========== 强制使用 happygames 数据库 ==========
         const mongoose = require('mongoose');
-        const expectedDbName = process.env.MONGO_URI?.match(/\/([^/?]+)\?/)?.[1] || 'happygames';
+        // 无论环境变量如何，我们都期望连接到 happygames
+        const expectedDbName = 'happygames';
         
         // 多种方式获取当前数据库名
         const dbName1 = mongoose.connection.name;
