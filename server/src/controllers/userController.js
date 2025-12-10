@@ -6,6 +6,7 @@
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
+const UserGameStats = require('../models/UserGameStats');
 const jwt = require('jsonwebtoken');
 
 /**
@@ -29,10 +30,29 @@ exports.getUserProfile = async (req, res) => {
 
         const wallet = await Wallet.findOne({ user: userId });
 
+        // 获取该用户所有游戏的统计数据
+        const gameStats = {};
+        const stats = await UserGameStats.find({ userId });
+        
+        stats.forEach(stat => {
+            gameStats[stat.gameType] = {
+                rating: stat.rating,
+                title: stat.title,
+                titleRank: stat.titleRank,
+                titleColor: stat.titleColor,
+                gamesPlayed: stat.gamesPlayed,
+                wins: stat.wins,
+                losses: stat.losses,
+                draws: stat.draws,
+                lastPlayedAt: stat.lastPlayedAt
+            };
+        });
+
         res.json({
             _id: user._id,
             username: user.username,
             nickname: user.nickname,
+            avatar: user.avatar,
             referralCode: user.referralCode,
             referralLevel: user.referralLevel,
             referralStats: user.referralStats,
@@ -41,7 +61,8 @@ exports.getUserProfile = async (req, res) => {
                 happyBeans: wallet ? wallet.happyBeans : 0,
                 piBalance: wallet ? wallet.piBalance : 0,
                 totalCommission: wallet ? wallet.totalCommissionEarned : 0
-            }
+            },
+            gameStats: gameStats  // 添加游戏统计数据
         });
     } catch (error) {
         console.error(error);
