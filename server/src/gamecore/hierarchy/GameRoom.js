@@ -96,19 +96,113 @@ class GameRoom {
     // findTable(tableId) - 根据ID查找游戏桌
 
     /**
-     * 分配玩家到游戏桌
-     * 子类必须重写此方法
+     * 分配玩家到游戏桌（基类实现）
+     * 流程：检查条件 → 通过后再加入游戏桌 → 确保不符合条件的玩家不被显示
+     * @param {Object} socket - Socket 实例
+     * @param {String} tableId - 指定的桌子ID（可选）
+     * @returns {Object} { success, reason?, tableId }
      */
-    assignPlayerToTable(socket, tableId) {
-        throw new Error('assignPlayerToTable() must be implemented by subclass');
+    async assignPlayerToTable(socket, tableId) {
+        try {
+            // 1. 获取或创建游戏桌
+            const table = this.getOrCreateTable(tableId);
+
+            // 2. 获取玩家统计数据
+            const stats = await this.getUserStats(socket.user._id);
+            if (!stats) {
+                const reason = '无法获取玩家统计数据';
+                console.log(`[GameRoom] ${reason}`);
+                socket.emit('error', { message: reason });
+                return { success: false, reason, tableId: table.tableId };
+            }
+
+            // 3. 【核心】执行所有条件检查，只有全部通过才能加入
+            // 子类可以通过重写 validatePlayerJoin() 来自定义检查逻辑
+            const validation = await this.validatePlayerJoin(stats, socket);
+            if (!validation.success) {
+                console.log(`[GameRoom] 玩家入座检查失败: ${validation.reason}`);
+                socket.emit('error', { message: validation.reason });
+                return { success: false, reason: validation.reason, tableId: table.tableId };
+            }
+
+            // 4. 条件全部通过后，才调用 joinTable
+            const result = await table.joinTable(socket, true);
+
+            // 5. 如果加入成功且满座，通知客户端
+            if (result.success && table.players.length === table.maxPlayers && !result.asSpectator) {
+                console.log(`[GameRoom] 桌子已满座，发送 table_full 事件到客户端`);
+                socket.emit('table_full', {
+                    message: '游戏桌已满座，准备开始游戏',
+                    tableId: table.tableId
+                });
+            }
+
+            // 6. 返回结果
+            return {
+                ...result,
+                tableId: table.tableId
+            };
+        } catch (err) {
+            console.error('[GameRoom] Error in assignPlayerToTable:', err);
+            socket.emit('error', { message: '分配游戏桌出错: ' + err.message });
+            return { success: false, reason: err.message };
+        }
     }
 
     /**
-     * 判断玩家是否可以入座
-     * 子类必须重写此方法
+     * 验证玩家是否可以加入（可被子类重写扩展）
+     * @param {Object} stats - 玩家统计数据
+     * @param {Object} socket - Socket 实例（可选，用于获取更多信息）
+     * @returns {Object} { success: boolean, reason?: string }
      */
-    canPlayerJoin(stats) {
-        throw new Error('canPlayerJoin() must be implemented by subclass');
+    async validatePlayerJoin(stats, socket) {
+        // 基础检查：积分范围
+        if (!this.canAccess(stats.rating)) {
+            return {
+                success: false,
+                reason: `您的等级分 ${stats.rating} 不符合房间要求 [${this.minRating}, ${this.maxRating}]`
+            };
+        }
+
+        // 基础检查：掉线率
+        const disconnectValidation = this.validateDisconnectRate(stats);
+        if (!disconnectValidation.success) {
+            return disconnectValidation;
+        }
+
+        return { success: true };
+    }
+
+    /**
+     * 验证玩家掉线率（可被子类重写调整阈值）
+     * @param {Object} stats - 玩家统计数据
+     * @returns {Object} { success: boolean, reason?: string }
+     */
+    validateDisconnectRate(stats) {
+        // 配置
+        const MIN_GAMES_FOR_DISCONNECT_CHECK = 20; // 至少需要20局对战记录才检查掉线率
+        const MAX_DISCONNECT_RATE = 100; // 最大掉线率 (%)
+
+        // 对局数不足，不检查掉线率
+        if (stats.gamesPlayed < MIN_GAMES_FOR_DISCONNECT_CHECK) {
+            console.log(`[GameRoom] 跳过掉线率检查：玩家对局数仅 ${stats.gamesPlayed} 局（需要至少 ${MIN_GAMES_FOR_DISCONNECT_CHECK} 局）`);
+            return { success: true };
+        }
+
+        // 计算掉线率
+        const disconnectRateRaw = stats.gamesPlayed > 0
+            ? (stats.disconnects / stats.gamesPlayed) * 100
+            : 0;
+        const disconnectRate = Math.min(100, disconnectRateRaw);
+
+        if (disconnectRateRaw > MAX_DISCONNECT_RATE) {
+            return {
+                success: false,
+                reason: `您的掉线率 ${disconnectRate.toFixed(1)}% 超过房间允许的最大值 ${MAX_DISCONNECT_RATE}%（基于 ${stats.gamesPlayed} 局对战记录）`
+            };
+        }
+
+        return { success: true };
     }
 
     /**

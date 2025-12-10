@@ -206,54 +206,46 @@ class ChineseChessRoom extends GameRoom {
 
     /**
      * 分配玩家到游戏桌
+     * 继承基类实现，可选：添加象棋特有的验证
      * @param {Object} socket - Socket 实例
      * @param {String} tableId - 指定的桌子ID（可选）
      */
     async assignPlayerToTable(socket, tableId) {
-        // 1. 获取或创建游戏桌
-        const table = this.getOrCreateTable(tableId);
-
-        // 2. 获取玩家统计数据
-        const stats = await this.getUserStats(socket.user._id);
-
-        // 3. 判断玩家是否可以入座（检查积分、欢乐豆等）
-        const canPlay = this.canPlayerJoin(stats);
-
-        // 4. 调用 GameTable 的 joinTable 方法处理实际加入
-        const result = await table.joinTable(socket, canPlay);
-
-        // 5. 如果加入成功且满座，通知客户端
-        if (result.success && table.players.length === table.maxPlayers && !result.asSpectator) {
-            console.log(`[ChineseChessRoom] 桌子已满座，发送 table_full 事件到客户端`);
-            socket.emit('table_full', {
-                message: '游戏桌已满座，准备开始游戏',
-                tableId: table.tableId
-            });
-        }
-
-        // 6. 返回结果
-        return {
-            ...result,
-            tableId: table.tableId
-        };
+        // 直接调用基类实现，基类已处理所有检查和状态管理
+        return await super.assignPlayerToTable(socket, tableId);
     }
 
     /**
-     * 判断玩家是否可以入座
+     * 验证玩家是否可以加入（可选：扩展基类的验证）
      * @param {Object} stats - 玩家统计数据
+     * @param {Object} socket - Socket 实例
+     * @returns {Object} { success: boolean, reason?: string }
      */
-    canPlayerJoin(stats) {
-        // 检查积分
-        if (!this.canAccess(stats.rating)) {
-            return false;
+    async validatePlayerJoin(stats, socket) {
+        // 1. 先执行基类的基础验证（积分、掉线率等）
+        const baseValidation = await super.validatePlayerJoin(stats, socket);
+        if (!baseValidation.success) {
+            return baseValidation;
         }
 
-        // 检查欢乐豆（如果房间有要求）
-        // if (this.requiredBeans && stats.beans < this.requiredBeans) {
-        //     return false;
+        // 2. 可以在这里添加象棋特有的验证
+        // 例如：检查玩家是否完成了新手教程
+        // if (stats.tutorialCompleted === false) {
+        //     return {
+        //         success: false,
+        //         reason: '请先完成新手教程'
+        //     };
         // }
 
-        return true;
+        // 3. 检查欢乐豆（如果房间有要求）
+        // if (this.requiredBeans && stats.beans < this.requiredBeans) {
+        //     return {
+        //         success: false,
+        //         reason: `您的欢乐豆不足（需要 ${this.requiredBeans}，当前 ${stats.beans}）`
+        //     };
+        // }
+
+        return { success: true };
     }
 
     /**
