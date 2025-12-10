@@ -123,19 +123,24 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       // 监听服务器广播的移动事件以播放公开音效（吃子）
       // 注意：选中棋子、胜利、失败的音效是私有的，只在本地播放
       // 吃子音效是公开的，由服务器广播给所有玩家
-      if ((tableClient as any).onMove === undefined) {
-         console.log('[ChineseChessDisplay] Registering onMove callback for public sound events');
-         (tableClient as any).onMove = (data: any) => {
-             console.log('[ChineseChessDisplay] onMove callback triggered:', { captured: data.captured });
-             // 吃子音效是公开的，所有玩家都应该听到
-             // 这个事件由服务器广播，所以两个玩家都会接收到
-             if (data.captured) {
-                 console.log('[ChineseChessDisplay] Playing eat sound (public event from server)');
-                 playSound('eat');
-             }
-         };
+      const onMoveHandler = (data: any) => {
+          console.log('[ChineseChessDisplay] onMove callback triggered:', { captured: data.captured });
+          // 吃子音效是公开的，所有玩家都应该听到
+          // 这个事件由服务器广播，所以两个玩家都会接收到
+          if (data.captured) {
+              console.log('[ChineseChessDisplay] Playing eat sound (public event from server)');
+              playSound('eat');
+          }
+      };
+
+      if (typeof (tableClient as any).addMoveListener === 'function') {
+          console.log('[ChineseChessDisplay] Registering move listener via addMoveListener');
+          (tableClient as any).addMoveListener(onMoveHandler);
+      } else if ((tableClient as any).onMove === undefined) {
+         console.log('[ChineseChessDisplay] Registering onMove callback (legacy)');
+         (tableClient as any).onMove = onMoveHandler;
       } else {
-         console.log('[ChineseChessDisplay] onMove callback already registered, skipping');
+         console.log('[ChineseChessDisplay] onMove callback already registered and addMoveListener not available, skipping');
       }
 
       // 监听游戏结束事件以播放胜利音效
@@ -161,7 +166,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       return () => {
         unsubscribe?.();
-        (tableClient as any).onMove = undefined;
+        
+        if (typeof (tableClient as any).removeMoveListener === 'function') {
+            (tableClient as any).removeMoveListener(onMoveHandler);
+        } else if ((tableClient as any).onMove === onMoveHandler) {
+            (tableClient as any).onMove = undefined;
+        }
+
         (tableClient as any).onGameEnded = prevGameEnded;
         (tableClient as any).onJoinFailed = prevJoinFailed;
       };

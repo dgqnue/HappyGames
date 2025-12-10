@@ -5,17 +5,19 @@
 
 ## 解决方案已实施
 
-### 核心修复：防重触发机制
-在 `ChineseChessDisplayPlugin.tsx` 中添加了 **100毫秒防重机制**
-- 同一音效在100ms内最多播放一次
-- 即使事件触发多次，用户也只会听到一次声音
+### 核心修复：防重触发机制与多监听器支持
+1. **防重触发**：在 `ChineseChessDisplayPlugin.tsx` 中添加了 **100毫秒防重机制**
+   - 同一音效在100ms内最多播放一次
+2. **多监听器支持**：在 `ChineseChessTableClient.ts` 中引入了 `addMoveListener` 模式
+   - 解决了 `onMove` 回调可能被覆盖或丢失的问题
+   - 确保红黑双方都能稳定接收到移动事件并播放音效
 
 ### 实施位置
 
 | 文件 | 修改内容 |
 |------|----------|
-| `client/src/games/chinesechess/gamepagehierarchy/ChineseChessDisplayPlugin.tsx` | 添加 useRef, 防重逻辑, 详细日志 |
-| `client/src/games/chinesechess/gamepagehierarchy/ChineseChessTableClient.ts` | 添加移动事件处理日志 |
+| `client/src/games/chinesechess/gamepagehierarchy/ChineseChessDisplayPlugin.tsx` | 使用 `addMoveListener` 注册音效回调 |
+| `client/src/games/chinesechess/gamepagehierarchy/ChineseChessTableClient.ts` | 添加 `moveListeners` 数组及管理方法 |
 | `server/src/games/chinesechess/gamepagehierarchy/ChineseChessTable.js` | 添加移动事件广播日志 |
 
 ## 验证日志
@@ -25,7 +27,7 @@
 ### 预期日志流程
 ```
 1. [ChineseChessTableClient] Move event received from server: {move: {...}, captured: "R"}
-2. [ChineseChessTableClient] handleMove: Calling onMove callback, captured=R
+2. [ChineseChessTableClient] handleMove: Calling 1 move listeners
 3. [ChineseChessDisplay] onMove callback triggered: {captured: "R"}
 4. [ChineseChessDisplay] Playing eat sound at 1701234567890
 ```

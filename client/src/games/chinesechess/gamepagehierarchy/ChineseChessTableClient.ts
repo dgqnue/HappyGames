@@ -18,6 +18,23 @@ export class ChineseChessTableClient extends GameTableClient {
     // 游戏结束事件回调
     public onGameEnded?: (data: any) => void;
 
+    // 移动事件监听器列表
+    private moveListeners: ((data: any) => void)[] = [];
+
+    /**
+     * 添加移动事件监听器
+     */
+    public addMoveListener(listener: (data: any) => void) {
+        this.moveListeners.push(listener);
+    }
+
+    /**
+     * 移除移动事件监听器
+     */
+    public removeMoveListener(listener: (data: any) => void) {
+        this.moveListeners = this.moveListeners.filter(l => l !== listener);
+    }
+
     constructor(socket: Socket) {
         super(socket, 'chinesechess');
         // 象棋游戏桌最多2个玩家
@@ -81,6 +98,18 @@ export class ChineseChessTableClient extends GameTableClient {
             this.onMove(data);
         } else {
             console.log(`[ChineseChessTableClient] handleMove: No onMove callback registered`);
+        }
+
+        // 触发所有注册的监听器
+        if (this.moveListeners.length > 0) {
+            console.log(`[ChineseChessTableClient] handleMove: Calling ${this.moveListeners.length} move listeners`);
+            this.moveListeners.forEach(listener => {
+                try {
+                    listener(data);
+                } catch (err) {
+                    console.error('[ChineseChessTableClient] Error in move listener:', err);
+                }
+            });
         }
         
         // 如果有获胜者，可能需要处理（通常由 game_ended 处理，但这里也可以更新状态）
