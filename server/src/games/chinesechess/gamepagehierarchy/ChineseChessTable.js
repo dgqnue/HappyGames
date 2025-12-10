@@ -63,30 +63,38 @@ class ChineseChessTable extends GameTable {
         return success;
     }
 
-    playerLeave(socket) {
-        // 如果正在游戏中，且离开的是玩家，判负
-        if (this.status === 'playing') {
-             const userId = socket.user._id.toString();
-             const player = this.players.find(p => p.userId === userId);
-             if (player) {
-                 console.log(`[ChineseChess] Player ${userId} left during game, forfeiting.`);
-                 // 判对方获胜
-                 const redPlayer = this.players[0];
-                 const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
-                 this.handleWin(winnerSide);
-                 // handleWin 会调用 endGame -> onGameEnd，该方法会将状态设为 MATCHING 并广播
-             }
+    /**
+     * 玩家在游戏中离开时的处理（判负逻辑）
+     * 重写基类的钩子方法
+     */
+    onPlayerLeaveDuringGame(socket) {
+        const userId = socket.user._id.toString();
+        const player = this.players.find(p => p.userId === userId);
+        if (player) {
+            console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting.`);
+            // 判对方获胜
+            const redPlayer = this.players[0];
+            const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
+            this.handleWin(winnerSide);
+            // handleWin 会调用 endGame -> onGameEnd，该方法会将状态设为 MATCHING 并广播
         }
+    }
 
-        // 移除游戏特定事件监听
+    /**
+     * 移除玩家的事件监听器
+     * 重写基类的方法
+     */
+    removePlayerEventListeners(socket) {
         socket.removeAllListeners(`${this.gameType}_move`);
         socket.removeAllListeners(`${this.gameType}_check_state_consistency`);
-        
-        console.log(`[ChineseChess] playerLeave: calling matchPlayers.playerLeave for ${socket.user._id}`);
-        const result = this.matchPlayers.playerLeave(socket);
-        console.log(`[ChineseChess] playerLeave: returned result=${result}, table status now=${this.matchPlayers.matchState.status}, players count=${this.matchPlayers.matchState.players.length}`);
-        
-        return result;
+    }
+
+    /**
+     * 重置游戏数据（棋盘）
+     * 重写基类的方法
+     */
+    resetGameData() {
+        this.resetBoard();
     }
 
     handlePlayerDisconnect(socket) {
