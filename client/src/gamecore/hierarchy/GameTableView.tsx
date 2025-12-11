@@ -426,7 +426,18 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const displayTitle = player.title || '初出茅庐';
         // 头像优先级：player.avatar > userObj.avatar > 默认头像
         // player.avatar 来自 broadcastRoomState，已经是完整 URL 并优先级最高
-        const avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
+        let avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
+        
+        // 补全相对路径 (如果服务器返回了相对路径，前端进行补全)
+        if (avatarUrl && avatarUrl.startsWith('/')) {
+             // 优先使用环境变量，否则回退到 localhost:5000
+             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+             // 避免重复拼接 (虽然 startsWith('/') 已经检查了，但为了保险)
+             if (!avatarUrl.startsWith('http')) {
+                 avatarUrl = `${baseUrl}${avatarUrl}`;
+             }
+        }
+
         const titleColor = player.titleColor || '#666';
 
         // 直接使用player.ready字段（统一命名）
