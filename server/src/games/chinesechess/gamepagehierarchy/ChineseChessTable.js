@@ -17,6 +17,7 @@ const { fetchLatestAvatarUrl } = require('../../../utils/avatarUtils');
 class ChineseChessTable extends GameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
         super(io, tableId);
+        console.log(`[ChineseChessTable] Initializing table ${tableId} (Fix-Avatar-State-First-V2)`);
 
         this.gameType = gameType;
         this.maxPlayers = maxPlayers;
@@ -142,7 +143,7 @@ class ChineseChessTable extends GameTable {
             players: this.players.map(p => ({
                 userId: p.userId,
                 nickname: p.nickname,
-                avatar: p.avatar,
+                avatar: p.avatar || '/images/default-avatar.png',
                 ready: p.ready
             })),
             winner: null // TODO: 如果已结束，需要发送 winner

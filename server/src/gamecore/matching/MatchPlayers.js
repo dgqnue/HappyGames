@@ -1136,7 +1136,9 @@ class MatchRoomState {
             baseBet: this.matchSettings.baseBet,
             matchSettings: this.matchSettings,
             playerList: this.players.map(p => ({
+                userId: p.userId, // 添加 userId
                 nickname: p.nickname,
+                avatar: p.avatar, // 添加 avatar
                 title: p.title,
                 titleColor: p.titleColor, // 添加 titleColor
                 winRate: p.winRate,
