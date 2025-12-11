@@ -45,7 +45,9 @@ export default function UserProfile() {
 
     /** 页面加载状态 */
     const [loading, setLoading] = useState(true);
-        const [avatarSrc, setAvatarSrc] = useState<string>('/images/default-avatar.png');
+
+    /** 当前头像展示用的 URL（后端返回或前端默认） */
+    const [avatarSrc, setAvatarSrc] = useState<string>('/images/default-avatar.png');
 
     /** 是否正在编辑昵称 */
     const [isEditing, setIsEditing] = useState(false);
@@ -61,8 +63,6 @@ export default function UserProfile() {
 
     /** 选中的新头像文件 */
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
-                    setAvatarSrc(data.avatar || '/images/default-avatar.png');
     /** 头像上传过程中的加载状态 */
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -97,8 +97,8 @@ export default function UserProfile() {
             if (res.ok) {
                 const { data } = await res.json();
                 setProfile(data);
+                setAvatarSrc(data.avatar || '/images/default-avatar.png');
             } else {
-                    setAvatarSrc(result.data.avatar || '/images/default-avatar.png');
                 // Token 失效或请求失败
                 console.error('Failed to fetch profile:', res.status);
                 if (res.status === 401) {
@@ -199,6 +199,7 @@ export default function UserProfile() {
 
             if (res.ok) {
                 setProfile({ ...profile, avatar: result.data.avatar });
+                setAvatarSrc(result.data.avatar || '/images/default-avatar.png');
                 setAvatarFile(null);
                 alert('头像上传成功！');
             } else {
