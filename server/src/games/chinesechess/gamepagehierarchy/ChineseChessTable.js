@@ -679,23 +679,32 @@ class ChineseChessTable extends GameTable {
     /**
      * 发送桌子状态
      */
-    sendState(socket) {
+    async sendState(socket) {
         const state = this.matchPlayers.matchState.getRoomInfo();
         state.status = this.status;
+
+        // 获取最新的玩家头像
+        const playersWithAvatar = await Promise.all(this.players.map(async p => {
+            const dbQueryId = p.user?._id || p.userId;
+            const avatar = await fetchLatestAvatarUrl(dbQueryId);
+            
+            return {
+                userId: p.userId,
+                nickname: p.nickname,
+                avatar: avatar, // 确保包含最新头像
+                ready: p.ready,
+                title: p.title,
+                titleColor: p.titleColor,
+                winRate: p.winRate,
+                seatIndex: p.seatIndex
+            };
+        }));
 
         socket.emit('table_state', {
             ...state,
             roomId: this.tableId,  // 添加 tableId，客户端用它来确认加入成功
             tableId: this.tableId, // 同时提供 tableId 字段以保持兼容性
-            players: this.players.map(p => ({
-                userId: p.userId,
-                nickname: p.nickname,
-                ready: p.ready,
-                title: p.title,
-                titleColor: p.titleColor, // 添加 titleColor
-                winRate: p.winRate,
-                seatIndex: p.seatIndex
-            })),
+            players: playersWithAvatar,
             spectators: this.spectators.map(s => ({
                 userId: s.userId,
                 nickname: s.nickname
