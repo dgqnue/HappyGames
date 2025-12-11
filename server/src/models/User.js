@@ -1,209 +1,195 @@
+/**
+ * 用户模型
+ * 定义用户的数据库结构、索引、虚拟字段、实例方法和静态方法。
+ */
+
 const mongoose = require('mongoose');
 
+// 定义用户的 Schema
 const UserSchema = new mongoose.Schema({
     // ========== 基础身份信息 ==========
     userId: {
-        type: String,
-        required: true,
-        unique: true,
-        immutable: true, // 永远不可更改
-        index: true
+        type: String, // 用户唯一标识符
+        required: true, // 必填字段
+        unique: true, // 必须唯一
+        immutable: true, // 不可更改
+        index: true // 创建索引以加速查询
     },
 
-    // Pi Network 用户名（登录凭证，不可更改）
     username: {
-        type: String,
-        required: true,
-        unique: true,
-        immutable: true, // 永远不可更改
-        trim: true,
-        index: true
+        type: String, // Pi Network 用户名
+        required: true, // 必填字段
+        unique: true, // 必须唯一
+        immutable: true, // 不可更改
+        trim: true, // 去除首尾空格
+        index: true // 创建索引
     },
 
-    // Pi Network ID
     piId: {
-        type: String,
-        unique: true,
-        sparse: true,
-        immutable: true // 永远不可更改
+        type: String, // Pi Network ID
+        unique: true, // 必须唯一
+        sparse: true, // 允许 null 值重复
+        immutable: true // 不可更改
     },
 
-    // 密码（仅非 Pi 用户需要，加密存储）
     password: {
-        type: String,
-        select: false // 默认查询不返回密码
+        type: String, // 用户密码（加密存储）
+        select: false // 默认查询时不返回该字段
     },
 
     // ========== 个人资料 ==========
-    // 昵称（可更改，但不能与其他用户重复）
     nickname: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        index: true
+        type: String, // 用户昵称
+        required: true, // 必填字段
+        unique: true, // 必须唯一
+        trim: true, // 去除首尾空格
+        index: true // 创建索引
     },
 
-    // 头像 URL
     avatar: {
-        type: String,
-        default: '/images/default-avatar.svg' // 默认头像
+        type: String, // 用户头像 URL
+        default: '/images/default-avatar.svg' // 默认头像路径
     },
 
-    // 性别（male/female，第一次登录随机生成，可更改）
     gender: {
-        type: String,
-        enum: ['male', 'female'],
-        required: true
+        type: String, // 用户性别
+        enum: ['male', 'female'], // 限定值为 male 或 female
+        required: true // 必填字段
     },
 
     // ========== 游戏货币 ==========
-    // 欢乐豆数量
     happyBeans: {
-        type: Number,
-        default: 0, // 新用户初始为 0
-        min: 0
+        type: Number, // 欢乐豆数量
+        default: 0, // 默认值为 0
+        min: 0 // 最小值为 0
     },
 
     // ========== 游戏数据 ==========
-    // 游戏统计数据（每个游戏一个对象）
     gameStats: [{
         gameType: {
-            type: String,
-            required: true,
-            index: true
+            type: String, // 游戏类型
+            required: true, // 必填字段
+            index: true // 创建索引
         },
         gameName: {
-            type: String,
-            required: true
+            type: String, // 游戏名称
+            required: true // 必填字段
         },
         rating: {
-            type: Number,
-            default: 1200 // 初始等级分
+            type: Number, // 游戏评分
+            default: 1200 // 默认初始评分
         },
         title: {
-            type: String,
-            default: '初出茅庐' // 称号
+            type: String, // 游戏称号
+            default: '初出茅庐' // 默认称号
         },
         titleColor: {
-            type: String,
-            default: '#666666' // 称号颜色
+            type: String, // 称号颜色
+            default: '#666666' // 默认颜色
         },
         gamesPlayed: {
-            type: Number,
-            default: 0
+            type: Number, // 游戏场次
+            default: 0 // 默认值为 0
         },
         wins: {
-            type: Number,
-            default: 0
+            type: Number, // 胜利场次
+            default: 0 // 默认值为 0
         },
         losses: {
-            type: Number,
-            default: 0
+            type: Number, // 失败场次
+            default: 0 // 默认值为 0
         },
         draws: {
-            type: Number,
-            default: 0
+            type: Number, // 平局场次
+            default: 0 // 默认值为 0
         },
         disconnects: {
-            type: Number,
-            default: 0
+            type: Number, // 掉线场次
+            default: 0 // 默认值为 0
         },
-        // 胜率（百分比）
         winRate: {
-            type: Number,
-            default: 0
+            type: Number, // 胜率（百分比）
+            default: 0 // 默认值为 0
         },
-        // 掉线率（百分比）
         disconnectRate: {
-            type: Number,
-            default: 0
+            type: Number, // 掉线率（百分比）
+            default: 0 // 默认值为 0
         },
-        // 最高连胜
         maxWinStreak: {
-            type: Number,
-            default: 0
+            type: Number, // 最高连胜
+            default: 0 // 默认值为 0
         },
-        // 当前连胜
         currentWinStreak: {
-            type: Number,
-            default: 0
+            type: Number, // 当前连胜
+            default: 0 // 默认值为 0
         },
-        // 游戏特定数据（JSON 格式，每个游戏可以自定义）
         gameSpecificData: {
-            type: mongoose.Schema.Types.Mixed,
-            default: {}
+            type: mongoose.Schema.Types.Mixed, // 游戏特定数据（JSON 格式）
+            default: {} // 默认值为空对象
         },
-        // 最后游戏时间
         lastPlayedAt: {
-            type: Date,
-            default: null
+            type: Date, // 最后游戏时间
+            default: null // 默认值为空
         },
-        // 首次游戏时间
         firstPlayedAt: {
-            type: Date,
-            default: Date.now
+            type: Date, // 首次游戏时间
+            default: Date.now // 默认值为当前时间
         }
-    }],
+    }], // 修复缺少的逗号
 
     // ========== 推荐系统 ==========
     referralCode: {
-        type: String,
-        unique: true,
-        sparse: true, // 关键修复：允许 null 值重复（即允许多个用户没有推荐码）
-        index: true
+        type: String, // 推荐码
+        unique: true, // 必须唯一
+        sparse: true, // 允许 null 值重复
+        index: true // 创建索引
     },
     referrer: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        default: null
+        type: mongoose.Schema.Types.ObjectId, // 推荐人 ID
+        ref: 'User', // 关联到 User 模型
+        default: null // 默认值为空
     },
     referralLevel: {
-        type: Number,
-        default: 1,
-        min: 1,
-        max: 5
+        type: Number, // 推荐等级
+        default: 1, // 默认值为 1
+        min: 1, // 最小值为 1
+        max: 5 // 最大值为 5
     },
     referralStats: {
-        inviteCount: { type: Number, default: 0 },
-        totalFlow: { type: Number, default: 0 }
+        inviteCount: { type: Number, default: 0 }, // 邀请人数
+        totalFlow: { type: Number, default: 0 } // 总流水
     },
     isInvited: {
-        type: Boolean,
-        default: false
+        type: Boolean, // 是否被邀请
+        default: false // 默认值为 false
     },
 
     // ========== 账户状态 ==========
-    // 账户状态（active/banned/suspended）
     accountStatus: {
-        type: String,
-        enum: ['active', 'banned', 'suspended'],
-        default: 'active'
+        type: String, // 账户状态
+        enum: ['active', 'banned', 'suspended'], // 限定值
+        default: 'active' // 默认值为 active
     },
 
-    // 最后登录时间
     lastLoginAt: {
-        type: Date,
-        default: Date.now
+        type: Date, // 最后登录时间
+        default: Date.now // 默认值为当前时间
     },
 
-    // 登录次数
     loginCount: {
-        type: Number,
-        default: 0
+        type: Number, // 登录次数
+        default: 0 // 默认值为 0
     },
 
-    // 账户创建时间
     createdAt: {
-        type: Date,
-        default: Date.now,
-        immutable: true
+        type: Date, // 账户创建时间
+        default: Date.now, // 默认值为当前时间
+        immutable: true // 不可更改
     },
 
-    // 最后更新时间
     updatedAt: {
-        type: Date,
-        default: Date.now
+        type: Date, // 最后更新时间
+        default: Date.now // 默认值为当前时间
     }
 }, {
     timestamps: true // 自动管理 createdAt 和 updatedAt
@@ -218,7 +204,7 @@ UserSchema.index({ 'gameStats.gameType': 1 });
 // ========== 虚拟字段 ==========
 // 总游戏场次
 UserSchema.virtual('totalGamesPlayed').get(function () {
-    return this.gameStats.reduce((sum, stat) => sum + stat.gamesPlayed, 0);
+    return this.gameStats.reduce((sum, stat) => sum + stat.gamesPlayed, 0); // 计算总游戏场次
 });
 
 // ========== 实例方法 ==========

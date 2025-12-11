@@ -1,34 +1,34 @@
 /**
- * User Controller
- * Handles user authentication, profile retrieval, and updates.
+ * 用户控制器
+ * 处理用户的身份验证、个人资料获取和更新。
  */
 
-const User = require('../models/User');
-const Wallet = require('../models/Wallet');
-const Transaction = require('../models/Transaction');
-const UserGameStats = require('../models/UserGameStats');
-const jwt = require('jsonwebtoken');
+const User = require('../models/User'); // 导入用户模型
+const Wallet = require('../models/Wallet'); // 导入钱包模型
+const Transaction = require('../models/Transaction'); // 导入交易模型
+const UserGameStats = require('../models/UserGameStats'); // 导入用户游戏统计模型
+const jwt = require('jsonwebtoken'); // 导入 JSON Web Token 库
 
 /**
- * Get User Profile
- * Retrieves user details, wallet balance, and referral stats.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * 获取用户个人资料
+ * 该方法会检索用户的详细信息、钱包余额以及推荐统计数据。
+ * @param {Object} req - Express 请求对象
+ * @param {Object} res - Express 响应对象
  */
 exports.getUserProfile = async (req, res) => {
     try {
-        const userId = req.query.userId;
+        const userId = req.query.userId; // 从查询参数中获取用户 ID
 
         if (!userId) {
-            return res.status(400).json({ message: 'User ID required' });
+            return res.status(400).json({ message: '需要提供用户 ID' });
         }
 
-        const user = await User.findById(userId).populate('referrer', 'username');
+        const user = await User.findById(userId).populate('referrer', 'username'); // 查找用户并填充推荐人信息
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: '未找到用户' });
         }
 
-        const wallet = await Wallet.findOne({ user: userId });
+        const wallet = await Wallet.findOne({ user: userId }); // 查找用户的钱包信息
 
         // 获取该用户所有游戏的统计数据
         const gameStats = {};
@@ -36,50 +36,50 @@ exports.getUserProfile = async (req, res) => {
         
         stats.forEach(stat => {
             gameStats[stat.gameType] = {
-                rating: stat.rating,
-                title: stat.title,
-                titleRank: stat.titleRank,
-                titleColor: stat.titleColor,
-                gamesPlayed: stat.gamesPlayed,
-                wins: stat.wins,
-                losses: stat.losses,
-                draws: stat.draws,
-                lastPlayedAt: stat.lastPlayedAt
+                rating: stat.rating, // 用户的游戏评分
+                title: stat.title, // 用户的游戏头衔
+                titleRank: stat.titleRank, // 用户头衔的排名
+                titleColor: stat.titleColor, // 用户头衔的颜色
+                gamesPlayed: stat.gamesPlayed, // 用户参与的游戏数量
+                wins: stat.wins, // 用户赢得的游戏数量
+                losses: stat.losses, // 用户输掉的游戏数量
+                draws: stat.draws, // 用户平局的游戏数量
+                lastPlayedAt: stat.lastPlayedAt // 用户最后一次游戏时间
             };
         });
 
         res.json({
-            _id: user._id,
-            username: user.username,
-            nickname: user.nickname,
-            avatar: user.avatar,
-            referralCode: user.referralCode,
-            referralLevel: user.referralLevel,
-            referralStats: user.referralStats,
-            referrer: user.referrer ? user.referrer.username : 'None',
+            _id: user._id, // 用户 ID
+            username: user.username, // 用户名
+            nickname: user.nickname, // 用户昵称
+            avatar: user.avatar, // 用户头像
+            referralCode: user.referralCode, // 用户的推荐码
+            referralLevel: user.referralLevel, // 用户的推荐等级
+            referralStats: user.referralStats, // 用户的推荐统计数据
+            referrer: user.referrer ? user.referrer.username : '无', // 推荐人的用户名
             assets: {
-                happyBeans: wallet ? wallet.happyBeans : 0,
-                piBalance: wallet ? wallet.piBalance : 0,
-                totalCommission: wallet ? wallet.totalCommissionEarned : 0
+                happyBeans: wallet ? wallet.happyBeans : 0, // 用户的 HappyBeans 数量
+                piBalance: wallet ? wallet.piBalance : 0, // 用户的 Pi 币余额
+                totalCommission: wallet ? wallet.totalCommissionEarned : 0 // 用户赚取的总佣金
             },
-            gameStats: gameStats  // 添加游戏统计数据
+            gameStats: gameStats  // 用户的游戏统计数据
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: '服务器错误' });
     }
 };
 
 /**
- * Login or Register
- * Authenticates a user via Pi Network ID. 
- * NOTE: Only login is allowed here. User registration must be done via /api/user/register endpoint.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * 登录或注册
+ * 通过 Pi Network ID 验证用户身份。
+ * 注意：此方法仅用于登录，用户注册必须通过 /api/user/register 端点完成。
+ * @param {Object} req - Express 请求对象
+ * @param {Object} res - Express 响应对象
  */
 exports.loginOrRegister = async (req, res) => {
     try {
-        const { username, referralCode, piId, avatar } = req.body;
+        const { username, referralCode, piId, avatar } = req.body; // 从请求体中获取用户信息
 
         // ========== 强制使用 happygames 数据库 ==========
         const mongoose = require('mongoose');
@@ -101,14 +101,14 @@ exports.loginOrRegister = async (req, res) => {
         }
 
         if (!username || !piId) {
-            return res.status(400).json({ message: 'Username and Pi ID are required' });
+            return res.status(400).json({ message: '需要提供用户名和 Pi ID' });
         }
 
-        // 1. Try to find existing user by Pi ID (more stable) or Username
+        // 1. 尝试通过 Pi ID 或用户名查找现有用户
         let user = await User.findOne({ $or: [{ piId }, { username }] });
 
         if (user) {
-            // Update user info if needed (e.g. avatar, or backfill piId if missing)
+            // 如果需要，更新用户信息（例如头像，或补全缺失的 piId）
             let updated = false;
             if (!user.piId) {
                 user.piId = piId;
@@ -125,14 +125,14 @@ exports.loginOrRegister = async (req, res) => {
             console.log(`[Pi登录] ✅ 成功登录用户: ${username}`);
 
             return res.json({
-                message: 'Login successful',
+                message: '登录成功',
                 user,
                 token,
                 isNew: false
             });
         }
 
-        // 2. User not found - must register via /api/user/register first
+        // 2. 用户未找到 - 必须先通过 /api/user/register 注册
         console.log(`[Pi登录] ❌ 用户未注册: ${username}`);
         return res.status(401).json({
             success: false,
@@ -140,53 +140,53 @@ exports.loginOrRegister = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Login Error:', error);
-        // Handle duplicate key error specifically
+        console.error('登录错误:', error);
+        // 处理重复键错误
         if (error.code === 11000) {
-            return res.status(400).json({ message: 'Username or Pi ID already exists' });
+            return res.status(400).json({ message: '用户名或 Pi ID 已存在' });
         }
-        res.status(500).json({ message: 'Server Error: ' + error.message });
+        res.status(500).json({ message: '服务器错误: ' + error.message });
     }
 };
 
 /**
- * Reset Database (Dev Only)
- * Clears all users and wallets.
+ * 重置数据库（仅限开发环境）
+ * 清空所有用户和钱包数据。
  */
 exports.resetDb = async (req, res) => {
     try {
-        await User.deleteMany({});
-        await Wallet.deleteMany({});
-        res.json({ message: 'Database cleared successfully' });
+        await User.deleteMany({}); // 删除所有用户数据
+        await Wallet.deleteMany({}); // 删除所有钱包数据
+        res.json({ message: '数据库已成功清空' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
 /**
- * Update User Profile
- * Updates user nickname and avatar. Checks for nickname uniqueness.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * 更新用户个人资料
+ * 更新用户的昵称和头像，并检查昵称的唯一性。
+ * @param {Object} req - Express 请求对象
+ * @param {Object} res - Express 响应对象
  */
 exports.updateProfile = async (req, res) => {
     try {
-        const { userId, nickname, avatar } = req.body;
+        const { userId, nickname, avatar } = req.body; // 从请求体中获取用户信息
 
         if (!userId) {
-            return res.status(400).json({ message: 'User ID required' });
+            return res.status(400).json({ message: '需要提供用户 ID' });
         }
 
-        const user = await User.findById(userId);
+        const user = await User.findById(userId); // 查找用户
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: '未找到用户' });
         }
 
         if (nickname) {
-            // Check uniqueness
+            // 检查昵称唯一性
             const existingUser = await User.findOne({ nickname });
             if (existingUser && existingUser._id.toString() !== userId) {
-                return res.status(400).json({ message: 'Nickname already taken' });
+                return res.status(400).json({ message: '昵称已被占用' });
             }
             user.nickname = nickname;
         }
@@ -194,26 +194,26 @@ exports.updateProfile = async (req, res) => {
 
         await user.save();
 
-        res.json({ message: 'Profile updated', user });
+        res.json({ message: '个人资料已更新', user });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
 /**
- * Get Referrals
- * Retrieves list of users invited by the current user.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * 获取推荐用户
+ * 检索当前用户邀请的用户列表。
+ * @param {Object} req - Express 请求对象
+ * @param {Object} res - Express 响应对象
  */
 exports.getReferrals = async (req, res) => {
     try {
-        const userId = req.query.userId;
-        if (!userId) return res.status(400).json({ message: 'User ID required' });
+        const userId = req.query.userId; // 从查询参数中获取用户 ID
+        if (!userId) return res.status(400).json({ message: '需要提供用户 ID' });
 
         const referrals = await User.find({ referrer: userId })
-            .select('username nickname avatar createdAt referralLevel')
-            .sort({ createdAt: -1 });
+            .select('username nickname avatar createdAt referralLevel') // 选择需要的字段
+            .sort({ createdAt: -1 }); // 按创建时间倒序排序
 
         res.json(referrals);
     } catch (error) {
@@ -222,20 +222,20 @@ exports.getReferrals = async (req, res) => {
 };
 
 /**
- * Get Commission History
- * Retrieves commission transactions for the user.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * 获取佣金历史
+ * 检索用户的佣金交易记录。
+ * @param {Object} req - Express 请求对象
+ * @param {Object} res - Express 响应对象
  */
 exports.getCommissionHistory = async (req, res) => {
     try {
-        const userId = req.query.userId;
-        if (!userId) return res.status(400).json({ message: 'User ID required' });
+        const userId = req.query.userId; // 从查询参数中获取用户 ID
+        if (!userId) return res.status(400).json({ message: '需要提供用户 ID' });
 
         const commissions = await Transaction.find({
             user: userId,
-            type: 'COMMISSION'
-        }).sort({ createdAt: -1 });
+            type: 'COMMISSION' // 仅检索佣金类型的交易
+        }).sort({ createdAt: -1 }); // 按创建时间倒序排序
 
         res.json(commissions);
     } catch (error) {
