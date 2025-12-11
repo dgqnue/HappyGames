@@ -10,8 +10,8 @@ const TITLES = [
     { rank: 6, name: '炉火纯青', percent: 8, minPercentile: 0.12, color: '#00FFFF' },
     { rank: 7, name: '名满江湖', percent: 6, minPercentile: 0.06, color: '#ffee32' },
     { rank: 8, name: '傲视群雄', percent: 4, minPercentile: 0.02, color: '#800080' },
-    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#ffba08' },
-    { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#FF6200' } // top 1
+    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#FF6200' },
+    { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#ffba08' } // top 1
 ];
 
 class Grade {
