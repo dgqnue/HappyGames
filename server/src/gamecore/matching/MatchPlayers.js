@@ -1,5 +1,6 @@
 const DisconnectTracker = require('../DisconnectTracker');
 const GameConfig = require('./GameConfig');
+const { getFullAvatarUrl } = require('../../utils/urlUtils');
 
 /**
  * ============================================================================
@@ -1380,8 +1381,9 @@ class MatchPlayers {
         }
 
         // 优先使用数据库中的最新信息，回退到 socket.user
-        // 注意：存储相对路径，不做 URL 转换（转换在广播时进行）
-        const userAvatar = userFromDb?.avatar || socket.user.avatar || '/images/default-avatar.png';
+        // 使用 getFullAvatarUrl 转换为完整 URL，确保客户端（特别是移动端）能正确加载
+        const rawAvatar = userFromDb?.avatar || socket.user.avatar;
+        const userAvatar = getFullAvatarUrl(rawAvatar);
         console.log(`[MatchPlayers] Final avatar for ${userId}: ${userAvatar}`);
         const userNickname = userFromDb?.nickname || socket.user.nickname || socket.user.username;
 

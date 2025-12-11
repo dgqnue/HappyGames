@@ -12,6 +12,8 @@ const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';
  * 中国象棋游戏桌 (ChineseChessTable)
  * 直接继承自 GameTable，使用 MatchPlayers 处理匹配逻辑
  */
+const { getFullAvatarUrl } = require('../../../utils/urlUtils');
+
 class ChineseChessTable extends GameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
         super(io, tableId);
@@ -454,32 +456,7 @@ class ChineseChessTable extends GameTable {
         const currentPlayers = this.players;
         
         // 辅助函数：将头像路径转换为完整 URL（统一提供给前端）
-        const getFullAvatarUrl = (avatarPath) => {
-            // 空值统一返回默认头像 URL（由后端统一拼好域名）
-            if (!avatarPath) {
-                avatarPath = '/images/default-avatar.png';
-            }
-
-            // 已经是完整 URL，直接返回
-            if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://') || avatarPath.startsWith('data:')) {
-                return avatarPath;
-            }
-
-            // 只接受以 / 开头的相对路径，其它异常值一律回退到默认头像
-            if (!avatarPath.startsWith('/')) {
-                avatarPath = '/images/default-avatar.png';
-            }
-
-            // Render 线上或生产环境
-            if (process.env.RENDER || process.env.NODE_ENV === 'production') {
-                const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
-                return `${baseUrl}${avatarPath}`;
-            }
-
-            // 本地开发环境 - 优先使用 API_BASE_URL (方便局域网调试)，否则回退到 localhost
-            const baseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
-            return `${baseUrl}${avatarPath}`;
-        };
+        // const getFullAvatarUrl = (avatarPath) => { ... } // Moved to utils/urlUtils.js
         
         // 从数据库获取最新的玩家信息（特别是称号、等级分和头像）
         const UserGameStats = require('../../../models/UserGameStats');
