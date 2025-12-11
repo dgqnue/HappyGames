@@ -479,14 +479,17 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
 
                 {/* 头像 */}
                 <div className="relative w-16 h-16">
-                    <Image
+                    {/* 使用标准 img 标签代替 next/image，以避免局域网 IP 不在 remotePatterns 中的问题 */}
+                    <img
                         src={avatarUrl || '/images/default-avatar.png'}
                         alt={displayName}
-                        fill
-                        className="rounded-full object-cover border-2 border-amber-200"
+                        className="w-full h-full rounded-full object-cover border-2 border-amber-200"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = '/images/default-avatar.png';
+                            // 防止无限循环
+                            if (target.src.indexOf('default-avatar.png') === -1) {
+                                target.src = '/images/default-avatar.png';
+                            }
                         }}
                     />
                     {playerReady && (
