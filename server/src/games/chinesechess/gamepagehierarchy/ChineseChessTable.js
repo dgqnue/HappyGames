@@ -183,10 +183,22 @@ class ChineseChessTable extends GameTable {
     /**
      * 游戏开始回调
      */
-    onGameStart() {
+    async onGameStart() {
         // 分配阵营：第一个玩家是红方，第二个是黑方
         const redPlayer = this.players[0];
         const blackPlayer = this.players[1];
+
+        // 获取最新的玩家头像和信息
+        const playerInfos = await Promise.all(this.players.map(async p => {
+            const dbQueryId = p.user?._id || p.userId;
+            const avatar = await fetchLatestAvatarUrl(dbQueryId);
+            return {
+                userId: p.userId,
+                nickname: p.nickname,
+                title: p.title || '无',
+                avatar: avatar
+            };
+        }));
 
         // 发送初始状态给所有玩家
         this.players.forEach((player) => {
@@ -199,12 +211,7 @@ class ChineseChessTable extends GameTable {
                     r: redPlayer.userId,
                     b: blackPlayer.userId
                 },
-                playerInfos: this.players.map(p => ({
-                    userId: p.userId,
-                    nickname: p.nickname,
-                    title: p.title || '无',
-                    avatar: p.avatar
-                }))
+                playerInfos: playerInfos
             });
         });
 
@@ -725,12 +732,7 @@ class ChineseChessTable extends GameTable {
                     r: redPlayer ? redPlayer.userId : null,
                     b: blackPlayer ? blackPlayer.userId : null
                 },
-                playerInfos: this.players.map(p => ({
-                    userId: p.userId,
-                    nickname: p.nickname,
-                    title: p.title || '无',
-                    avatar: p.avatar
-                }))
+                playerInfos: playersWithAvatar
             });
         }
     }

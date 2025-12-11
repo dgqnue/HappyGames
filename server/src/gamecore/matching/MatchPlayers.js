@@ -1862,6 +1862,9 @@ class MatchPlayers {
                 if (updatedStats) {
                     const socket = this.io.sockets.sockets.get(player.socketId);
                     if (socket) {
+                        // 获取最新头像
+                        const avatar = await fetchLatestAvatarUrl(player.userId);
+
                         socket.emit('user_stats', {
                             userId: updatedStats.userId,
                             rating: updatedStats.rating,
@@ -1873,7 +1876,8 @@ class MatchPlayers {
                             title: updatedStats.title,
                             titleRank: updatedStats.titleRank,
                             titleColor: updatedStats.titleColor,
-                            lastPlayedAt: updatedStats.lastPlayedAt
+                            lastPlayedAt: updatedStats.lastPlayedAt,
+                            avatar: avatar // 添加头像字段
                         });
                         console.log(`[MatchPlayers] Sent updated user_stats to ${player.userId}: rating=${updatedStats.rating}, title=${updatedStats.title}`);
                     }
