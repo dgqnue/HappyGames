@@ -486,6 +486,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         className="w-full h-full rounded-full object-cover border-2 border-amber-200"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
+                            console.error(`[GameTableView] Failed to load avatar: ${target.src}`);
                             // 防止无限循环
                             if (target.src.indexOf('default-avatar.png') === -1) {
                                 target.src = '/images/default-avatar.png';
@@ -498,6 +499,12 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         </div>
                     )}
                 </div>
+                {/* 调试信息：显示头像 URL (仅在开发环境或 URL 包含 IP 时显示) */}
+                {(process.env.NODE_ENV === 'development' || (avatarUrl && avatarUrl.includes('192.168'))) && (
+                    <div className="text-[10px] text-gray-500 max-w-[100px] truncate mt-1">
+                        {avatarUrl}
+                    </div>
+                )}
             </div>
         );
     };

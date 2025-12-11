@@ -162,8 +162,9 @@ app.use((err, req, res, next) => {
 // 启动服务器
 // ============================================
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`[Server] ✓ 服务器运行在端口 ${PORT}`);
+// 显式监听 0.0.0.0 以允许局域网访问
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Server] ✓ 服务器运行在端口 ${PORT} (0.0.0.0)`);
     console.log(`[Server] ✓ 准备接受连接`);
     console.log('[Server] ============================================');
     console.log('[Server] 模块加载状态:');
