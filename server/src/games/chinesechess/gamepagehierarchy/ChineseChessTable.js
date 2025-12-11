@@ -520,15 +520,21 @@ class ChineseChessTable extends GameTable {
                 // 如果获取失败，fetchLatestAvatarUrl 也会返回默认头像，所以这里直接使用即可
                 const finalAvatar = latestData.avatar;
                 
-                // 🚨 强制检查：如果数据库查询失败，回退到玩家对象上的头像，而不是默认头像
-                // 这可以防止因为数据库查询延迟或失败导致的头像闪烁
+                // 🚨 强制检查：如果数据库查询失败，回退到玩家对象上的头像
                 const fallbackAvatar = p.avatar || p.user?.avatar;
                 const effectiveAvatar = finalAvatar && !finalAvatar.includes('default-avatar') ? finalAvatar : (fallbackAvatar || finalAvatar);
 
+                // 🚨 关键修复：确保 userId 绝对存在
+                const effectiveUserId = p.userId || (p.user ? p.user._id.toString() : null);
+                
+                if (!effectiveUserId) {
+                    console.error(`[ChineseChessTable] 🚨 CRITICAL: Player object missing userId!`, p);
+                }
+
                 return {
-                    userId: p.userId,
+                    userId: effectiveUserId,
                     socketId: p.socketId,
-                    nickname: latestData.nickname || p.nickname,
+                    nickname: latestData.nickname || p.nickname || (p.user ? p.user.nickname : 'Unknown'),
                     avatar: effectiveAvatar,
                     ready: p.ready,
                     title: latestData.title || p.title,
