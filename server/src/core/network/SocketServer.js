@@ -24,11 +24,24 @@ class SocketServer {
      * @param {Object} server - HTTP Server 实例
      */
     init(server) {
+        const allowedOrigins = [
+            'https://www.happygames.online',
+            'https://happygames.online',
+            'http://localhost:3000',
+            'http://localhost:3001'
+        ];
+
         this.io = socketIo(server, {
             cors: {
-                origin: "*",  // 临时允许所有来源
-                methods: ["GET", "POST"],
-                credentials: false
+                origin: (origin, callback) => {
+                    // 保守允许白名单域名，其余直接拒绝以避免跨域失败
+                    if (!origin || allowedOrigins.includes(origin)) {
+                        return callback(null, origin || '*');
+                    }
+                    return callback(new Error('Not allowed by CORS'));
+                },
+                methods: ['GET', 'POST'],
+                credentials: true
             },
             transports: ['websocket', 'polling'],
             allowEIO3: true,
