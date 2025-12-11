@@ -439,17 +439,17 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                     <span className="text-sm text-green-500 tracking-widest">就绪</span>
                 </div>
 
-                {/* 昵称 + 称号（分行显示在头像上方） */}
+                {/* 称号 + 昵称（分行显示在头像上方，互换顺序） */}
                 <div className="flex flex-col items-center justify-center h-[32px] mb-2">
                     <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-black">
-                            {displayName}
-                        </span>
                         <span
                             className="text-xs whitespace-nowrap leading-tight"
                             style={{ color: titleColor }}
                         >
                             {displayTitle}
+                        </span>
+                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-black">
+                            {displayName}
                         </span>
                     </div>
                 </div>
