@@ -1,4 +1,5 @@
 const UserGameStats = require('../../models/UserGameStats');
+const { fetchLatestAvatarUrl } = require('../../utils/avatarUtils');
 
 /**
  * 游戏中心基类 (GameCenter)
@@ -67,10 +68,14 @@ class GameCenter {
      * @returns {Object} 用户统计数据
      */
     async getUserStats(userId) {
-        let stats = await UserGameStats.findOne({ userId, gameType: this.gameType });
+        let stats = await UserGameStats.findOne({ userId, gameType: this.gameType }).lean();
         if (!stats) {
             stats = { rating: 1200 }; // 默认值
         }
+        
+        // 添加最新头像
+        stats.avatar = await fetchLatestAvatarUrl(userId);
+        
         return stats;
     }
 
