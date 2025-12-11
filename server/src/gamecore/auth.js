@@ -23,7 +23,11 @@ const verifyToken = async (token) => {
     if (!token) return null;
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
-        const user = await User.findById(decoded._id).select('-password');
+        // 兼容 id 和 _id 两种写法
+        const userId = decoded.id || decoded._id;
+        if (!userId) return null;
+
+        const user = await User.findById(userId).select('-password');
 
         // 处理头像 URL
         if (user) {
@@ -83,11 +87,20 @@ async function piAuth(req, res, next) {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
-        let user = await User.findOne({ username: decoded.username });
+        
+        // 优先使用 ID 查询 (更可靠)，兼容旧版 username
+        const userId = decoded.id || decoded._id;
+        let user;
+        
+        if (userId) {
+            user = await User.findById(userId);
+        } else if (decoded.username) {
+            user = await User.findOne({ username: decoded.username });
+        }
 
         if (!user) {
             // User not found - must register via /api/user/register first
-            console.log(`[piAuth] ❌ 用户未注册: ${decoded.username}`);
+            console.log(`[piAuth] ❌ 用户未注册: ${decoded.username || userId}`);
             return res.status(401).json({
                 success: false,
                 message: '用户未注册。请先通过 /api/user/register 端点注册账号。'
@@ -124,7 +137,15 @@ async function optionalAuth(req, res, next) {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         if (token) {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
-            const user = await User.findOne({ username: decoded.username });
+            const userId = decoded.id || decoded._id;
+            let user;
+            
+            if (userId) {
+                user = await User.findById(userId);
+            } else if (decoded.username) {
+                user = await User.findOne({ username: decoded.username });
+            }
+
             if (user) {
                 user.avatar = processAvatarUrl(user.avatar);
                 req.user = user;

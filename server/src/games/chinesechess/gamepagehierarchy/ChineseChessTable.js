@@ -482,6 +482,7 @@ class ChineseChessTable extends GameTable {
                 // 获取用户信息（头像、昵称等）- 无条件查询
                 let userInfo;
                 try {
+                    console.log(`[ChineseChessTable] Fetching DB info for player: ${player.userId}`);
                     userInfo = await User.findById(player.userId).select('avatar nickname').lean();
                     if (userInfo) {
                         console.log(`[ChineseChessTable] broadcastRoomState: User ${player.userId} found in DB. Avatar: ${userInfo.avatar}`);
