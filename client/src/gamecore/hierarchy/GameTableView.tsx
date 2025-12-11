@@ -194,6 +194,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const seat0Player = seats[0] || null;
     const seat1Player = seats[1] || null;
 
+    // 公共默认头像路径（前端本地文件）
+    const DEFAULT_AVATAR = '/images/default-avatar.png';
+
     // 监听roomClient状态变化，确保isMyTable正确更新
     useEffect(() => {
         // 定期检查roomClient状态，确保UI与状态同步
@@ -454,7 +457,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 {/* 头像 */}
                 <div className="relative w-16 h-16">
                     <Image
-                        src={avatarUrl}
+                        src={avatarUrl || '/images/default-avatar.png'}
                         alt={displayName}
                         fill
                         className="rounded-full object-cover border-2 border-amber-200"

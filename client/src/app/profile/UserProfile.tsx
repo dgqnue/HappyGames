@@ -45,6 +45,7 @@ export default function UserProfile() {
 
     /** 页面加载状态 */
     const [loading, setLoading] = useState(true);
+        const [avatarSrc, setAvatarSrc] = useState<string>('/images/default-avatar.png');
 
     /** 是否正在编辑昵称 */
     const [isEditing, setIsEditing] = useState(false);
@@ -61,6 +62,7 @@ export default function UserProfile() {
     /** 选中的新头像文件 */
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
+                    setAvatarSrc(data.avatar || '/images/default-avatar.png');
     /** 头像上传过程中的加载状态 */
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -96,6 +98,7 @@ export default function UserProfile() {
                 const { data } = await res.json();
                 setProfile(data);
             } else {
+                    setAvatarSrc(result.data.avatar || '/images/default-avatar.png');
                 // Token 失效或请求失败
                 console.error('Failed to fetch profile:', res.status);
                 if (res.status === 401) {
@@ -258,7 +261,7 @@ export default function UserProfile() {
                             <div className="relative group">
                                 <div className="w-24 h-24 bg-gradient-to-br from-amber-200 to-orange-200 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                                     <img
-                                        src={profile.avatar || '/images/default-avatar.png'}
+                                        src={avatarSrc || '/images/default-avatar.png'}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
