@@ -509,8 +509,10 @@ class ChineseChessTable extends GameTable {
             players: currentPlayers.map(p => {
                 // 优先使用从数据库获取的最新信息
                 const latestData = playerDataMap[p.userId] || {};
-                // latestData.avatar 已经被 getFullAvatarUrl 转换为完整 URL
-                const finalAvatar = latestData.avatar || getFullAvatarUrl(p.avatar) || getFullAvatarUrl('/images/default-avatar.png');
+                // latestData.avatar 已经通过 fetchLatestAvatarUrl 获取为完整 URL
+                // 如果获取失败，fetchLatestAvatarUrl 也会返回默认头像，所以这里直接使用即可
+                const finalAvatar = latestData.avatar;
+                
                 return {
                     userId: p.userId,
                     socketId: p.socketId,
@@ -533,12 +535,6 @@ class ChineseChessTable extends GameTable {
 
         console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${currentStatus}, players=${currentPlayers.length}`);
         
-        // 调试日志：显示每个玩家的头像
-        currentPlayers.forEach(p => {
-            const latestData = playerDataMap[p.userId] || {};
-            console.log(`[ChineseChessTable] Player ${p.userId}: db-avatar=${latestData.avatar}, player-avatar=${p.avatar}, final=${latestData.avatar || p.avatar || '/images/default-avatar.png'}`);
-        });
-
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
 
