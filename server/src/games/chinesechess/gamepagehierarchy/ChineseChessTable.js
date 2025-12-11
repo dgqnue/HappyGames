@@ -191,12 +191,21 @@ class ChineseChessTable extends GameTable {
         // 获取最新的玩家头像和信息
         const playerInfos = await Promise.all(this.players.map(async p => {
             const dbQueryId = p.user?._id || p.userId;
-            const avatar = await fetchLatestAvatarUrl(dbQueryId);
+            const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
+            
+            // 决策：如果数据库返回默认头像，但内存中有非默认头像，优先使用内存的
+            const cachedAvatar = p.avatar || p.user?.avatar;
+            let finalAvatar = dbAvatar;
+            if (dbAvatar && dbAvatar.includes('default-avatar') && cachedAvatar && !cachedAvatar.includes('default-avatar')) {
+                console.log(`[ChineseChessTable] onGameStart: Fallback to cached avatar for ${p.userId}`);
+                finalAvatar = cachedAvatar;
+            }
+
             return {
                 userId: p.userId,
                 nickname: p.nickname,
                 title: p.title || '无',
-                avatar: avatar
+                avatar: finalAvatar
             };
         }));
 
@@ -489,7 +498,17 @@ class ChineseChessTable extends GameTable {
                 // 获取用户信息（头像、昵称等）- 无条件查询
                 // 使用统一的 fetchLatestAvatarUrl 获取头像
                 const dbQueryId = player.user?._id || player.userId;
-                playerData.avatar = await fetchLatestAvatarUrl(dbQueryId);
+                const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
+                
+                // 决策：如果数据库返回默认头像，但内存中有非默认头像，优先使用内存的
+                const cachedAvatar = player.avatar || player.user?.avatar;
+                let finalAvatar = dbAvatar;
+                if (dbAvatar && dbAvatar.includes('default-avatar') && cachedAvatar && !cachedAvatar.includes('default-avatar')) {
+                    console.log(`[ChineseChessTable] broadcastRoomState: Fallback to cached avatar for ${player.userId}`);
+                    finalAvatar = cachedAvatar;
+                }
+                
+                playerData.avatar = finalAvatar;
                 console.log(`[ChineseChessTable] Using standardized avatar for ${dbQueryId}: ${playerData.avatar}`);
 
                 // 单独获取昵称
@@ -709,12 +728,24 @@ class ChineseChessTable extends GameTable {
         // 获取最新的玩家头像
         const playersWithAvatar = await Promise.all(this.players.map(async p => {
             const dbQueryId = p.user?._id || p.userId;
-            const avatar = await fetchLatestAvatarUrl(dbQueryId);
+            // 1. 尝试从数据库获取最新头像
+            const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
+            
+            // 2. 获取内存中的缓存头像作为回退
+            const cachedAvatar = p.avatar || p.user?.avatar;
+            
+            // 3. 决策：如果数据库返回默认头像，但内存中有非默认头像，优先使用内存的
+            // 只有当两者都是默认，或者数据库返回了新的非默认头像时，才使用数据库的
+            let finalAvatar = dbAvatar;
+            if (dbAvatar.includes('default-avatar') && cachedAvatar && !cachedAvatar.includes('default-avatar')) {
+                console.log(`[ChineseChessTable] sendState: Fallback to cached avatar for ${p.userId}`);
+                finalAvatar = cachedAvatar;
+            }
             
             return {
                 userId: p.userId,
                 nickname: p.nickname,
-                avatar: avatar, // 确保包含最新头像
+                avatar: finalAvatar, // 使用经过决策的头像
                 ready: p.ready,
                 title: p.title,
                 titleColor: p.titleColor,
