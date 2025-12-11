@@ -511,10 +511,6 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         </div>
                     )}
                 </div>
-                {/* 调试信息：显示头像 URL (强制显示以调试) */}
-                <div className="text-[10px] text-gray-500 max-w-[100px] break-all mt-1">
-                    {avatarUrl}
-                </div>
             </div>
         );
     };
