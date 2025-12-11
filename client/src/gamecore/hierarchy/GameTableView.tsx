@@ -501,7 +501,26 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             console.error(`[GameTableView] Failed to load avatar: ${target.src}`);
                             // 防止无限循环
                             if (target.src.indexOf('default-avatar.png') === -1) {
-                                target.src = '/images/default-avatar.png';
+                                // 尝试使用相对路径（如果之前是绝对路径失败了）
+                                if (target.src.startsWith('http')) {
+                                    try {
+                                        const url = new URL(target.src);
+                                        // 如果是同一域名下的资源，尝试直接使用路径
+                                        if (url.origin === window.location.origin) {
+                                            // 已经是同源失败，直接回退
+                                            target.src = '/images/default-avatar.png';
+                                        } else {
+                                            // 跨域失败，可能是 Render 临时域名问题，尝试只取路径部分
+                                            // 注意：这假设图片在当前服务器上也有
+                                            console.log(`[GameTableView] Retrying with relative path: ${url.pathname}`);
+                                            target.src = url.pathname;
+                                        }
+                                    } catch (err) {
+                                        target.src = '/images/default-avatar.png';
+                                    }
+                                } else {
+                                    target.src = '/images/default-avatar.png';
+                                }
                             }
                         }}
                     />
