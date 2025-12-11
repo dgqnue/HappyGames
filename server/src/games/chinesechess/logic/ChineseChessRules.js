@@ -176,6 +176,82 @@ class ChineseChessRules {
         }
         return count;
     }
-}
 
-module.exports = ChineseChessRules;
+    /**
+     * 找到指定方向的将/帅位置
+     * @param {Array} board - 棋盘
+     * @param {string} side - 'r' (红方) 或 'b' (黑方)
+     * @returns {Object|null} - {x, y} 或 null
+     */
+    static getKingPosition(board, side) {
+        const kingPiece = side === 'r' ? 'K' : 'k';
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 9; x++) {
+                if (board[y][x] === kingPiece) {
+                    return { x, y };
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 检查某个位置是否受到对方攻击（被将军）
+     * @param {Array} board - 棋盘
+     * @param {number} kingX - 将/帅的X坐标
+     * @param {number} kingY - 将/帅的Y坐标
+     * @param {string} side - 'r' (红方) 或 'b' (黑方)
+     * @returns {boolean}
+     */
+    static isKingUnderAttack(board, kingX, kingY, side) {
+        const enemySide = side === 'r' ? 'b' : 'r';
+
+        // 遍历所有敌方棋子，检查是否能攻击到将/帅
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 9; x++) {
+                const piece = board[y][x];
+                if (!piece) continue;
+
+                const pieceSide = this.getSide(piece);
+                if (pieceSide !== enemySide) continue;
+
+                // 检查敌方棋子是否能移动到国王位置（模拟一个移动）
+                if (this.isValidMoveV2(board, x, y, kingX, kingY, enemySide)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查移动后是否形成将军
+     * @param {Array} board - 棋盘
+     * @param {number} fromX - 移动的起始X
+     * @param {number} fromY - 移动的起始Y
+     * @param {number} toX - 移动的目标X
+     * @param {number} toY - 移动的目标Y
+     * @param {string} side - 'r' (红方) 或 'b' (黑方)
+     * @returns {boolean}
+     */
+    static isCheckAfterMove(board, fromX, fromY, toX, toY, side) {
+        // 深拷贝棋盘以模拟移动
+        const boardCopy = board.map(row => [...row]);
+        const piece = boardCopy[fromY][fromX];
+        
+        // 执行移动
+        boardCopy[toY][toX] = piece;
+        boardCopy[fromY][fromX] = null;
+
+        // 对方的国王位置
+        const enemySide = side === 'r' ? 'b' : 'r';
+        const kingPos = this.getKingPosition(boardCopy, enemySide);
+        
+        if (!kingPos) {
+            return false;
+        }
+
+        // 检查对方国王是否受到攻击
+        return this.isKingUnderAttack(boardCopy, kingPos.x, kingPos.y, enemySide);
+    }
+}

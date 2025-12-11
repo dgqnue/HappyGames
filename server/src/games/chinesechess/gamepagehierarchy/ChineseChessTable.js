@@ -272,11 +272,15 @@ class ChineseChessTable extends GameTable {
         // 切换回合
         this.turn = this.turn === 'r' ? 'b' : 'r';
 
+        // 检查是否形成将军
+        const check = ChineseChessRules.isCheckAfterMove(this.board, fromX, fromY, toX, toY, side);
+
         // 广播移动
-        console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}`);
+        console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${check}`);
         this.broadcast('move', {
             move,
             captured: captured ? captured : null,
+            check: check,
             turn: this.turn,
             board: this.board
         });

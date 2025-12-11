@@ -59,8 +59,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   );
 
   // 跟踪上次播放的音效时间，防止重复播放
-  // 支持的音效类型：'select'（选中）、'eat'（吃子）、'win'（胜利）、'lose'（失败）、'check'（将军）、'move'（移动）
-  const lastAudioTimeRef = useRef<{ [key: string]: number }>({ select: 0, eat: 0, win: 0, lose: 0, check: 0, move: 0 });
+  // 支持的音效类型：'select'（选中）、'eat'（吃子）、'win'（胜利）、'lose'（失败）
+  const lastAudioTimeRef = useRef<{ [key: string]: number }>({ select: 0, eat: 0, win: 0, lose: 0 });
 
   // 包装 setSelectedPiece，同步更新到 tableClient
   const setSelectedPiece = (piece: { row: number; col: number } | null) => {
@@ -120,9 +120,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         updateGameState();
       });
 
-      // 监听服务器广播的移动事件以播放公开音效（吃子、将军）
+      // 监听服务器广播的移动事件以播放公开音效（吃子、将军、移动）
       // 注意：选中棋子、胜利、失败的音效是私有的，只在本地播放
-      // 吃子、将军音效是公开的，由服务器广播给所有玩家
+      // 吃子、将军、移动音效是公开的，由服务器广播给所有玩家
       const onMoveHandler = (data: any) => {
           console.log('[ChineseChessDisplay] onMove callback triggered:', { 
               captured: data.captured,
@@ -142,11 +142,16 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               console.log('[ChineseChessDisplay] No capture detected in move event');
           }
           
-          // 处理将军事件
+          // 处理将军事件（公开音效）
           if (data.check) {
               console.log('[ChineseChessDisplay] Playing check sound (public event from server)');
               playSound('check');
           }
+          
+          // 处理棋子移动音效（公开音效）
+          // 所有玩家都听到移动音效
+          console.log('[ChineseChessDisplay] Playing move sound (public event from server)');
+          playSound('move');
       };
 
       if (typeof (tableClient as any).addMoveListener === 'function') {
@@ -384,9 +389,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             try {
               tableClient.sendMove(selectedPiece.col, selectedPiece.row, col, row);
               setSelectedPiece(null);
-              // 播放棋子移动音效
-              playSound('move');
-              // 音效现在由 onMove 事件触发，确保只有在服务器确认移动后才播放
+              // 音效现在由服务器广播的 onMove 事件触发，确保两个玩家同时听到
             } catch (err) {
               console.error('[ChineseChessDisplay] Error sending move:', err);
             }
