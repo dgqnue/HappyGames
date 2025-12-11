@@ -255,6 +255,9 @@ class ChineseChessTable extends GameTable {
         }
         console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
 
+        // 在执行移动前保存棋盘快照，用于将军检测，避免使用已被修改的棋盘
+        const boardBeforeMove = this.board.map(row => [...row]);
+
         // 执行移动
         const captured = this.board[toY][toX];
 
@@ -272,8 +275,13 @@ class ChineseChessTable extends GameTable {
         // 切换回合
         this.turn = this.turn === 'r' ? 'b' : 'r';
 
-        // 检查是否形成将军
-        const check = ChineseChessRules.isCheckAfterMove(this.board, fromX, fromY, toX, toY, side);
+        // 检查是否形成将军（使用移动前的棋盘做模拟，若检测异常不中断广播）
+        let check = false;
+        try {
+            check = ChineseChessRules.isCheckAfterMove(boardBeforeMove, fromX, fromY, toX, toY, side);
+        } catch (err) {
+            console.warn('[ChineseChessTable] isCheckAfterMove failed, continue without check flag:', err);
+        }
 
         // 广播移动
         console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${check}`);
