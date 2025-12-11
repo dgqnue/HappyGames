@@ -8,7 +8,7 @@ const Wallet = require('../models/Wallet'); // 导入钱包模型
 const Transaction = require('../models/Transaction'); // 导入交易模型
 const UserGameStats = require('../models/UserGameStats'); // 导入用户游戏统计模型
 const jwt = require('jsonwebtoken'); // 导入 JSON Web Token 库
-const { getFullAvatarUrl } = require('../utils/urlUtils');
+const { fetchLatestAvatarUrl } = require('../utils/avatarUtils');
 
 /**
  * 获取用户个人资料
@@ -53,7 +53,7 @@ exports.getUserProfile = async (req, res) => {
             _id: user._id, // 用户 ID
             username: user.username, // 用户名
             nickname: user.nickname, // 用户昵称
-            avatar: getFullAvatarUrl(user.avatar), // 用户头像
+            avatar: await fetchLatestAvatarUrl(user._id), // 用户头像 (强制获取最新)
             referralCode: user.referralCode, // 用户的推荐码
             referralLevel: user.referralLevel, // 用户的推荐等级
             referralStats: user.referralStats, // 用户的推荐统计数据
@@ -126,7 +126,7 @@ exports.loginOrRegister = async (req, res) => {
             console.log(`[Pi登录] ✅ 成功登录用户: ${username}`);
 
             const userObj = user.toObject();
-            userObj.avatar = getFullAvatarUrl(userObj.avatar);
+            userObj.avatar = await fetchLatestAvatarUrl(user._id);
 
             return res.json({
                 message: '登录成功',

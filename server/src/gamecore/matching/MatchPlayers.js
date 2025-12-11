@@ -1,6 +1,6 @@
 const DisconnectTracker = require('../DisconnectTracker');
 const GameConfig = require('./GameConfig');
-const { getFullAvatarUrl } = require('../../utils/urlUtils');
+const { fetchLatestAvatarUrl } = require('../../utils/avatarUtils');
 
 /**
  * ============================================================================
@@ -1365,27 +1365,21 @@ class MatchPlayers {
             ? (playerStats.disconnects / playerStats.gamesPlayed) * 100
             : 0;
 
-        // 从数据库获取用户的最新信息（特别是头像可能在个人资料页面更新过）
+        // 使用统一的 fetchLatestAvatarUrl 获取最新头像
+        const userAvatar = await fetchLatestAvatarUrl(socket.user._id);
+        console.log(`[MatchPlayers] Final avatar for ${userId}: ${userAvatar}`);
+        
+        // 获取昵称 (仍然需要手动查询，或者我们可以扩展 avatarUtils 来获取更多信息，但目前只关注头像)
         const User = require('../../models/User');
-        let userFromDb;
+        let userNickname = socket.user.nickname || socket.user.username;
         try {
-            userFromDb = await User.findById(socket.user._id).select('avatar nickname').lean();
-            if (userFromDb) {
-                console.log(`[MatchPlayers] User ${socket.user._id} found in DB. Avatar: ${userFromDb.avatar}`);
-            } else {
-                console.warn(`[MatchPlayers] User ${socket.user._id} NOT found in DB.`);
+            const userFromDb = await User.findById(socket.user._id).select('nickname').lean();
+            if (userFromDb && userFromDb.nickname) {
+                userNickname = userFromDb.nickname;
             }
         } catch (err) {
-            console.warn(`[MatchPlayers] Failed to fetch user from DB, using socket.user:`, err.message);
-            userFromDb = null;
+            console.warn(`[MatchPlayers] Failed to fetch nickname:`, err.message);
         }
-
-        // 优先使用数据库中的最新信息，回退到 socket.user
-        // 使用 getFullAvatarUrl 转换为完整 URL，确保客户端（特别是移动端）能正确加载
-        const rawAvatar = userFromDb?.avatar || socket.user.avatar;
-        const userAvatar = getFullAvatarUrl(rawAvatar);
-        console.log(`[MatchPlayers] Final avatar for ${userId}: ${userAvatar}`);
-        const userNickname = userFromDb?.nickname || socket.user.nickname || socket.user.username;
 
         // 准备玩家数据
         const playerData = {

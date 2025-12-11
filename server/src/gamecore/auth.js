@@ -1,23 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getFullAvatarUrl } = require('../utils/urlUtils');
 
-// 辅助函数：处理头像 URL
-const processAvatarUrl = (avatarPath) => {
-    // 如果是默认头像路径，返回前端本地路径
-    if (!avatarPath || avatarPath.includes('default-avatar')) return '/images/default-avatar.png';
-
-    // 如果已经是绝对路径或 Base64，直接返回
-    if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
-
-    // 检查是否在 Render 环境中
-    if (process.env.RENDER || process.env.NODE_ENV === 'production') {
-        const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
-        return `${baseUrl}${avatarPath}`;
-    }
-
-    // 本地开发环境
-    return `http://localhost:5000${avatarPath}`;
-};
+// 辅助函数：处理头像 URL (已废弃，使用 getFullAvatarUrl)
+// const processAvatarUrl = ...
 
 const verifyToken = async (token) => {
     if (!token) return null;
@@ -31,7 +17,7 @@ const verifyToken = async (token) => {
 
         // 处理头像 URL
         if (user) {
-            user.avatar = processAvatarUrl(user.avatar);
+            user.avatar = getFullAvatarUrl(user.avatar);
         }
 
         return user;
@@ -114,7 +100,7 @@ async function piAuth(req, res, next) {
         console.log(`[piAuth] ✅ 成功登录用户: ${user.username}`);
 
         if (user) {
-            user.avatar = processAvatarUrl(user.avatar);
+            user.avatar = getFullAvatarUrl(user.avatar);
         }
 
         req.user = user;
@@ -147,7 +133,7 @@ async function optionalAuth(req, res, next) {
             }
 
             if (user) {
-                user.avatar = processAvatarUrl(user.avatar);
+                user.avatar = getFullAvatarUrl(user.avatar);
                 req.user = user;
                 req.token = token;
             }
@@ -162,5 +148,5 @@ module.exports = {
     verifyToken,
     piAuth,
     optionalAuth,
-    processAvatarUrl
+    processAvatarUrl: getFullAvatarUrl // 保持兼容性导出
 };

@@ -12,7 +12,7 @@ const SECRET_KEY = process.env.SETTLEMENT_SECRET_KEY || 'YOUR_SECURE_KEY';
  * 中国象棋游戏桌 (ChineseChessTable)
  * 直接继承自 GameTable，使用 MatchPlayers 处理匹配逻辑
  */
-const { getFullAvatarUrl } = require('../../../utils/urlUtils');
+const { fetchLatestAvatarUrl } = require('../../../utils/avatarUtils');
 
 class ChineseChessTable extends GameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
@@ -480,37 +480,19 @@ class ChineseChessTable extends GameTable {
                 }
                 
                 // 获取用户信息（头像、昵称等）- 无条件查询
-                let userInfo;
+                // 使用统一的 fetchLatestAvatarUrl 获取头像
+                const dbQueryId = player.user?._id || player.userId;
+                playerData.avatar = await fetchLatestAvatarUrl(dbQueryId);
+                console.log(`[ChineseChessTable] Using standardized avatar for ${dbQueryId}: ${playerData.avatar}`);
+
+                // 单独获取昵称
                 try {
-                    // 尝试使用 userId (可能是 ObjectId 字符串) 或 user._id
-                    const dbQueryId = player.user?._id || player.userId;
-                    console.log(`[ChineseChessTable] Fetching DB info for player: ${dbQueryId}`);
-                    userInfo = await User.findById(dbQueryId).select('avatar nickname').lean();
-                    if (userInfo) {
-                        console.log(`[ChineseChessTable] broadcastRoomState: User ${dbQueryId} found in DB. Avatar: ${userInfo.avatar}`);
-                    } else {
-                        console.warn(`[ChineseChessTable] broadcastRoomState: User ${dbQueryId} NOT found in DB.`);
+                    const userInfo = await User.findById(dbQueryId).select('nickname').lean();
+                    if (userInfo?.nickname) {
+                        playerData.nickname = userInfo.nickname;
                     }
                 } catch (err) {
-                    console.warn(`[ChineseChessTable] Failed to fetch user info for ${player.userId}:`, err.message);
-                    userInfo = null;
-                }
-                
-                // 设置头像和昵称（优先使用数据库中的最新值）
-                if (userInfo?.avatar) {
-                    playerData.avatar = getFullAvatarUrl(userInfo.avatar);
-                    console.log(`[ChineseChessTable] Using DB avatar for ${player.userId}: ${playerData.avatar}`);
-                } else if (player.avatar) {
-                    // 如果数据库中没有头像，使用玩家对象中的头像（该值是在玩家加入时设置的）
-                    playerData.avatar = getFullAvatarUrl(player.avatar);
-                    console.log(`[ChineseChessTable] Using cached avatar for ${player.userId}: ${playerData.avatar}`);
-                } else {
-                    playerData.avatar = getFullAvatarUrl('/images/default-avatar.png');
-                    console.log(`[ChineseChessTable] Using default avatar for ${player.userId}`);
-                }
-                
-                if (userInfo?.nickname) {
-                    playerData.nickname = userInfo.nickname;
+                    console.warn(`[ChineseChessTable] Failed to fetch nickname for ${player.userId}:`, err.message);
                 }
                 
                 playerDataMap[player.userId] = playerData;

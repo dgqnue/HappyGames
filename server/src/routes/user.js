@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const bcrypt = require('bcryptjs');
-const { getFullAvatarUrl } = require('../utils/urlUtils');
+const { fetchLatestAvatarUrl } = require('../utils/avatarUtils');
 
 // 读取默认头像并转换为 Base64
 let DEFAULT_AVATAR_BASE64 = '';
@@ -306,7 +306,7 @@ router.get('/profile', async (req, res) => {
 
         // 转换头像为完整 URL
         const userData = user.toObject();
-        userData.avatar = getFullAvatarUrl(userData.avatar);
+        userData.avatar = await fetchLatestAvatarUrl(user._id);
 
         res.json({
             success: true,
@@ -448,7 +448,7 @@ router.post('/avatar', upload.single('avatar'), async (req, res) => {
 
         // 转换头像为完整 URL
         const userData = user.toObject();
-        userData.avatar = getFullAvatarUrl(userData.avatar);
+        userData.avatar = await fetchLatestAvatarUrl(user._id);
         console.log('[Avatar Upload] 返回给前端的完整 URL:', userData.avatar);
 
         res.json({
