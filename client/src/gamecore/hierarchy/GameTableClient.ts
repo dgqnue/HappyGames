@@ -387,14 +387,29 @@ export abstract class GameTableClient {
         }
 
         try {
-            // 更新状态为 playing，保持倒计时状态直到倒计时完成
-            this.updateState({
+            // 准备新的状态对象
+            const newState: any = {
                 status: 'playing',
                 ...data,
                 canStart: false, // 游戏开始后不能再开始
                 ready: false // 重置准备状态
-                // 注意：不清除 countdown，让它继续显示直到倒计时完成
-            });
+            };
+
+            // 关键修复：处理 players 字段的数据类型不一致问题
+            // 服务器在 game_start 中发送的 players 是 {r: userId, b: userId} 对象
+            // 而客户端 state.players 需要是 Player[] 数组
+            // 服务器同时发送了 playerInfos 作为数组，应该使用它
+            if (data.playerInfos && Array.isArray(data.playerInfos)) {
+                console.log(`[${this.gameType}TableClient] Using playerInfos as players state`);
+                newState.players = data.playerInfos;
+            } else if (data.players && !Array.isArray(data.players)) {
+                console.warn(`[${this.gameType}TableClient] data.players is not an array (likely side mapping), ignoring it to prevent state corruption.`);
+                // 删除 players 字段，避免覆盖现有的正确 players 数组
+                delete newState.players;
+            }
+
+            // 更新状态
+            this.updateState(newState);
             
             console.log(`[${this.gameType}TableClient] State updated to playing, current state:`, this.state);
             
