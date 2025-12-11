@@ -476,8 +476,9 @@ class ChineseChessTable extends GameTable {
                 return `${baseUrl}${avatarPath}`;
             }
 
-            // 本地开发环境
-            return `http://localhost:5000${avatarPath}`;
+            // 本地开发环境 - 优先使用 API_BASE_URL (方便局域网调试)，否则回退到 localhost
+            const baseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
+            return `${baseUrl}${avatarPath}`;
         };
         
         // 从数据库获取最新的玩家信息（特别是称号、等级分和头像）
@@ -505,6 +506,11 @@ class ChineseChessTable extends GameTable {
                 let userInfo;
                 try {
                     userInfo = await User.findById(player.userId).select('avatar nickname').lean();
+                    if (userInfo) {
+                        console.log(`[ChineseChessTable] broadcastRoomState: User ${player.userId} found in DB. Avatar: ${userInfo.avatar}`);
+                    } else {
+                        console.warn(`[ChineseChessTable] broadcastRoomState: User ${player.userId} NOT found in DB.`);
+                    }
                 } catch (err) {
                     console.warn(`[ChineseChessTable] Failed to fetch user info for ${player.userId}:`, err.message);
                     userInfo = null;
@@ -513,11 +519,14 @@ class ChineseChessTable extends GameTable {
                 // 设置头像和昵称（优先使用数据库中的最新值）
                 if (userInfo?.avatar) {
                     playerData.avatar = getFullAvatarUrl(userInfo.avatar);
+                    console.log(`[ChineseChessTable] Using DB avatar for ${player.userId}: ${playerData.avatar}`);
                 } else if (player.avatar) {
                     // 如果数据库中没有头像，使用玩家对象中的头像（该值是在玩家加入时设置的）
                     playerData.avatar = getFullAvatarUrl(player.avatar);
+                    console.log(`[ChineseChessTable] Using cached avatar for ${player.userId}: ${playerData.avatar}`);
                 } else {
                     playerData.avatar = getFullAvatarUrl('/images/default-avatar.png');
+                    console.log(`[ChineseChessTable] Using default avatar for ${player.userId}`);
                 }
                 
                 if (userInfo?.nickname) {

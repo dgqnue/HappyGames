@@ -1369,6 +1369,11 @@ class MatchPlayers {
         let userFromDb;
         try {
             userFromDb = await User.findById(socket.user._id).select('avatar nickname').lean();
+            if (userFromDb) {
+                console.log(`[MatchPlayers] User ${socket.user._id} found in DB. Avatar: ${userFromDb.avatar}`);
+            } else {
+                console.warn(`[MatchPlayers] User ${socket.user._id} NOT found in DB.`);
+            }
         } catch (err) {
             console.warn(`[MatchPlayers] Failed to fetch user from DB, using socket.user:`, err.message);
             userFromDb = null;
@@ -1377,6 +1382,7 @@ class MatchPlayers {
         // 优先使用数据库中的最新信息，回退到 socket.user
         // 注意：存储相对路径，不做 URL 转换（转换在广播时进行）
         const userAvatar = userFromDb?.avatar || socket.user.avatar || '/images/default-avatar.png';
+        console.log(`[MatchPlayers] Final avatar for ${userId}: ${userAvatar}`);
         const userNickname = userFromDb?.nickname || socket.user.nickname || socket.user.username;
 
         // 准备玩家数据

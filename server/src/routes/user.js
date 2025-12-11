@@ -53,8 +53,9 @@ const getFullAvatarUrl = (avatarPath) => {
         return `${baseUrl}${avatarPath}`;
     }
 
-    // 本地开发环境
-    return `http://localhost:5000${avatarPath}`;
+    // 本地开发环境 - 优先使用 API_BASE_URL (方便局域网调试)，否则回退到 localhost
+    const baseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
+    return `${baseUrl}${avatarPath}`;
 };
 
 // ========== 公开路由 (无需认证) ==========
