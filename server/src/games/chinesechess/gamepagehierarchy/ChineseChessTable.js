@@ -426,21 +426,31 @@ class ChineseChessTable extends GameTable {
         const currentStatus = this.status;  // 使用 getter，确保获取正确的状态
         const currentPlayers = this.players;
         
-        // 辅助函数：将头像路径转换为完整 URL
+        // 辅助函数：将头像路径转换为完整 URL（统一提供给前端）
         const getFullAvatarUrl = (avatarPath) => {
-            if (!avatarPath) return '/images/default-avatar.png';
-            // 如果已经是完整 URL，直接返回
-            if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
-            // 如果是相对路径，需要补全为完整 URL
-            if (avatarPath.startsWith('/')) {
-                if (process.env.RENDER || process.env.NODE_ENV === 'production') {
-                    const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
-                    return `${baseUrl}${avatarPath}`;
-                }
-                return `http://localhost:5000${avatarPath}`;
+            // 空值统一返回默认头像 URL（由后端统一拼好域名）
+            if (!avatarPath) {
+                avatarPath = '/images/default-avatar.png';
             }
-            // 其他情况返回默认头像
-            return '/images/default-avatar.png';
+
+            // 已经是完整 URL，直接返回
+            if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://') || avatarPath.startsWith('data:')) {
+                return avatarPath;
+            }
+
+            // 只接受以 / 开头的相对路径，其它异常值一律回退到默认头像
+            if (!avatarPath.startsWith('/')) {
+                avatarPath = '/images/default-avatar.png';
+            }
+
+            // Render 线上或生产环境
+            if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+                const baseUrl = process.env.API_BASE_URL || 'https://happygames-tfdz.onrender.com';
+                return `${baseUrl}${avatarPath}`;
+            }
+
+            // 本地开发环境
+            return `http://localhost:5000${avatarPath}`;
         };
         
         // 从数据库获取最新的玩家信息（特别是称号、等级分和头像）
