@@ -431,7 +431,19 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         // 补全相对路径 (如果服务器返回了相对路径，前端进行补全)
         if (avatarUrl && avatarUrl.startsWith('/')) {
              // 优先使用环境变量，否则回退到 localhost:5000
-             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+             let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+             
+             // 智能修正：如果是浏览器环境，且当前访问的不是 localhost，但 baseUrl 是 localhost
+             // 则尝试将 baseUrl 中的 localhost 替换为当前访问的 hostname (用于局域网调试)
+             if (typeof window !== 'undefined' && 
+                 window.location.hostname !== 'localhost' && 
+                 window.location.hostname !== '127.0.0.1' &&
+                 (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1'))) {
+                 baseUrl = baseUrl.replace('localhost', window.location.hostname);
+                 baseUrl = baseUrl.replace('127.0.0.1', window.location.hostname);
+                 console.log('[GameTableView] Auto-corrected API URL for LAN:', baseUrl);
+             }
+
              // 避免重复拼接 (虽然 startsWith('/') 已经检查了，但为了保险)
              if (!avatarUrl.startsWith('http')) {
                  avatarUrl = `${baseUrl}${avatarUrl}`;
