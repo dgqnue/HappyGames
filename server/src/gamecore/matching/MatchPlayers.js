@@ -913,6 +913,8 @@ class MatchRoomState {
             seatIndex: seatIndex
         };
 
+        console.log(`[MatchRoom] Adding player ${playerData.userId} to memory. Avatar: ${playerData.avatar}`);
+
         this.players.push(playerWithSeat);
 
         const newState = MatchingRules.getStateAfterPlayerJoin(this.players.length, this.maxPlayers);
@@ -1401,6 +1403,8 @@ class MatchPlayers {
             matchSettings: matchSettings,
             ready: false
         };
+
+        console.log(`[MatchPlayers] Created playerData for ${userId} with avatar: ${userAvatar}`);
 
         // 尝试入座
         const result = this.matchState.addPlayer(playerData);
