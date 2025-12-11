@@ -473,13 +473,47 @@ export abstract class GameTableClient {
     public updateState(newState: Partial<GameTableState>): void {
         const oldStatus = this.state.status;
         const oldState = { ...this.state };
+
+        // 🚨 AVATAR TRAP: 监控头像丢失或回退
+        if (newState.players) {
+            newState.players.forEach((newP: any) => {
+                const oldP = this.state.players.find(p => p.userId === newP.userId);
+                
+                // 情况1: 头像完全丢失
+                if (oldP && oldP.avatar && !newP.avatar) {
+                    console.error(`[GameTableClient] 🚨 AVATAR LOST for ${newP.userId}!`, {
+                        oldAvatar: oldP.avatar,
+                        newAvatar: newP.avatar,
+                        source: 'updateState',
+                        newStateKeys: Object.keys(newState),
+                        fullNewState: newState
+                    });
+                    console.trace('Avatar lost trace');
+                }
+                
+                // 情况2: 头像变回默认
+                if (oldP && oldP.avatar && newP.avatar && 
+                    oldP.avatar !== newP.avatar && 
+                    (newP.avatar.includes('default') || newP.avatar === '/images/default-avatar.png')) {
+                    console.error(`[GameTableClient] 🚨 AVATAR REVERTED TO DEFAULT for ${newP.userId}!`, {
+                        oldAvatar: oldP.avatar,
+                        newAvatar: newP.avatar,
+                        source: 'updateState',
+                        newStateKeys: Object.keys(newState),
+                        fullNewState: newState
+                    });
+                    console.trace('Avatar revert trace');
+                }
+            });
+        }
+
         this.state = { ...this.state, ...newState };
         
         console.log(`[${this.gameType}TableClient] updateState called:`, {
             oldStatus,
             newStatus: this.state.status,
-            oldState,
-            newState: this.state,
+            // oldState,
+            // newState: this.state,
             hasOnStateUpdate: !!this.onStateUpdate
         });
         
