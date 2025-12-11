@@ -213,9 +213,24 @@ class ChineseChessTable extends GameTable {
      * 处理移动请求
      */
     handleMove(socket, move) {
+        // 如果状态不是 playing，尝试自愈，避免直接拒绝导致棋子无法移动
         if (this.status !== 'playing') {
-            console.log(`[ChineseChessTable] handleMove rejected: status is ${this.status}, not 'playing'`);
-            return;
+            console.warn(`[ChineseChessTable] handleMove: status=${this.status}, expected 'playing'. Attempting auto-recover.`);
+
+            // 若棋盘未初始化，重置棋盘并抢救状态
+            if (!this.board || !Array.isArray(this.board) || this.board.length === 0) {
+                console.warn('[ChineseChessTable] Board missing when move received. Resetting board and turn.');
+                this.resetBoard();
+            }
+
+            // 补上回合信息
+            if (!this.turn) {
+                this.turn = 'r';
+            }
+
+            // 将状态切回 playing 并广播，让前端同步
+            this.matchPlayers.matchState.status = 'playing';
+            this.broadcastRoomState();
         }
 
         const { fromX, fromY, toX, toY } = move;
