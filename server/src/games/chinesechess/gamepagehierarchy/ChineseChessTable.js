@@ -534,16 +534,6 @@ class ChineseChessTable extends GameTable {
                     disconnectRate: p.disconnectRate,
                     seatIndex: p.seatIndex
                 };
-                    socketId: p.socketId,
-                    nickname: latestData.nickname || p.nickname || (p.user ? p.user.nickname : 'Unknown'),
-                    avatar: effectiveAvatar,
-                    ready: p.ready,
-                    title: latestData.title || p.title,
-                    titleColor: latestData.titleColor || p.titleColor,
-                    winRate: p.winRate,
-                    disconnectRate: p.disconnectRate,
-                    seatIndex: p.seatIndex
-                };
             }),
             // 如果正在游戏中，附带游戏状态
             ...(currentStatus === 'playing' ? {
