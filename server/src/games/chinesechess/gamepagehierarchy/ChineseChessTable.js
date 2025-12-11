@@ -482,12 +482,14 @@ class ChineseChessTable extends GameTable {
                 // 获取用户信息（头像、昵称等）- 无条件查询
                 let userInfo;
                 try {
-                    console.log(`[ChineseChessTable] Fetching DB info for player: ${player.userId}`);
-                    userInfo = await User.findById(player.userId).select('avatar nickname').lean();
+                    // 尝试使用 userId (可能是 ObjectId 字符串) 或 user._id
+                    const dbQueryId = player.user?._id || player.userId;
+                    console.log(`[ChineseChessTable] Fetching DB info for player: ${dbQueryId}`);
+                    userInfo = await User.findById(dbQueryId).select('avatar nickname').lean();
                     if (userInfo) {
-                        console.log(`[ChineseChessTable] broadcastRoomState: User ${player.userId} found in DB. Avatar: ${userInfo.avatar}`);
+                        console.log(`[ChineseChessTable] broadcastRoomState: User ${dbQueryId} found in DB. Avatar: ${userInfo.avatar}`);
                     } else {
-                        console.warn(`[ChineseChessTable] broadcastRoomState: User ${player.userId} NOT found in DB.`);
+                        console.warn(`[ChineseChessTable] broadcastRoomState: User ${dbQueryId} NOT found in DB.`);
                     }
                 } catch (err) {
                     console.warn(`[ChineseChessTable] Failed to fetch user info for ${player.userId}:`, err.message);
