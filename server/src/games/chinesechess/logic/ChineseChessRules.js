@@ -255,3 +255,5 @@ class ChineseChessRules {
         return this.isKingUnderAttack(boardCopy, kingPos.x, kingPos.y, enemySide);
     }
 }
+
+module.exports = ChineseChessRules;
