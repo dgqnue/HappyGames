@@ -117,7 +117,32 @@ try {
 }
 
 app.use('/images', express.static(imagesDir));
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+// 调试 Uploads 目录
+const uploadsDir = path.join(__dirname, '../public/uploads');
+console.log('[Server] Uploads 目录:', uploadsDir);
+if (fs.existsSync(uploadsDir)) {
+    console.log('[Server] Uploads 目录存在');
+    // 递归列出文件用于调试
+    try {
+        const avatarsDir = path.join(uploadsDir, 'avatars');
+        if (fs.existsSync(avatarsDir)) {
+            console.log('[Server] Avatars 目录文件:', fs.readdirSync(avatarsDir));
+        } else {
+            console.log('[Server] Avatars 目录不存在');
+        }
+    } catch (e) {
+        console.log('[Server] 读取 Avatars 目录失败:', e.message);
+    }
+} else {
+    console.error('[Server] Uploads 目录不存在！');
+}
+
+app.use('/uploads', (req, res, next) => {
+    console.log(`[Static] 请求 Uploads 资源: ${req.url}`);
+    next();
+});
+app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
 // API 路由
