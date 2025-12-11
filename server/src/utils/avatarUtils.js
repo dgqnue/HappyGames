@@ -23,9 +23,12 @@ async function fetchLatestAvatarUrl(userId) {
         
         if (user && user.avatar) {
             // 数据库有记录，转换并返回
-            return getFullAvatarUrl(user.avatar);
+            const fullUrl = getFullAvatarUrl(user.avatar);
+            // console.log(`[AvatarUtils] Found avatar for ${userId}: ${fullUrl}`);
+            return fullUrl;
         } else {
             // 用户不存在或字段为空，返回默认
+            // console.log(`[AvatarUtils] No avatar found for ${userId}, using default`);
             return getFullAvatarUrl(null);
         }
     } catch (error) {

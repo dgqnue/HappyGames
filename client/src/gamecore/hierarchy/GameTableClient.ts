@@ -251,6 +251,15 @@ export abstract class GameTableClient {
     protected handleTableState(data: any): void {
         const players = data.playerList || data.players || [];
 
+        // 调试：检查接收到的玩家头像
+        players.forEach((p: any) => {
+            if (!p.avatar) {
+                console.warn(`[${this.gameType}TableClient] Player ${p.userId} has NO avatar in table_state!`, p);
+            } else {
+                console.log(`[${this.gameType}TableClient] Player ${p.userId} avatar: ${p.avatar}`);
+            }
+        });
+
         // 基础状态更新
         const stateUpdate: any = {
             tableId: data.tableId || data.roomId,  // 加入成功后设置 tableId（优先使用tableId字段）
@@ -277,6 +286,16 @@ export abstract class GameTableClient {
     protected handleTableUpdate(data: any): void {
         console.log(`[${this.gameType}TableClient] handleTableUpdate received:`, data);
         const players = data.playerList || data.players || [];
+        
+        // 调试：检查接收到的玩家头像
+        players.forEach((p: any) => {
+            if (!p.avatar) {
+                console.warn(`[${this.gameType}TableClient] Player ${p.userId} has NO avatar in table_update!`, p);
+            } else {
+                console.log(`[${this.gameType}TableClient] Player ${p.userId} avatar: ${p.avatar}`);
+            }
+        });
+
         const canStart = this.checkCanStart(players);
 
         // 如果状态变为 playing
@@ -355,6 +374,17 @@ export abstract class GameTableClient {
      */
     protected handleGameStart(data: any): void {
         console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
+
+        // 调试：检查接收到的玩家头像
+        if (data.playerInfos) {
+            data.playerInfos.forEach((p: any) => {
+                if (!p.avatar) {
+                    console.warn(`[${this.gameType}TableClient] Player ${p.userId} has NO avatar in game_start!`, p);
+                } else {
+                    console.log(`[${this.gameType}TableClient] Player ${p.userId} avatar: ${p.avatar}`);
+                }
+            });
+        }
 
         try {
             // 更新状态为 playing，保持倒计时状态直到倒计时完成
