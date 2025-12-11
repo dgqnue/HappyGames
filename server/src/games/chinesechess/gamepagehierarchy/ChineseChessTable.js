@@ -188,26 +188,15 @@ class ChineseChessTable extends GameTable {
         const redPlayer = this.players[0];
         const blackPlayer = this.players[1];
 
-        // 获取最新的玩家头像和信息
-        const playerInfos = await Promise.all(this.players.map(async p => {
-            const dbQueryId = p.user?._id || p.userId;
-            const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
-            
-            // 决策：优先使用内存中的非默认头像 (Aggressive Fallback)
-            const cachedAvatar = p.avatar || p.user?.avatar;
-            let finalAvatar = dbAvatar;
-            if (cachedAvatar && !cachedAvatar.includes('default-avatar')) {
-                console.log(`[ChineseChessTable] onGameStart: Enforcing cached avatar for ${p.userId}`);
-                finalAvatar = cachedAvatar;
-            }
-
+        // 架构优化：直接使用内存中的玩家状态
+        const playerInfos = this.players.map(p => {
             return {
                 userId: p.userId,
                 nickname: p.nickname,
                 title: p.title || '无',
-                avatar: finalAvatar
+                avatar: p.avatar || '/images/default-avatar.png' // 信任内存状态
             };
-        }));
+        });
 
         // 发送初始状态给所有玩家
         this.players.forEach((player) => {
@@ -496,29 +485,12 @@ class ChineseChessTable extends GameTable {
                 }
                 
                 // 获取用户信息（头像、昵称等）- 无条件查询
-                // 使用统一的 fetchLatestAvatarUrl 获取头像
+                // 架构优化：不再重复查询头像，直接使用内存中的状态
+                // const dbQueryId = player.user?._id || player.userId;
+                // playerData.avatar = await fetchLatestAvatarUrl(dbQueryId);
+
+                // 单独获取昵称 (如果需要实时更新昵称的话保留，否则也可以优化掉)
                 const dbQueryId = player.user?._id || player.userId;
-                const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
-                
-                // 决策：优先使用内存中的非默认头像 (Aggressive Fallback)
-                // 只要内存中有有效的非默认头像，就直接使用，防止数据库查询返回默认头像导致覆盖
-                const cachedAvatar = player.avatar || player.user?.avatar;
-                let finalAvatar = dbAvatar;
-                
-                // Debug logging
-                if (player.userId) {
-                     console.log(`[ChineseChessTable] Avatar Check for ${player.userId}: DB=${dbAvatar}, Cached=${cachedAvatar}`);
-                }
-
-                if (cachedAvatar && !cachedAvatar.includes('default-avatar')) {
-                    console.log(`[ChineseChessTable] broadcastRoomState: Enforcing cached avatar for ${player.userId}`);
-                    finalAvatar = cachedAvatar;
-                }
-                
-                playerData.avatar = finalAvatar;
-                console.log(`[ChineseChessTable] Using standardized avatar for ${dbQueryId}: ${playerData.avatar}`);
-
-                // 单独获取昵称
                 try {
                     const userInfo = await User.findById(dbQueryId).select('nickname').lean();
                     if (userInfo?.nickname) {
@@ -540,16 +512,9 @@ class ChineseChessTable extends GameTable {
             roomId: this.tableId,               // 保留 roomId 作为备选
             status: currentStatus,              // 游戏桌状态（idle, waiting, matching, playing）
             players: currentPlayers.map(p => {
-                // 优先使用从数据库获取的最新信息
+                // 优先使用从数据库获取的最新信息 (仅限动态数据如称号、积分)
                 const latestData = playerDataMap[p.userId] || {};
-                // latestData.avatar 已经通过 fetchLatestAvatarUrl 获取为完整 URL
-                // 如果获取失败，fetchLatestAvatarUrl 也会返回默认头像，所以这里直接使用即可
-                const finalAvatar = latestData.avatar;
                 
-                // 🚨 强制检查：如果数据库查询失败，回退到玩家对象上的头像
-                const fallbackAvatar = p.avatar || p.user?.avatar;
-                const effectiveAvatar = finalAvatar && !finalAvatar.includes('default-avatar') ? finalAvatar : (fallbackAvatar || finalAvatar);
-
                 // 🚨 关键修复：确保 userId 绝对存在
                 const effectiveUserId = p.userId || (p.user ? p.user._id.toString() : null);
                 
@@ -559,6 +524,16 @@ class ChineseChessTable extends GameTable {
 
                 return {
                     userId: effectiveUserId,
+                    nickname: latestData.nickname || p.nickname,
+                    // 架构优化：直接使用内存中的头像，它是入座时获取的正确数据
+                    avatar: p.avatar || '/images/default-avatar.png', 
+                    ready: p.ready,
+                    title: latestData.title || p.title,
+                    titleColor: latestData.titleColor || p.titleColor,
+                    winRate: p.winRate,
+                    disconnectRate: p.disconnectRate,
+                    seatIndex: p.seatIndex
+                };
                     socketId: p.socketId,
                     nickname: latestData.nickname || p.nickname || (p.user ? p.user.nickname : 'Unknown'),
                     avatar: effectiveAvatar,
@@ -732,33 +707,20 @@ class ChineseChessTable extends GameTable {
         const state = this.matchPlayers.matchState.getRoomInfo();
         state.status = this.status;
 
-        // 获取最新的玩家头像
-        const playersWithAvatar = await Promise.all(this.players.map(async p => {
-            const dbQueryId = p.user?._id || p.userId;
-            // 1. 尝试从数据库获取最新头像
-            const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
-            
-            // 2. 获取内存中的缓存头像作为回退
-            const cachedAvatar = p.avatar || p.user?.avatar;
-            
-            // 3. 决策：优先使用内存中的非默认头像 (Aggressive Fallback)
-            let finalAvatar = dbAvatar;
-            if (cachedAvatar && !cachedAvatar.includes('default-avatar')) {
-                console.log(`[ChineseChessTable] sendState: Enforcing cached avatar for ${p.userId}`);
-                finalAvatar = cachedAvatar;
-            }
-            
+        // 架构优化：直接使用内存中的玩家状态，不再重复查询数据库
+        // MatchPlayers 在玩家入座时已经获取了正确的头像
+        const playersWithAvatar = this.players.map(p => {
             return {
                 userId: p.userId,
                 nickname: p.nickname,
-                avatar: finalAvatar, // 使用经过决策的头像
+                avatar: p.avatar || '/images/default-avatar.png', // 信任内存状态
                 ready: p.ready,
                 title: p.title,
                 titleColor: p.titleColor,
                 winRate: p.winRate,
                 seatIndex: p.seatIndex
             };
-        }));
+        });
 
         socket.emit('table_state', {
             ...state,
