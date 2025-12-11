@@ -193,11 +193,11 @@ class ChineseChessTable extends GameTable {
             const dbQueryId = p.user?._id || p.userId;
             const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
             
-            // 决策：如果数据库返回默认头像，但内存中有非默认头像，优先使用内存的
+            // 决策：优先使用内存中的非默认头像 (Aggressive Fallback)
             const cachedAvatar = p.avatar || p.user?.avatar;
             let finalAvatar = dbAvatar;
-            if (dbAvatar && dbAvatar.includes('default-avatar') && cachedAvatar && !cachedAvatar.includes('default-avatar')) {
-                console.log(`[ChineseChessTable] onGameStart: Fallback to cached avatar for ${p.userId}`);
+            if (cachedAvatar && !cachedAvatar.includes('default-avatar')) {
+                console.log(`[ChineseChessTable] onGameStart: Enforcing cached avatar for ${p.userId}`);
                 finalAvatar = cachedAvatar;
             }
 
@@ -500,11 +500,18 @@ class ChineseChessTable extends GameTable {
                 const dbQueryId = player.user?._id || player.userId;
                 const dbAvatar = await fetchLatestAvatarUrl(dbQueryId);
                 
-                // 决策：如果数据库返回默认头像，但内存中有非默认头像，优先使用内存的
+                // 决策：优先使用内存中的非默认头像 (Aggressive Fallback)
+                // 只要内存中有有效的非默认头像，就直接使用，防止数据库查询返回默认头像导致覆盖
                 const cachedAvatar = player.avatar || player.user?.avatar;
                 let finalAvatar = dbAvatar;
-                if (dbAvatar && dbAvatar.includes('default-avatar') && cachedAvatar && !cachedAvatar.includes('default-avatar')) {
-                    console.log(`[ChineseChessTable] broadcastRoomState: Fallback to cached avatar for ${player.userId}`);
+                
+                // Debug logging
+                if (player.userId) {
+                     console.log(`[ChineseChessTable] Avatar Check for ${player.userId}: DB=${dbAvatar}, Cached=${cachedAvatar}`);
+                }
+
+                if (cachedAvatar && !cachedAvatar.includes('default-avatar')) {
+                    console.log(`[ChineseChessTable] broadcastRoomState: Enforcing cached avatar for ${player.userId}`);
                     finalAvatar = cachedAvatar;
                 }
                 
@@ -734,11 +741,10 @@ class ChineseChessTable extends GameTable {
             // 2. 获取内存中的缓存头像作为回退
             const cachedAvatar = p.avatar || p.user?.avatar;
             
-            // 3. 决策：如果数据库返回默认头像，但内存中有非默认头像，优先使用内存的
-            // 只有当两者都是默认，或者数据库返回了新的非默认头像时，才使用数据库的
+            // 3. 决策：优先使用内存中的非默认头像 (Aggressive Fallback)
             let finalAvatar = dbAvatar;
-            if (dbAvatar.includes('default-avatar') && cachedAvatar && !cachedAvatar.includes('default-avatar')) {
-                console.log(`[ChineseChessTable] sendState: Fallback to cached avatar for ${p.userId}`);
+            if (cachedAvatar && !cachedAvatar.includes('default-avatar')) {
+                console.log(`[ChineseChessTable] sendState: Enforcing cached avatar for ${p.userId}`);
                 finalAvatar = cachedAvatar;
             }
             
