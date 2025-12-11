@@ -428,13 +428,25 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         // player.avatar 来自 broadcastRoomState，已经是完整 URL 并优先级最高
         let avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
         
-        // 补全相对路径 (如果服务器返回了相对路径，前端进行补全)
+        // 智能修正：如果是浏览器环境，且当前访问的不是 localhost
+        if (typeof window !== 'undefined' && 
+            window.location.hostname !== 'localhost' && 
+            window.location.hostname !== '127.0.0.1') {
+            
+            // 情况1: 如果是完整 URL 但包含 localhost/127.0.0.1，替换为当前 hostname
+            if (avatarUrl && (avatarUrl.includes('localhost') || avatarUrl.includes('127.0.0.1'))) {
+                 avatarUrl = avatarUrl.replace('localhost', window.location.hostname);
+                 avatarUrl = avatarUrl.replace('127.0.0.1', window.location.hostname);
+                 console.log('[GameTableView] Auto-corrected full URL for LAN:', avatarUrl);
+            }
+        }
+
+        // 情况2: 补全相对路径 (如果服务器返回了相对路径，前端进行补全)
         if (avatarUrl && avatarUrl.startsWith('/')) {
              // 优先使用环境变量，否则回退到 localhost:5000
              let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
              
              // 智能修正：如果是浏览器环境，且当前访问的不是 localhost，但 baseUrl 是 localhost
-             // 则尝试将 baseUrl 中的 localhost 替换为当前访问的 hostname (用于局域网调试)
              if (typeof window !== 'undefined' && 
                  window.location.hostname !== 'localhost' && 
                  window.location.hostname !== '127.0.0.1' &&
@@ -444,7 +456,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                  console.log('[GameTableView] Auto-corrected API URL for LAN:', baseUrl);
              }
 
-             // 避免重复拼接 (虽然 startsWith('/') 已经检查了，但为了保险)
+             // 避免重复拼接
              if (!avatarUrl.startsWith('http')) {
                  avatarUrl = `${baseUrl}${avatarUrl}`;
              }
@@ -499,12 +511,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         </div>
                     )}
                 </div>
-                {/* 调试信息：显示头像 URL (仅在开发环境或 URL 包含 IP 时显示) */}
-                {(process.env.NODE_ENV === 'development' || (avatarUrl && avatarUrl.includes('192.168'))) && (
-                    <div className="text-[10px] text-gray-500 max-w-[100px] truncate mt-1">
-                        {avatarUrl}
-                    </div>
-                )}
+                {/* 调试信息：显示头像 URL (强制显示以调试) */}
+                <div className="text-[10px] text-gray-500 max-w-[100px] break-all mt-1">
+                    {avatarUrl}
+                </div>
             </div>
         );
     };
