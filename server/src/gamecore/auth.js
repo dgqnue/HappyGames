@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { getFullAvatarUrl } = require('../utils/urlUtils');
+const { getFullAvatarUrl } = require('../utils/avatarUtils');
 
 // 辅助函数：处理头像 URL (已废弃，使用 getFullAvatarUrl)
 // const processAvatarUrl = ...

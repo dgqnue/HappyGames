@@ -1,7 +1,6 @@
 
 require('dotenv').config();
-const { fetchLatestAvatarUrl } = require('./server/src/utils/avatarUtils');
-const { getFullAvatarUrl } = require('./server/src/utils/urlUtils');
+const { fetchLatestAvatarUrl, getFullAvatarUrl } = require('./server/src/utils/avatarUtils');
 
 async function test() {
     console.log('Testing avatar URLs...');

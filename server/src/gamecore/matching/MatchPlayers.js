@@ -1368,14 +1368,7 @@ class MatchPlayers {
             : 0;
 
         // 使用统一的 fetchLatestAvatarUrl 获取最新头像
-        let userAvatar = await fetchLatestAvatarUrl(socket.user._id);
-        
-        // 特殊处理：如果是默认头像，使用相对路径，以便客户端可以使用本地资源
-        // 这避免了跨域问题或服务器静态资源服务配置问题
-        if (userAvatar && userAvatar.includes('default-avatar.png')) {
-            userAvatar = '/images/default-avatar.png';
-        }
-        
+        const userAvatar = await fetchLatestAvatarUrl(socket.user._id);
         console.log(`[MatchPlayers] Final avatar for ${userId}: ${userAvatar}`);
         
         // 获取昵称 (仍然需要手动查询，或者我们可以扩展 avatarUtils 来获取更多信息，但目前只关注头像)
