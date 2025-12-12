@@ -122,7 +122,7 @@ class ChineseChessRules {
 
             case 'p': // 兵/卒
                 if (turn === 'r') { // 红兵 (向上)
-                    if (dy >= 0) return false; // 必须向上
+                    if (dy > 0) return false; // 不能后退
                     
                     // 过河前 (Row 5-9)
                     if (fromY > 4) {
@@ -132,7 +132,7 @@ class ChineseChessRules {
                         // 可以横向
                     }
                 } else { // 黑卒 (向下)
-                    if (dy <= 0) return false; // 必须向下
+                    if (dy < 0) return false; // 不能后退
                     
                     // 过河前 (Row 0-4)
                     if (fromY < 5) {
