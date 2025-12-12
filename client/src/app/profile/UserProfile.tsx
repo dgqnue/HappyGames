@@ -617,9 +617,22 @@ export default function UserProfile() {
                             </div>
                             <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
                                 <p className="text-sm text-orange-800 font-medium mb-2">推荐链接:</p>
-                                <code className="block bg-white p-2 rounded border border-orange-200 text-xs text-gray-600 break-all font-mono">
-                                    {process.env.NEXT_PUBLIC_CLIENT_URL}?ref={profile.referralCode}
-                                </code>
+                                <div 
+                                    className="block bg-white p-2 rounded border border-orange-200 text-xs text-gray-600 break-all font-mono cursor-pointer hover:bg-gray-50 transition-colors relative group"
+                                    onClick={() => {
+                                        const url = `${window.location.origin}?ref=${profile.referralCode}`;
+                                        navigator.clipboard.writeText(url);
+                                        alert('链接已复制！');
+                                    }}
+                                    title="点击复制"
+                                >
+                                    {typeof window !== 'undefined' ? window.location.origin : ''}?ref={profile.referralCode}
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                             <button
                                 onClick={() => setShowReferralDetails(true)}

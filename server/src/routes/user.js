@@ -11,13 +11,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { fetchLatestAvatarUrl, getFullAvatarUrl } = require('../utils/avatarUtils');
 
-// 辅助函数：将相对路径的头像转换为完整 URL
-// 约定：
-//   - 数据库存储相对路径（/images/xxx.png 或 /uploads/avatars/xxx.png）
-//   - 对外所有接口一律返回完整 URL，前端无需再拼接
-// const getFullAvatarUrl = (avatarPath) => {
-//     // Moved to ../utils/urlUtils.js
-// };
+// Helper: Generate Random Referral Code
+const generateReferralCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
 
 // ========== 公开路由 (无需认证) ==========
 
@@ -87,6 +89,13 @@ router.post('/register', async (req, res) => {
         // 生成 userId
         const userId = await User.generateUserId();
 
+        // 生成 Referral Code
+        let referralCode = generateReferralCode();
+        // 简单的唯一性检查 (生产环境应更严谨)
+        while (await User.findOne({ referralCode })) {
+            referralCode = generateReferralCode();
+        }
+
         // 加密密码
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -98,7 +107,8 @@ router.post('/register', async (req, res) => {
             password: hashedPassword,
             nickname: username, // 默认昵称
             gender: Math.random() > 0.5 ? 'male' : 'female', // 随机性别
-            avatar: '/images/default-avatar.png'
+            avatar: '/images/default-avatar.png',
+            referralCode: referralCode
         });
 
         await newUser.save();
@@ -279,13 +289,23 @@ const upload = multer({
  */
 router.get('/profile', async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('-__v');
+        let user = await User.findById(req.user._id).select('-__v');
 
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: '用户不存在'
             });
+        }
+
+        // 检查并生成 Referral Code (如果缺失)
+        if (!user.referralCode) {
+            let referralCode = generateReferralCode();
+            while (await User.findOne({ referralCode })) {
+                referralCode = generateReferralCode();
+            }
+            user.referralCode = referralCode;
+            await user.save();
         }
 
         // 转换头像为完整 URL
