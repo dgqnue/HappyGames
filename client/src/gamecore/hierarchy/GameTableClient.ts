@@ -269,6 +269,15 @@ export abstract class GameTableClient {
             maxPlayers: data.maxPlayers
         };
 
+        // 同步当前用户的 ready 状态
+        const currentUserId = this.getCurrentUserId();
+        if (currentUserId) {
+            const myPlayer = players.find((p: any) => p.userId === currentUserId);
+            if (myPlayer && myPlayer.ready !== undefined) {
+                stateUpdate.ready = myPlayer.ready;
+            }
+        }
+
         // 只在游戏进行时才更新游戏状态数据
         if (data.status === 'playing') {
             if (data.board) stateUpdate.board = data.board;
@@ -278,6 +287,32 @@ export abstract class GameTableClient {
         }
 
         this.updateState(stateUpdate);
+    }
+
+    /**
+     * 获取当前用户ID (从Token解析)
+     */
+    protected getCurrentUserId(): string | null {
+        if (this.currentUserId) return this.currentUserId;
+        
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const base64Url = token.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+                    const payload = JSON.parse(jsonPayload);
+                    this.currentUserId = payload.userId || payload.id || payload._id;
+                    return this.currentUserId;
+                } catch (e) {
+                    console.error('Failed to decode token', e);
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -297,6 +332,26 @@ export abstract class GameTableClient {
         });
 
         const canStart = this.checkCanStart(players);
+
+        // 准备更新对象
+        const updateObj: any = {
+            status: data.status,
+            players: players,
+            canStart: canStart,
+            ...(data.board ? { board: data.board } : {}),
+            ...(data.turn ? { turn: data.turn } : {})
+        };
+
+        // 关键修复：同步当前用户的 ready 状态
+        // 确保本地 ready 状态与服务器保持一致（特别是当服务器重置状态时）
+        const currentUserId = this.getCurrentUserId();
+        if (currentUserId) {
+            const myPlayer = players.find((p: any) => p.userId === currentUserId);
+            if (myPlayer && myPlayer.ready !== undefined) {
+                // 如果服务器明确返回了 ready 状态，则同步到本地
+                updateObj.ready = myPlayer.ready;
+            }
+        }
 
         // 如果状态变为 playing
         if (data.status === 'playing') {
@@ -319,14 +374,7 @@ export abstract class GameTableClient {
             this.socket.emit('request_table_state');
         } else {
             // 非playing状态，正常更新
-            this.updateState({
-                status: data.status,
-                players: players,
-                canStart: canStart,
-                // 即使不是 playing，也可能更新了部分数据
-                ...(data.board ? { board: data.board } : {}),
-                ...(data.turn ? { turn: data.turn } : {})
-            });
+            this.updateState(updateObj);
         }
     }
 
