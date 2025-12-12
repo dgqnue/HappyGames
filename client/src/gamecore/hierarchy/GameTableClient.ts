@@ -184,7 +184,13 @@ export abstract class GameTableClient {
 
         // 准备倒计时取消
         this.socket.on('ready_check_cancelled', (data: any) => {
-            this.updateState({ countdown: null });
+            console.log(`[${this.gameType}TableClient] Ready check cancelled:`, data);
+            // 倒计时取消（通常是因为超时或有人离开），强制重置本地准备状态
+            // 这确保了按钮会从"取消"变回"开始"
+            this.updateState({ 
+                countdown: null,
+                ready: false 
+            });
         });
 
         // 游戏开始倒计时
