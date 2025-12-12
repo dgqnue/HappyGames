@@ -17,7 +17,6 @@ const { fetchLatestAvatarUrl } = require('../../../utils/avatarUtils');
 class ChineseChessTable extends GameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
         super(io, tableId);
-        console.log(`[ChineseChessTable] Initializing table ${tableId} (Fix-Avatar-State-First-V2)`);
 
         this.gameType = gameType;
         this.maxPlayers = maxPlayers;
@@ -546,11 +545,6 @@ class ChineseChessTable extends GameTable {
         console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${currentStatus}, players=${currentPlayers.length}`);
         
         // 广播给房间内所有人
-        // DEBUG: Log avatar URLs being sent
-        if (state.players && state.players.length > 0) {
-            const avatars = state.players.map(p => `${p.nickname}:${p.avatar}`);
-            console.log(`[ChineseChessTable] Broadcasting table_update with avatars:`, avatars);
-        }
         this.io.to(this.tableId).emit('table_update', state);
 
         // 通知 GameCenter 广播更新的桌子列表到房间
