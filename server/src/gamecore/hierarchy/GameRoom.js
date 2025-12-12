@@ -125,10 +125,19 @@ class GameRoom {
                 return { success: false, reason: validation.reason, tableId: table.tableId };
             }
 
-            // 4. 条件全部通过后，才调用 joinTable
+            // 4. 判断是否可以作为玩家入座（积分检查）
+            const canPlay = this.canAccess(stats.rating);
+            if (!canPlay) {
+                const message = `您的积分 ${stats.rating} 不符合当前游戏房间要求 [${this.minRating}, ${this.maxRating}]。\n请移步其他房间，或等其他玩家入座游戏后旁观。`;
+                console.log(`[GameRoom] 玩家 ${socket.user.username} 积分 ${stats.rating} 不符合房间要求，拒绝入座`);
+                socket.emit('error', { message });
+                return { success: false, reason: message, tableId: table.tableId };
+            }
+
+            // 5. 调用 joinTable
             const result = await table.joinTable(socket, true);
 
-            // 5. 如果加入成功且满座，通知客户端
+            // 6. 如果加入成功且满座，通知客户端
             if (result.success && table.players.length === table.maxPlayers && !result.asSpectator) {
                 console.log(`[GameRoom] 桌子已满座，发送 table_full 事件到客户端`);
                 socket.emit('table_full', {
@@ -137,7 +146,7 @@ class GameRoom {
                 });
             }
 
-            // 6. 返回结果
+            // 7. 返回结果
             return {
                 ...result,
                 tableId: table.tableId
@@ -156,13 +165,8 @@ class GameRoom {
      * @returns {Object} { success: boolean, reason?: string }
      */
     async validatePlayerJoin(stats, socket) {
-        // 基础检查：积分范围
-        if (!this.canAccess(stats.rating)) {
-            return {
-                success: false,
-                reason: `您的等级分 ${stats.rating} 不符合房间要求 [${this.minRating}, ${this.maxRating}]`
-            };
-        }
+        // 注意：积分范围检查已移至 assignPlayerToTable 中作为 canPlay 的判断依据
+        // 这里只进行"硬性"阻挡（如黑名单、封禁等）
 
         // 基础检查：掉线率
         const disconnectValidation = this.validateDisconnectRate(stats);

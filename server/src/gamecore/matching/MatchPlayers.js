@@ -1332,6 +1332,14 @@ class MatchPlayers {
     async _playerJoin(socket, matchSettings = null) {
         console.log(`[MatchPlayers] playerJoin() called for room ${this.roomId}`);
 
+        // 如果明确指定不能玩（例如积分不足），直接转为观众
+        if (matchSettings && matchSettings.canPlay === false) {
+            console.log(`[MatchPlayers] Player ${socket.user._id} joining as spectator (canPlay=false)`);
+            // 注意：这里不能直接调用 this.addSpectator(socket)，因为它会再次调用 enqueueAction 导致死锁
+            // 我们需要提取 addSpectator 的内部逻辑，或者直接在这里处理
+            return this._addSpectator(socket);
+        }
+
         const userId = socket.user._id.toString();
 
         // 获取玩家统计数据
@@ -1434,6 +1442,38 @@ class MatchPlayers {
      */
     async playerJoin(socket, matchSettings = null) {
         return this.enqueueAction(() => this._playerJoin(socket, matchSettings));
+    }
+
+    /**
+     * 添加观众 - 队列包装
+     */
+    async addSpectator(socket) {
+        return this.enqueueAction(() => this._addSpectator(socket));
+    }
+
+    /**
+     * 添加观众 - 内部实现
+     */
+    async _addSpectator(socket) {
+        const spectatorData = {
+            userId: socket.user._id.toString(),
+            socketId: socket.id,
+            nickname: socket.user.nickname || socket.user.username,
+            avatar: await fetchLatestAvatarUrl(socket.user._id)
+        };
+
+        const result = this.matchState.addSpectator(spectatorData);
+        
+        if (result.success) {
+            socket.join(this.roomId);
+            // 广播房间状态更新
+            if (this.table && typeof this.table.broadcastRoomState === 'function') {
+                await this.table.broadcastRoomState();
+            }
+            return { success: true, asSpectator: true };
+        } else {
+            return { success: false, error: result.error };
+        }
     }
 
     /**

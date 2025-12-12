@@ -50,6 +50,15 @@ class GameTable {
      * 处理玩家加入游戏桌
      */
     async joinTable(socket, canPlay) {
+        // 如果不能玩（如积分不足），则作为观众加入
+        if (!canPlay) {
+            const result = await this.matchPlayers.addSpectator(socket);
+            if (result.success) {
+                this.setupSocketListeners(socket, true);
+            }
+            return result;
+        }
+
         const success = await this.matchPlayers.playerJoin(socket, { canPlay });
         if (success) {
             this.setupSocketListeners(socket);
