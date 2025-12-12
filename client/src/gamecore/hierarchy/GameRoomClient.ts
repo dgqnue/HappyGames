@@ -324,6 +324,15 @@ export abstract class GameRoomClient {
                 // 将游戏桌状态合并到房间状态
                 this.updateState({ ...tableState });
             });
+
+            // 监听被踢出事件，清理选中状态并刷新列表
+            this.tableClient.setOnKickedCallback((data: any) => {
+                console.log(`[${this.gameType}RoomClient] Player kicked from table, clearing selection and refreshing list`);
+                this.updateState({ selectedTableId: null });
+                if (this.state.currentRoom) {
+                    this.getTableList(this.state.currentRoom.id);
+                }
+            });
         }
 
         // 【关键修改】不要立即更新 selectedTableId
