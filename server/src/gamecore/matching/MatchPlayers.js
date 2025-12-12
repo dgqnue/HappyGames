@@ -278,7 +278,7 @@ class MatchRoomState {
 
         const newState = StateMappingRules.getStateAfterPlayerLeave(this.players.length, this.maxPlayers);
         if (newState) {
-            this.status = newState;
+            this.transitionStatus(newState, { userId, reason: 'player_leave' });
         }
 
         if (this.players.length === 0) {
@@ -415,7 +415,7 @@ class MatchRoomState {
         // Allow starting ready check even if already in MATCHING state (e.g. when room just became full)
         // if (this.status === StateMappingRules.TABLE_STATUS.MATCHING) return;
 
-        this.status = StateMappingRules.TABLE_STATUS.MATCHING;
+        this.transitionStatus(StateMappingRules.TABLE_STATUS.MATCHING, { reason: 'ready_check_start' });
         return {
             started: true,
             timeout: this.readyTimeout
@@ -428,7 +428,7 @@ class MatchRoomState {
             this.readyTimer = null;
         }
         const newState = StateMappingRules.getStateAfterCancelReadyCheck(this.players.length, this.maxPlayers);
-        this.status = newState;
+        this.transitionStatus(newState, { reason: 'ready_check_cancel' });
     }
 
     getUnreadyPlayers() {
@@ -836,7 +836,7 @@ class MatchPlayers {
             if (playerCountAfter === 0) {
                 console.log(`[MatchPlayers] All players left the table, resetting table state`);
                 // Reset to initial state
-                this.matchState.status = StateMappingRules.TABLE_STATUS.IDLE;
+                this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.IDLE, { reason: 'table_reset' });
                 this.matchState.resetReadyStatus();
                 this.readyCheckCancelled = false;
                 this.isLocked = false;
@@ -1167,7 +1167,7 @@ class MatchPlayers {
         }
 
         // Set to playing state
-        this.matchState.status = StateMappingRules.TABLE_STATUS.PLAYING;
+        this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.PLAYING, { reason: 'game_start' });
         console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
 
         // Note: Do not reset ready status! Ready status should remain until game ends
