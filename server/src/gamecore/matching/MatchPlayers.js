@@ -1689,12 +1689,13 @@ class MatchPlayers {
 
         this.matchState.cancelReadyCheck();
         this.matchState.resetReadyStatus();
-        this.table.broadcastRoomState();
 
         this.table.broadcast('ready_check_cancelled', {
             reason: '部分玩家未在规定时间内准备',
             remainingPlayers: this.matchState.players.length
         });
+
+        this.table.broadcastRoomState();
     }
 
     /**
