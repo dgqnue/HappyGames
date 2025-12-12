@@ -35,12 +35,7 @@ export default function LobbyDashboard() {
     const [lobbyData, setLobbyData] = useState<any>(null);
 
     /** 大厅动态Feed（玩家活动记录） */
-    const [lobbyFeed, setLobbyFeed] = useState<any[]>([
-        { id: 1, type: 'join', user: 'CryptoKing', time: 'Just now' },
-        { id: 2, type: 'win', user: 'PiMaster99', amount: 500, time: '2m ago' },
-        { id: 3, type: 'join', user: 'Alice_Wonder', time: '5m ago' },
-        { id: 4, type: 'jackpot', user: 'LuckyStar', amount: 10000, time: '10m ago' },
-    ]);
+    const [lobbyFeed, setLobbyFeed] = useState<any[]>([]);
 
     /** 是否正在匹配中 */
     const [isMatching, setIsMatching] = useState(false);
