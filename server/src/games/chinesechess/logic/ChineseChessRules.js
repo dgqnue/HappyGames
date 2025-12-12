@@ -15,11 +15,8 @@ class ChineseChessRules {
     }
 
     /**
-     * 验证移动合法性 V2 (修复版)
-     * 假设：
-     * - 红方在底部 (Row 9)，棋子大写
-     * - 黑方在顶部 (Row 0)，棋子小写
-     * - 河界在 Row 4 和 Row 5 之间
+     * 验证移动合法性 V2 (基础规则检查)
+     * 只检查棋子本身的行走规则，不检查送将、飞将等全局规则
      */
     static isValidMoveV2(board, fromX, fromY, toX, toY, turn) {
         const piece = board[fromY][fromX];
@@ -253,6 +250,101 @@ class ChineseChessRules {
 
         // 检查对方国王是否受到攻击
         return this.isKingUnderAttack(boardCopy, kingPos.x, kingPos.y, enemySide);
+    }
+
+    /**
+     * 检查移动后己方是否被将军（送将）
+     * @param {Array} board - 棋盘
+     * @param {number} fromX - 移动的起始X
+     * @param {number} fromY - 移动的起始Y
+     * @param {number} toX - 移动的目标X
+     * @param {number} toY - 移动的目标Y
+     * @param {string} side - 'r' (红方) 或 'b' (黑方)
+     * @returns {boolean}
+     */
+    static isSelfCheckAfterMove(board, fromX, fromY, toX, toY, side) {
+        // 深拷贝棋盘以模拟移动
+        const boardCopy = board.map(row => [...row]);
+        const piece = boardCopy[fromY][fromX];
+        
+        // 执行移动
+        boardCopy[toY][toX] = piece;
+        boardCopy[fromY][fromX] = null;
+
+        // 己方国王位置
+        const kingPos = this.getKingPosition(boardCopy, side);
+        
+        if (!kingPos) {
+            // 理论上国王不应该消失，但如果被吃掉了（虽然不应该发生），算作被将军
+            return true;
+        }
+
+        // 检查己方国王是否受到攻击
+        return this.isKingUnderAttack(boardCopy, kingPos.x, kingPos.y, side);
+    }
+
+    /**
+     * 检查是否飞将（将帅对脸）
+     * @param {Array} board - 棋盘
+     * @returns {boolean}
+     */
+    static isFlyingGeneral(board) {
+        const redKing = this.getKingPosition(board, 'r');
+        const blackKing = this.getKingPosition(board, 'b');
+
+        if (!redKing || !blackKing) return false;
+
+        // 必须在同一列
+        if (redKing.x !== blackKing.x) return false;
+
+        // 中间不能有子
+        return this.countPiecesBetween(board, redKing.x, redKing.y, blackKing.x, blackKing.y) === 0;
+    }
+
+    /**
+     * 检查移动后是否导致飞将
+     */
+    static isFlyingGeneralAfterMove(board, fromX, fromY, toX, toY) {
+        const boardCopy = board.map(row => [...row]);
+        const piece = boardCopy[fromY][fromX];
+        boardCopy[toY][toX] = piece;
+        boardCopy[fromY][fromX] = null;
+        return this.isFlyingGeneral(boardCopy);
+    }
+
+    /**
+     * 检查玩家是否有合法移动（用于判断困毙/无子可走）
+     * @param {Array} board - 棋盘
+     * @param {string} side - 'r' (红方) 或 'b' (黑方)
+     * @returns {boolean}
+     */
+    static hasLegalMove(board, side) {
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 9; x++) {
+                const piece = board[y][x];
+                if (!piece) continue;
+                if (this.getSide(piece) !== side) continue;
+
+                // 尝试所有可能的移动
+                // 优化：根据棋子类型减少搜索范围
+                // 这里为了简单，遍历所有点，实际可以优化
+                for (let ty = 0; ty < 10; ty++) {
+                    for (let tx = 0; tx < 9; tx++) {
+                        // 1. 基础规则检查
+                        if (this.isValidMoveV2(board, x, y, tx, ty, side)) {
+                            // 2. 送将检查
+                            if (!this.isSelfCheckAfterMove(board, x, y, tx, ty, side)) {
+                                // 3. 飞将检查
+                                if (!this.isFlyingGeneralAfterMove(board, x, y, tx, ty)) {
+                                    return true; // 只要找到一个合法移动即可
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
 

@@ -1,5 +1,4 @@
 const GameTable = require('../../../gamecore/hierarchy/GameTable');
-const MatchPlayers = require('../../../gamecore/matching/MatchPlayers');
 const ChineseChessRules = require('../logic/ChineseChessRules');
 const EloService = require('../../../gamecore/EloService');
 const Grade = require('../grade/Grade');
@@ -16,14 +15,7 @@ const { fetchLatestAvatarUrl } = require('../../../utils/avatarUtils');
 
 class ChineseChessTable extends GameTable {
     constructor(io, tableId, gameType, maxPlayers, tier) {
-        super(io, tableId);
-
-        this.gameType = gameType;
-        this.maxPlayers = maxPlayers;
-        this.tier = tier;
-
-        // 初始化匹配管理器
-        this.matchPlayers = new MatchPlayers(this);
+        super(io, tableId, gameType, maxPlayers, tier);
 
         // 游戏特定状态
         this.board = null;
@@ -32,33 +24,6 @@ class ChineseChessTable extends GameTable {
 
         // 初始化空棋盘
         this.resetBoard();
-    }
-
-    // --- 委托给 MatchPlayers 的属性 ---
-
-    get players() {
-        return this.matchPlayers.players;
-    }
-
-    get spectators() {
-        return this.matchPlayers.spectators;
-    }
-
-    get status() {
-        return this.matchPlayers.status;
-    }
-
-    set status(value) {
-        this.matchPlayers.status = value;
-    }
-
-    // --- 委托给 MatchPlayers 的方法 ---
-
-    async playerJoin(socket, matchSettings) {
-        const success = await this.matchPlayers.playerJoin(socket, matchSettings);
-        // 注意：Socket 事件监听器现在由 setupSocketListeners 统一处理
-        // 不在这里注册，避免重复注册
-        return success;
     }
 
     /**
@@ -93,18 +58,6 @@ class ChineseChessTable extends GameTable {
      */
     resetGameData() {
         this.resetBoard();
-    }
-
-    handlePlayerDisconnect(socket) {
-        return this.matchPlayers.handlePlayerDisconnect(socket);
-    }
-
-    playerReady(socket) {
-        return this.matchPlayers.playerReady(socket);
-    }
-
-    playerUnready(socket) {
-        return this.matchPlayers.playerUnready(socket);
     }
 
     /**
@@ -172,13 +125,7 @@ class ChineseChessTable extends GameTable {
         this.history = [];
     }
 
-    /**
-     * 开始游戏 (由 MatchPlayers 调用)
-     */
-    startGame() {
-        this.resetBoard();
-        this.onGameStart();
-    }
+
 
     /**
      * 游戏开始回调
@@ -268,13 +215,29 @@ class ChineseChessTable extends GameTable {
             return;
         }
 
-        // 验证移动逻辑
+        // 1. 基础规则验证 (棋子行走规则)
         const isValidMove = ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn);
         if (!isValidMove) {
             console.log(`[ChineseChessTable] handleMove rejected: invalid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
             socket.emit('error', { message: '非法移动' });
             return;
         }
+
+        // 2. 规则一：对方将军必须应将 (即不能送将)
+        // 检查移动后己方是否被将军
+        if (ChineseChessRules.isSelfCheckAfterMove(this.board, fromX, fromY, toX, toY, this.turn)) {
+            console.log(`[ChineseChessTable] handleMove rejected: self check (suicide)`);
+            socket.emit('error', { message: '不能送将' });
+            return;
+        }
+
+        // 3. 飞将检查 (将帅不能对脸)
+        if (ChineseChessRules.isFlyingGeneralAfterMove(this.board, fromX, fromY, toX, toY)) {
+            console.log(`[ChineseChessTable] handleMove rejected: flying general`);
+            socket.emit('error', { message: '将帅不能照面' });
+            return;
+        }
+
         console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
 
         // 在执行移动前保存棋盘快照，用于将军检测，避免使用已被修改的棋盘
@@ -296,6 +259,15 @@ class ChineseChessTable extends GameTable {
 
         // 切换回合
         this.turn = this.turn === 'r' ? 'b' : 'r';
+
+        // 规则二 & 三：对方无子可走（困毙）判负
+        // 检查对方是否有合法移动
+        const opponentHasMoves = ChineseChessRules.hasLegalMove(this.board, this.turn);
+        if (!opponentHasMoves) {
+            console.log(`[ChineseChessTable] Opponent ${this.turn} has no legal moves. Current player ${side} wins.`);
+            this.handleWin(side); // 当前方获胜
+            return;
+        }
 
         // 检查是否形成将军（使用移动前的棋盘做模拟，若检测异常不中断广播）
         let check = false;

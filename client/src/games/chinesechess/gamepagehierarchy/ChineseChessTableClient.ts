@@ -73,13 +73,6 @@ export class ChineseChessTableClient extends GameTableClient {
             this.handleGameEnded(data);
         });
 
-        // 监听错误事件
-        this.socket.on('error', (data: any) => {
-            console.error(`[${this.gameType}TableClient] Error:`, data);
-            // 可以选择通过回调通知UI显示错误，或者直接alert
-            // alert(data.message || '操作失败');
-        });
-
         // join_failed 监听器现在在基类 GameTableClient 中处理
     }
 
@@ -134,7 +127,7 @@ export class ChineseChessTableClient extends GameTableClient {
     protected handleGameEnded(data: any): void {
         // 更新游戏状态
         this.updateState({
-            status: 'matching',  // 游戏结束后状态变为 matching（等待再来一局）
+            // status: 'matching', // 基类已处理
             winner: data.result?.winner
         });
 
@@ -153,6 +146,5 @@ export class ChineseChessTableClient extends GameTableClient {
     protected removeTableListeners(): void {
         this.socket.off('move');
         this.socket.off('game_ended');
-        this.socket.off('error');
     }
 }

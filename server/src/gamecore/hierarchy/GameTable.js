@@ -1,3 +1,5 @@
+const MatchPlayers = require('../matching/MatchPlayers');
+
 /**
  * 游戏桌基类 (GameTable)
  * 定义了游戏桌的基本行为：玩家加入、离开、游戏开始、结束、消息广播等。
@@ -6,14 +8,37 @@
  * 注意：具体的结算逻辑 (settle) 和签名逻辑 (sign) 已移至具体的游戏桌子类中实现。
  */
 class GameTable {
-    constructor(io, roomId) {
+    constructor(io, roomId, gameType, maxPlayers, tier) {
         this.io = io;
         this.roomId = roomId; // 游戏桌ID
-        // Note: players 属性由子类管理（MatchableGameTable 使用 getter）
+        this.gameType = gameType;
+        this.maxPlayers = maxPlayers;
+        this.tier = tier;
+        
+        // 初始化匹配管理器
+        this.matchPlayers = new MatchPlayers(this);
     }
 
     get tableId() {
         return this.roomId;
+    }
+
+    // --- 委托给 MatchPlayers 的属性 ---
+
+    get players() {
+        return this.matchPlayers.players;
+    }
+
+    get spectators() {
+        return this.matchPlayers.spectators;
+    }
+
+    get status() {
+        return this.matchPlayers.status;
+    }
+
+    set status(value) {
+        this.matchPlayers.status = value;
     }
 
     onJoin(player) { }
@@ -23,10 +48,49 @@ class GameTable {
 
     /**
      * 处理玩家加入游戏桌
-     * 子类必须重写此方法
      */
-    joinTable(socket, canPlay) {
-        throw new Error('joinTable() must be implemented by subclass');
+    async joinTable(socket, canPlay) {
+        const success = await this.matchPlayers.playerJoin(socket, { canPlay });
+        if (success) {
+            this.setupSocketListeners(socket);
+        }
+        return success;
+    }
+
+    /**
+     * 设置Socket监听器 (子类可扩展)
+     */
+    setupSocketListeners(socket) {
+        // 基础监听器可以放在这里
+    }
+
+    /**
+     * 处理玩家断开连接
+     */
+    handlePlayerDisconnect(socket) {
+        return this.matchPlayers.handlePlayerDisconnect(socket);
+    }
+
+    /**
+     * 玩家准备
+     */
+    playerReady(socket) {
+        return this.matchPlayers.playerReady(socket);
+    }
+
+    /**
+     * 玩家取消准备
+     */
+    playerUnready(socket) {
+        return this.matchPlayers.playerUnready(socket);
+    }
+
+    /**
+     * 开始游戏 (由 MatchPlayers 调用)
+     */
+    startGame() {
+        this.resetGameData();
+        this.onGameStart();
     }
 
     /**
