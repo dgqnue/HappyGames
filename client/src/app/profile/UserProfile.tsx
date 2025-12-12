@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { io } from 'socket.io-client';
 import WalletManager from './WalletManager';
 import MyReferralModal from './MyReferralModal';
 import { useLanguage } from '@/lib/i18n';
@@ -66,11 +67,35 @@ export default function UserProfile() {
     /** 头像上传过程中的加载状态 */
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+    /** 大厅数据（统计信息、生态池等） */
+    const [lobbyData, setLobbyData] = useState<any>(null);
+
     // ========== 副作用 ==========
 
     // 组件挂载时获取用户资料
     useEffect(() => {
         fetchProfile();
+
+        // 连接 Socket 获取大厅数据
+        const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+            auth: {
+                token: localStorage.getItem('token')
+            }
+        });
+
+        // 监听大厅数据更新
+        newSocket.on('lobby_update', (data: any) => {
+            setLobbyData(data);
+        });
+        
+        // 主动请求一次数据
+        newSocket.on('connect', () => {
+             newSocket.emit('join_lobby', { username: 'Guest' });
+        });
+
+        return () => {
+            newSocket.disconnect();
+        };
     }, []);
 
     // ========== API 方法 ==========
@@ -375,6 +400,78 @@ export default function UserProfile() {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* ==================== 全网欢乐豆 & 生态钱包 ==================== */}
+                <div className="bg-gradient-to-br from-amber-100 to-orange-50 backdrop-blur-md rounded-2xl border border-amber-200 shadow-lg p-3 md:p-6 relative overflow-hidden mb-6">
+                    {lobbyData ? (
+                        <>
+                            {/* 统计数据网格 */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10">
+                                {/* 总豆子数 */}
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center text-3xl">
+                                        💰
+                                    </div>
+                                    <div>
+                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.total_beans}</p>
+                                        <p className="text-mobile-lg font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
+                                    </div>
+                                </div>
+
+                                {/* 生态池储备 */}
+                                <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-amber-200 pt-4 md:pt-0 md:pl-8">
+                                    <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-3xl">
+                                        🌱
+                                    </div>
+                                    <div>
+                                        <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool_min_reserve}</p>
+                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)} / {lobbyData.ecoPool.minReserve.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 官方钱包地址区域 */}
+                            <div className="mt-6 pt-4 border-t border-amber-200/50">
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3">
+                                    <p className="text-amber-800 font-medium flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                                        {t.official_wallet}
+                                    </p>
+                                    <span className="text-xs text-amber-600/80 bg-amber-100/50 px-2 py-1 rounded">
+                                        Official Eco-Wallet
+                                    </span>
+                                </div>
+                                
+                                <div className="bg-white/60 rounded-xl p-3 flex items-center justify-between gap-3 border border-amber-100 group hover:border-amber-300 transition-colors">
+                                    <code className="text-xs md:text-sm text-amber-900 font-mono break-all">
+                                        {lobbyData.ecoPool.officialWallet}
+                                    </code>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(lobbyData.ecoPool.officialWallet);
+                                            alert('Address Copied!');
+                                        }}
+                                        className="p-2 hover:bg-amber-100 rounded-lg text-amber-600 transition-colors flex-shrink-0"
+                                        title="Copy Address"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-amber-800/50 gap-3">
+                            <div className="w-8 h-8 border-4 border-amber-200 border-t-amber-500 rounded-full animate-spin"></div>
+                            <p className="text-sm font-medium">Loading Eco Data...</p>
+                        </div>
+                    )}
+                    
+                    {/* 装饰背景 */}
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-300/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-orange-300/10 rounded-full blur-3xl pointer-events-none"></div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
