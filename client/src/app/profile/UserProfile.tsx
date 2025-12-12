@@ -48,7 +48,7 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
 
     /** 当前头像展示用的 URL（后端返回或前端默认） */
-    const [avatarSrc, setAvatarSrc] = useState<string>('/images/default-avatar.png');
+    const [avatarSrc, setAvatarSrc] = useState('/images/default-avatar.png');
 
     /** 是否正在编辑昵称 */
     const [isEditing, setIsEditing] = useState(false);
@@ -252,7 +252,7 @@ export default function UserProfile() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50">
-                <div className="text-2xl font-bold text-amber-900 animate-pulse">加载中...</div>
+                <div className="text-2xl text-amber-900 animate-pulse">加载中...</div>
             </div>
         );
     }
@@ -262,7 +262,7 @@ export default function UserProfile() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold mb-4 text-amber-900">未找到用户信息</h2>
+                    <h2 className="text-2xl mb-4 text-amber-900">未找到用户信息</h2>
                     <p className="text-gray-600 mb-6">请尝试重新登录</p>
                     <button
                         onClick={() => router.push('/')}
@@ -317,7 +317,7 @@ export default function UserProfile() {
                             {/* 用户基本信息概览 */}
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
-                                    <h1 className="text-2xl font-bold text-amber-900">
+                                    <h1 className="text-2xl text-amber-900">
                                         {profile.nickname}
                                     </h1>
                                     <button
@@ -362,7 +362,7 @@ export default function UserProfile() {
                             </button>
                             <button
                                 onClick={() => setIsLoggingOut(true)}
-                                className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-bold flex items-center gap-2 shadow-sm"
+                                className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm flex items-center gap-2 shadow-sm"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -392,7 +392,7 @@ export default function UserProfile() {
                                     <button
                                         onClick={handleUploadAvatar}
                                         disabled={uploadingAvatar}
-                                        className="px-4 py-1 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-bold disabled:opacity-50 shadow-sm transition-colors"
+                                        className="px-4 py-1 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm disabled:opacity-50 shadow-sm transition-colors"
                                     >
                                         {uploadingAvatar ? '上传中...' : '确认上传'}
                                     </button>
@@ -415,7 +415,7 @@ export default function UserProfile() {
                                     </div>
                                     <div>
                                         <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.total_beans}</p>
-                                        <p className="text-mobile-lg font-bold text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
+                                        <p className="text-mobile-lg text-amber-900">{lobbyData.ecoPool.totalBeans.toLocaleString()}</p>
                                     </div>
                                 </div>
 
@@ -426,7 +426,7 @@ export default function UserProfile() {
                                     </div>
                                     <div>
                                         <p className="text-amber-800 font-medium mb-1 text-mobile-base">{t.eco_pool_min_reserve}</p>
-                                        <p className="text-mobile-lg font-bold text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)} / {lobbyData.ecoPool.minReserve.toFixed(2)}</p>
+                                        <p className="text-mobile-lg text-green-900">{lobbyData.ecoPool.piReserve.toFixed(2)} / {lobbyData.ecoPool.minReserve.toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -479,7 +479,7 @@ export default function UserProfile() {
                     <div className="space-y-6">
                         {/* 基本信息卡片 */}
                         <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
-                            <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <h3 className="text-xl text-amber-900 mb-4 flex items-center gap-2">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
@@ -488,7 +488,7 @@ export default function UserProfile() {
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                     <span className="text-gray-600">用户 ID</span>
-                                    <span className="font-mono font-bold text-blue-600">{profile.userId}</span>
+                                    <span className="font-mono text-blue-600">{profile.userId}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                     <span className="text-gray-600">Pi 用户名</span>
@@ -523,7 +523,7 @@ export default function UserProfile() {
                                 </div>
                                 <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                     <span className="text-gray-600">欢乐豆</span>
-                                    <span className="font-bold text-orange-600 text-lg">{profile.happyBeans?.toLocaleString() || 0}</span>
+                                    <span className="text-orange-600 text-lg">{profile.happyBeans?.toLocaleString() || 0}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600">注册时间</span>
@@ -540,7 +540,7 @@ export default function UserProfile() {
                     <div className="space-y-6">
                         {/* 游戏数据卡片 */}
                         <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
-                            <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <h3 className="text-xl text-amber-900 mb-4 flex items-center gap-2">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
@@ -551,35 +551,35 @@ export default function UserProfile() {
                                     {profile.gameStats.map((stat: any, index: number) => (
                                         <div key={index} className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 hover:shadow-md transition-shadow">
                                             <div className="flex justify-between items-center mb-3">
-                                                <h4 className="font-bold text-lg text-amber-900">{stat.gameName}</h4>
-                                                <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-bold shadow-sm">
+                                                <h4 className="text-lg text-amber-900">{stat.gameName}</h4>
+                                                <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-sm shadow-sm">
                                                     {stat.rating}
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3 text-sm">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">称号:</span>
-                                                    <span className="font-bold" style={{ color: stat.titleColor || '#d97706' }}>{stat.title}</span>
+                                                    <span className="" style={{ color: stat.titleColor || '#d97706' }}>{stat.title}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">总场次:</span>
-                                                    <span className="font-bold text-gray-900">{stat.gamesPlayed}</span>
+                                                    <span className="text-gray-900">{stat.gamesPlayed}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">胜率:</span>
-                                                    <span className="font-bold text-green-600">{stat.winRate}%</span>
+                                                    <span className="text-green-600">{stat.winRate}%</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">掉线率:</span>
-                                                    <span className="font-bold text-red-600">{stat.disconnectRate}%</span>
+                                                    <span className="text-red-600">{stat.disconnectRate}%</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">最高连胜:</span>
-                                                    <span className="font-bold text-orange-600">{stat.maxWinStreak}</span>
+                                                    <span className="text-orange-600">{stat.maxWinStreak}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">当前连胜:</span>
-                                                    <span className="font-bold text-gray-900">{stat.currentWinStreak}</span>
+                                                    <span className="text-gray-900">{stat.currentWinStreak}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -595,7 +595,7 @@ export default function UserProfile() {
 
                         {/* 推荐统计卡片 */}
                         <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50">
-                            <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <h3 className="text-xl text-amber-900 mb-4 flex items-center gap-2">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                 </svg>
@@ -604,15 +604,15 @@ export default function UserProfile() {
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                     <span className="text-gray-600">推荐码</span>
-                                    <span className="font-mono font-bold text-amber-600 text-lg tracking-wider">{profile.referralCode}</span>
+                                    <span className="font-mono text-amber-600 text-lg tracking-wider">{profile.referralCode}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                                     <span className="text-gray-600">邀请人数</span>
-                                    <span className="font-bold text-gray-900">{profile.referralStats?.inviteCount || 0}</span>
+                                    <span className="text-gray-900">{profile.referralStats?.inviteCount || 0}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600">总流水</span>
-                                    <span className="font-bold text-orange-600">{profile.referralStats?.totalFlow?.toLocaleString() || 0} 豆</span>
+                                    <span className="text-orange-600">{profile.referralStats?.totalFlow?.toLocaleString() || 0} 豆</span>
                                 </div>
                             </div>
                             <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
@@ -636,7 +636,7 @@ export default function UserProfile() {
                             </div>
                             <button
                                 onClick={() => setShowReferralDetails(true)}
-                                className="w-full py-3 mt-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                                className="w-full py-3 mt-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                             >
                                 查看详细数据
                             </button>
@@ -651,7 +651,7 @@ export default function UserProfile() {
             {isEditing && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100">
-                        <h3 className="text-xl font-bold text-amber-900 mb-4">修改昵称</h3>
+                        <h3 className="text-xl text-amber-900 mb-4">修改昵称</h3>
                         <input
                             type="text"
                             value={editNickname}
@@ -673,7 +673,7 @@ export default function UserProfile() {
                             </button>
                             <button
                                 onClick={handleUpdateNickname}
-                                className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors shadow-md"
+                                className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors shadow-md"
                             >
                                 保存修改
                             </button>
@@ -691,7 +691,7 @@ export default function UserProfile() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">确认退出登录？</h3>
+                        <h3 className="text-xl text-gray-900 mb-2">确认退出登录？</h3>
                         <p className="text-gray-500 mb-6">退出后需要重新登录才能访问。</p>
                         <div className="flex gap-3 justify-center">
                             <button
@@ -702,7 +702,7 @@ export default function UserProfile() {
                             </button>
                             <button
                                 onClick={handleLogout}
-                                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30"
+                                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors shadow-lg shadow-red-500/30"
                             >
                                 确认退出
                             </button>
