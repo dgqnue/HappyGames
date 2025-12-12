@@ -77,19 +77,25 @@ class MatchingRules {
         // 1. 检查底豆匹配 (双向匹配)
         if (playerSettings) {
             // 规则：房间的底豆必须在玩家接受的范围内
-            if (baseBet < playerSettings.betRange[0] || baseBet > playerSettings.betRange[1]) {
-                return {
-                    canJoin: false,
-                    reason: `房间底豆 ${baseBet} 不在您接受的范围 [${playerSettings.betRange[0]}, ${playerSettings.betRange[1]}] 内`
-                };
+            // 只有当 playerSettings 中包含 betRange 时才检查
+            if (playerSettings.betRange && Array.isArray(playerSettings.betRange) && playerSettings.betRange.length >= 2) {
+                if (baseBet < playerSettings.betRange[0] || baseBet > playerSettings.betRange[1]) {
+                    return {
+                        canJoin: false,
+                        reason: `房间底豆 ${baseBet} 不在您接受的范围 [${playerSettings.betRange[0]}, ${playerSettings.betRange[1]}] 内`
+                    };
+                }
             }
 
             // 规则：玩家设定的底豆必须在房间接受的范围内 (用于自动匹配时的双向验证)
-            if (playerSettings.baseBet < betRange[0] || playerSettings.baseBet > betRange[1]) {
-                return {
-                    canJoin: false,
-                    reason: `您的底豆 ${playerSettings.baseBet} 不在房间接受的范围 [${betRange[0]}, ${betRange[1]}] 内`
-                };
+            // 只有当 playerSettings 中包含 baseBet 时才检查
+            if (typeof playerSettings.baseBet === 'number') {
+                if (playerSettings.baseBet < betRange[0] || playerSettings.baseBet > betRange[1]) {
+                    return {
+                        canJoin: false,
+                        reason: `您的底豆 ${playerSettings.baseBet} 不在房间接受的范围 [${betRange[0]}, ${betRange[1]}] 内`
+                    };
+                }
             }
         }
 
