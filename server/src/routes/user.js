@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { fetchLatestAvatarUrl } = require('../utils/avatarUtils');
 
 // 辅助函数：将相对路径的头像转换为完整 URL
