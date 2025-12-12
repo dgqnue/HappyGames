@@ -1,14 +1,14 @@
-// RoomManager 已被移除，加入游戏桌的逻辑现在由各个 GameCenter 处理
+// RoomManager 已被移除，加入游戏桌的逻辑现在由各�?GameCenter 处理
 // const RoomManager = require('../game/RoomManager');
 const MatchPlayers = require('../gamecore/matching/MatchPlayers');
-const MatchingRules = MatchPlayers.MatchingRules;
+const StateMappingRules = require('../gamecore/matching/StateMappingRules');
 const WalletService = require('../services/WalletService');
 
 const feed = [];   // Save last 20 feed items
 
 module.exports = (io, socket) => {
     // Matchmaker is now managed by GameLoader
-    // MatchingRules.MatchMaker is a class, not a singleton instance here
+    // StateMappingRules.MatchMaker is a class, not a singleton instance here
 
     socket.on('join_lobby', async (data) => {
         socket.join('lobby');
@@ -79,7 +79,7 @@ module.exports = (io, socket) => {
         socket.emit('error', 'Please use the new matchmaking system');
     });
 
-    // 注意：join_table 事件已废弃
-    // 加入游戏桌的逻辑现在由各个 GameCenter 通过 'chinesechess_join' 等事件处理
-    // 如果需要通用的加入桌子逻辑，请使用对应游戏的事件
+    // 注意：join_table 事件已废�?
+    // 加入游戏桌的逻辑现在由各�?GameCenter 通过 'chinesechess_join' 等事件处�?
+    // 如果需要通用的加入桌子逻辑，请使用对应游戏的事�?
 };
