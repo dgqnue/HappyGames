@@ -347,19 +347,15 @@ export abstract class GameRoomClient {
             if (timeoutId) clearTimeout(timeoutId);
             this.updateState({ selectedTableId: tableId });
             // 清理监听器
-            this.socket.off(`${this.gameType}_game_state`, onJoined);
-            this.socket.off('table_state', onJoined);
+            this.socket.off('table_update', onJoined);
         };
         
         // 监听游戏桌状态更新（这表示已成功加入）
-        // 兼容旧的 game_state 事件和新的 table_state 事件
-        this.socket.once(`${this.gameType}_game_state`, onJoined);
-        this.socket.once('table_state', onJoined);
+        this.socket.on('table_update', onJoined);
         
         // 设置超时：如果5秒内没有收到成功确认，则保持原样
         timeoutId = setTimeout(() => {
-            this.socket.off(`${this.gameType}_game_state`, onJoined);
-            this.socket.off('table_state', onJoined);
+            this.socket.off('table_update', onJoined);
             // 如果没有收到确认，保持原样不更新状态
             // 这样如果服务器拒绝了，UI就不会改变
             console.log(`[${this.gameType}RoomClient] No confirmation received for table join, keeping UI unchanged`);
