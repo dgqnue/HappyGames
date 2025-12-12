@@ -2,6 +2,7 @@ const GameTable = require('../../../gamecore/hierarchy/GameTable');
 const ChineseChessRules = require('../logic/ChineseChessRules');
 const EloService = require('../../../gamecore/EloService');
 const Grade = require('../grade/Grade');
+const LobbyFeed = require('../../../models/LobbyFeed');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -321,16 +322,30 @@ class ChineseChessTable extends GameTable {
         // Broadcast Win to Lobby
         try {
             const winnerName = this.players.find(p => p.userId === winnerId)?.nickname || 'Unknown Player';
-            const winnerTitle = titleResult[winnerId]?.title || 'Unknown Title';
+            const winnerTitle = titleResult[winnerId]?.title || '无';
+            const winnerTitleColor = titleResult[winnerId]?.titleColor || '#000000';
             
-            this.io.to('lobby').emit('lobby_feed', {
-                id: Date.now(),
+            const winItem = new LobbyFeed({
                 type: 'game_win',
                 user: winnerName,
-                game: 'Xiangqi',
+                game: '中国象棋',
                 title: winnerTitle,
-                time: new Date().toLocaleTimeString()
+                titleColor: winnerTitleColor,
+                timestamp: new Date()
             });
+            await winItem.save();
+
+            this.io.to('lobby').emit('lobby_feed', winItem);
+
+            // Cleanup old feeds (keep latest 200)
+            const count = await LobbyFeed.countDocuments();
+            if (count > 200) {
+                const latest = await LobbyFeed.find().sort({ timestamp: -1 }).limit(200).select('_id');
+                if (latest.length === 200) {
+                    const latestIds = latest.map(doc => doc._id);
+                    await LobbyFeed.deleteMany({ _id: { $nin: latestIds } });
+                }
+            }
         } catch (err) {
             console.error(`[ChineseChessTable] Error broadcasting win to lobby:`, err);
         }

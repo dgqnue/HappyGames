@@ -120,10 +120,15 @@ export default function LobbyDashboard() {
             setLobbyData(data);
         });
 
+        // 监听历史记录
+        newSocket.on('lobby_feed_history', (history: any[]) => {
+            setLobbyFeed(history);
+        });
+
         // 监听大厅动态Feed（新的活动记录）
         newSocket.on('lobby_feed', (feedItem: any) => {
-            // 添加新记录到Feed顶部，保留最新20条
-            setLobbyFeed(prev => [feedItem, ...prev].slice(0, 20));
+            // 添加新记录到Feed顶部，保留最新200条
+            setLobbyFeed(prev => [feedItem, ...prev].slice(0, 200));
         });
 
         // 组件卸载时断开连接
@@ -300,7 +305,7 @@ export default function LobbyDashboard() {
                         {/* Feed 列表 */}
                         <div className="space-y-4">
                             {lobbyFeed.map((item) => (
-                                <div key={item.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-white/60 shadow-sm hover:bg-white/80 transition-colors">
+                                <div key={item.id || item._id} className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-white/60 shadow-sm hover:bg-white/80 transition-colors">
 
                                     {/* 活动类型图标 */}
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm
@@ -320,15 +325,16 @@ export default function LobbyDashboard() {
                                         <p className="text-sm text-gray-800">
                                             {item.type === 'join' ? (
                                                 <>
-                                                    <span className="text-gray-500">Welcome </span>
+                                                    <span className="text-gray-500">欢迎 </span>
                                                     <span className="font-bold text-amber-900">{item.user}</span>
-                                                    <span className="text-gray-500"> entering game lobby</span>
+                                                    <span className="text-gray-500"> 进入游戏大厅</span>
                                                 </>
                                             ) : item.type === 'game_win' ? (
                                                 <>
-                                                    <span className="text-gray-500">Congrats </span>
+                                                    <span className="text-gray-500">恭喜 </span>
                                                     <span className="font-bold text-amber-900">{item.user}</span>
-                                                    <span className="text-gray-500"> won {item.game}, Title: {item.title}</span>
+                                                    <span className="text-gray-500"> 赢得了{item.game}游戏的胜利，荣誉称号：</span>
+                                                    <span className="font-bold" style={{ color: item.titleColor || '#000000' }}>{item.title}</span>
                                                 </>
                                             ) : (
                                                 <>
@@ -341,7 +347,7 @@ export default function LobbyDashboard() {
                                                 </>
                                             )}
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-1">{item.time}</p>
+                                        <p className="text-xs text-gray-400 mt-1">{item.time || (item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : '')}</p>
                                     </div>
                                 </div>
                             ))}
