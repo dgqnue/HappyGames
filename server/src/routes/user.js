@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const UserGameStats = require('../models/UserGameStats');
 const { piAuth } = require('../gamecore/auth');
 const multer = require('multer');
 const path = require('path');
@@ -290,6 +291,37 @@ router.get('/profile', async (req, res) => {
         // 转换头像为完整 URL
         const userData = user.toObject();
         userData.avatar = await fetchLatestAvatarUrl(user._id);
+
+        // 获取并合并游戏数据 (UserGameStats)
+        // User.gameStats 字段可能未更新，以 UserGameStats 集合为准
+        const stats = await UserGameStats.find({ userId: user._id });
+        
+        const GAME_NAMES = {
+            'chinesechess': 'Chinese Chess',
+            'gomoku': 'Gomoku'
+        };
+
+        userData.gameStats = stats.map(stat => {
+            const gamesPlayed = stat.gamesPlayed || 0;
+            const wins = stat.wins || 0;
+            const disconnects = stat.disconnects || 0;
+
+            return {
+                gameType: stat.gameType,
+                gameName: GAME_NAMES[stat.gameType] || stat.gameType,
+                rating: stat.rating,
+                title: stat.title,
+                titleColor: stat.titleColor,
+                gamesPlayed: gamesPlayed,
+                wins: wins,
+                losses: stat.losses || 0,
+                draws: stat.draws || 0,
+                winRate: gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0,
+                disconnectRate: gamesPlayed > 0 ? Math.round((disconnects / gamesPlayed) * 100) : 0,
+                maxWinStreak: 0, // TODO: Add to UserGameStats
+                currentWinStreak: 0 // TODO: Add to UserGameStats
+            };
+        });
 
         res.json({
             success: true,
