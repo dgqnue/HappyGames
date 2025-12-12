@@ -1071,12 +1071,6 @@ class MatchPlayers {
             this.table.broadcastRoomState();
         });
     }
-            reason: 'Some players failed to ready up',
-            remainingPlayers: this.matchState.players.length
-        });
-
-        this.table.broadcastRoomState();
-    }
 
     /**
      * Start game countdown (3-2-1)
