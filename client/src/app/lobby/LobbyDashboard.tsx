@@ -34,6 +34,9 @@ export default function LobbyDashboard() {
     /** 大厅数据（统计信息、生态池等） */
     const [lobbyData, setLobbyData] = useState<any>(null);
 
+    /** 当前登录用户 */
+    const [user, setUser] = useState<any>(null);
+
     /** 大厅动态Feed（玩家活动记录） */
     const [lobbyFeed, setLobbyFeed] = useState<any[]>([]);
 
@@ -42,6 +45,27 @@ export default function LobbyDashboard() {
 
     /** 国际化翻译函数 */
     const { t } = useLanguage();
+
+    // ========== 获取用户信息 ==========
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/user/profile`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const { data } = await res.json();
+                        setUser(data);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch profile", e);
+                }
+            }
+        };
+        fetchProfile();
+    }, []);
 
     // ========== 轮播横幅配置 ==========
 
@@ -76,6 +100,8 @@ export default function LobbyDashboard() {
     // ========== Socket.io 连接和事件监听 ==========
 
     useEffect(() => {
+        if (!user) return; // 等待用户信息加载完成
+
         // 创建 Socket.io 连接
         const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
             auth: {
@@ -86,7 +112,7 @@ export default function LobbyDashboard() {
 
         // 连接成功后加入大厅
         newSocket.on('connect', () => {
-            newSocket.emit('join_lobby', { username: 'Guest' });
+            newSocket.emit('join_lobby', { username: user.nickname || 'Guest' });
         });
 
         // 监听大厅数据更新（统计信息等）
@@ -104,7 +130,7 @@ export default function LobbyDashboard() {
         return () => {
             newSocket.disconnect();
         };
-    }, [t]);
+    }, [t, user]);
 
     // ========== 轮播自动播放 ==========
 
