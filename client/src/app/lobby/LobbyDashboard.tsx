@@ -326,19 +326,19 @@ export default function LobbyDashboard() {
                                             {item.type === 'join' ? (
                                                 <>
                                                     <span className="text-gray-500">欢迎 </span>
-                                                    <span className="font-bold text-amber-900">{item.user}</span>
+                                                    <span className="text-amber-900">{item.user}</span>
                                                     <span className="text-gray-500"> 进入游戏大厅</span>
                                                 </>
                                             ) : item.type === 'game_win' ? (
                                                 <>
                                                     <span className="text-gray-500">恭喜 </span>
-                                                    <span className="font-bold text-amber-900">{item.user}</span>
+                                                    <span className="text-amber-900">{item.user}</span>
                                                     <span className="text-gray-500"> 赢得了{item.game}游戏的胜利，荣誉称号：</span>
-                                                    <span className="font-bold" style={{ color: item.titleColor || '#000000' }}>{item.title}</span>
+                                                    <span style={{ color: item.titleColor || '#000000' }}>{item.title}</span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <span className="font-bold text-amber-900">{item.user}</span>
+                                                    <span className="text-amber-900">{item.user}</span>
                                                     {' '}
                                                     {item.type === 'deposit' && <span className="text-gray-500">{t.feed_deposit}: {item.amount} Pi</span>}
                                                     {item.type === 'withdraw' && <span className="text-gray-500">{t.feed_withdraw}: {item.amount} Pi</span>}
