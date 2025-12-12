@@ -9,24 +9,6 @@ const fsPromises = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const { fetchLatestAvatarUrl } = require('../utils/avatarUtils');
 
-// 读取默认头像并转换为 Base64
-let DEFAULT_AVATAR_BASE64 = '';
-try {
-    const avatarPath = path.join(__dirname, '../../public/images/default-avatar.png');
-    if (fs.existsSync(avatarPath)) {
-        const imageBuffer = fs.readFileSync(avatarPath);
-        DEFAULT_AVATAR_BASE64 = `data:image/png;base64,${imageBuffer.toString('base64')}`;
-        console.log('默认头像加载成功');
-    } else {
-        console.warn('默认头像文件不存在:', avatarPath);
-        // 降级使用 SVG
-        DEFAULT_AVATAR_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZC1ncmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRDcwMDtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNGREI5MzE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I0I4ODYwQjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1vcGFjaXR5PSIwLjMiLz4KICAgIDwvZmlsdGVyPgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0idXJsKCNnb2xkLWdyYWQpIiAvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIiBzdHJva2Utd2lkdGg9IjQiIC8+CiAgPGcgZmlsdGVyPSJ1cmwoI3NoYWRvdykiPgogICAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iODUiIHI9IjM1IiBmaWxsPSIjZmZmZmZmIiAvPgogICAgPHBhdGggZD0iTTEwMCAxMzUgYy0zNSAwIC02MCAyMCAtNzAgNDUgYSA4NSA4NSAwIDAgMCAxNDAgMCBjLTEwIC0yNSAtMzUgLTQ1IC03MCAtNDUgeiIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8L2c+Cjwvc3ZnPg==';
-    }
-} catch (error) {
-    console.error('默认头像加载失败:', error);
-    DEFAULT_AVATAR_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZC1ncmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRDcwMDtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNGREI5MzE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I0I4ODYwQjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1vcGFjaXR5PSIwLjMiLz4KICAgIDwvZmlsdGVyPgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0idXJsKCNnb2xkLWdyYWQpIiAvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIiBzdHJva2Utd2lkdGg9IjQiIC8+CiAgPGcgZmlsdGVyPSJ1cmwoI3NoYWRvdykiPgogICAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iODUiIHI9IjM1IiBmaWxsPSIjZmZmZmZmIiAvPgogICAgPHBhdGggZD0iTTEwMCAxMzUgYy0zNSAwIC02MCAyMCAtNzAgNDUgYSA4NSA4NSAwIDAgMCAxNDAgMCBjLTEwIC0yNSAtMzUgLTQ1IC03MCAtNDUgeiIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8L2c+Cjwvc3ZnPg==';
-}
-
 // 辅助函数：将相对路径的头像转换为完整 URL
 // 约定：
 //   - 数据库存储相对路径（/images/xxx.png 或 /uploads/avatars/xxx.png）

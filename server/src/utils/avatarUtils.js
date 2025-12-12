@@ -61,6 +61,11 @@ async function fetchLatestAvatarUrl(userId) {
         const user = await User.findById(userId).select('avatar').lean();
         
         if (user && user.avatar) {
+            // 拦截旧的 SVG Base64 默认头像，强制使用新的图片文件默认头像
+            if (user.avatar.startsWith('data:image/svg+xml') || user.avatar.endsWith('.svg')) {
+                return '/images/default-avatar.png';
+            }
+
             // 数据库有记录，转换并返回
             const fullUrl = getFullAvatarUrl(user.avatar);
             // console.log(`[AvatarUtils] Found avatar for ${userId}: ${fullUrl}`);
