@@ -247,7 +247,7 @@ class MatchRoomState {
 
         const newState = StateMappingRules.getStateAfterPlayerJoin(this.players.length, this.maxPlayers);
         if (newState) {
-            this.status = newState;
+            this.transitionStatus(newState, { userId: playerData.userId, reason: 'player_join' });
         }
 
         if (this.players.length === 1) {
@@ -427,7 +427,7 @@ class MatchRoomState {
             clearTimeout(this.readyTimer);
             this.readyTimer = null;
         }
-        const newState = StateMappingRules.getStateAfterCancelReadyCheck(this.players.length);
+        const newState = StateMappingRules.getStateAfterCancelReadyCheck(this.players.length, this.maxPlayers);
         this.status = newState;
     }
 
@@ -1018,46 +1018,59 @@ class MatchPlayers {
      * Ready timeout handler (30s countdown)
      * This method only handles ready timeout, should not be affected by game countdown
      */
-    onReadyTimeout() {
-        console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, readyCheckCancelled: ${this.readyCheckCancelled}`);
-        
-        // If ready countdown cancelled (i.e. game countdown started), return immediately
-        if (this.readyCheckCancelled) {
-            console.log(`[MatchPlayers] Ready check was already cancelled, skipping timeout processing`);
-            return;
-        }
-        
-        // If game already started, do nothing
-        if (this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
-            console.log(`[MatchPlayers] Game already playing, skipping ready timeout processing`);
-            return;
-        }
-
-        console.log(`[MatchPlayers] Ready timeout occurred - kicking out unready players`);
-
-        const unreadyPlayers = this.matchState.getUnreadyPlayers();
-        console.log(`[MatchPlayers] Unready players:`, unreadyPlayers.map(p => p.userId));
-
-        unreadyPlayers.forEach(player => {
-            const socket = this.io.sockets.sockets.get(player.socketId);
-            if (socket) {
-                console.log(`[MatchPlayers] Kicking player ${player.userId} for ready timeout`);
-                socket.emit('kicked', {
-                    reason: 'Ready timeout',
-                    code: 'READY_TIMEOUT'
-                });
-                this.playerLeave(socket);
-            } else {
-                console.log(`[MatchPlayers] Removing player ${player.userId} from match state`);
-                this.matchState.removePlayer(player.userId);
-                this.table.broadcastRoomState();
+    async onReadyTimeout() {
+        // Use enqueueAction to ensure atomicity and prevent race conditions
+        await this.enqueueAction(async () => {
+            console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, readyCheckCancelled: ${this.readyCheckCancelled}`);
+            
+            // If ready countdown cancelled (i.e. game countdown started), return immediately
+            if (this.readyCheckCancelled) {
+                console.log(`[MatchPlayers] Ready check was already cancelled, skipping timeout processing`);
+                return;
             }
+            
+            // If game already started, do nothing
+            if (this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
+                console.log(`[MatchPlayers] Game already playing, skipping ready timeout processing`);
+                return;
+            }
+
+            console.log(`[MatchPlayers] Ready timeout occurred - kicking out unready players`);
+
+            const unreadyPlayers = this.matchState.getUnreadyPlayers();
+            console.log(`[MatchPlayers] Unready players:`, unreadyPlayers.map(p => p.userId));
+
+            // Kick players first
+            for (const player of unreadyPlayers) {
+                const socket = this.io.sockets.sockets.get(player.socketId);
+                if (socket) {
+                    console.log(`[MatchPlayers] Kicking player ${player.userId} for ready timeout`);
+                    socket.emit('kicked', {
+                        reason: 'Ready timeout',
+                        code: 'READY_TIMEOUT'
+                    });
+                    // Use _playerLeave directly since we are already in queue
+                    this._playerLeave(socket);
+                } else {
+                    console.log(`[MatchPlayers] Removing player ${player.userId} from match state`);
+                    this.matchState.removePlayer(player.userId);
+                    // _playerLeave handles broadcast, but removePlayer doesn't
+                    // However, we will broadcast at the end anyway
+                }
+            }
+
+            // Then cancel ready check (which updates status based on remaining players)
+            this.matchState.cancelReadyCheck();
+            this.matchState.resetReadyStatus();
+
+            this.table.broadcast('ready_check_cancelled', {
+                reason: 'Some players failed to ready up',
+                remainingPlayers: this.matchState.players.length
+            });
+
+            this.table.broadcastRoomState();
         });
-
-        this.matchState.cancelReadyCheck();
-        this.matchState.resetReadyStatus();
-
-        this.table.broadcast('ready_check_cancelled', {
+    }
             reason: 'Some players failed to ready up',
             remainingPlayers: this.matchState.players.length
         });

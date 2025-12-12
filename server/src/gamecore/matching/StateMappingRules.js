@@ -223,14 +223,15 @@ class StateMappingRules {
     /**
      * 获取取消准备后的新状态
      * @param {number} currentPlayers - 当前玩家数
+     * @param {number} maxPlayers - 最大玩家数
      * @returns {string} 新状态
      */
-    static getStateAfterCancelReadyCheck(currentPlayers) {
-        // 取消准备后，状态回退到 WAITING (即使满座，也需要重新触发准备流程)
-        // 或者保持 MATCHING 但重置倒计时？
-        // 根据需求，如果有人取消准备，通常意味着需要重新确认
-        // 但为了避免状态反复跳变，如果满座，可以保持 MATCHING，只是取消了倒计时
-        // 不过为了逻辑清晰，这里返回 MATCHING，具体的倒计时逻辑由 MatchPlayers 控制
+    static getStateAfterCancelReadyCheck(currentPlayers, maxPlayers) {
+        // 如果玩家人数少于最大人数，状态应为 WAITING
+        if (currentPlayers < maxPlayers) {
+            return this.TABLE_STATUS.WAITING;
+        }
+        // 否则保持 MATCHING (满座但未全部就绪)
         return this.TABLE_STATUS.MATCHING;
     }
 
