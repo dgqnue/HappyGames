@@ -412,7 +412,8 @@ class MatchRoomState {
     }
 
     startReadyCheck() {
-        if (this.status === StateMappingRules.TABLE_STATUS.MATCHING) return;
+        // Allow starting ready check even if already in MATCHING state (e.g. when room just became full)
+        // if (this.status === StateMappingRules.TABLE_STATUS.MATCHING) return;
 
         this.status = StateMappingRules.TABLE_STATUS.MATCHING;
         return {
