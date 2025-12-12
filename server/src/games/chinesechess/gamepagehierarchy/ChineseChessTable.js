@@ -318,6 +318,23 @@ class ChineseChessTable extends GameTable {
             console.error(`[ChineseChessTable] Error updating all titles:`, err);
         }
 
+        // Broadcast Win to Lobby
+        try {
+            const winnerName = this.players.find(p => p.userId === winnerId)?.nickname || 'Unknown Player';
+            const winnerTitle = titleResult[winnerId]?.title || 'Unknown Title';
+            
+            this.io.to('lobby').emit('lobby_feed', {
+                id: Date.now(),
+                type: 'game_win',
+                user: winnerName,
+                game: 'Xiangqi',
+                title: winnerTitle,
+                time: new Date().toLocaleTimeString()
+            });
+        } catch (err) {
+            console.error(`[ChineseChessTable] Error broadcasting win to lobby:`, err);
+        }
+
         // 3. 游戏豆结算 (非免费室)
         if (this.tier !== 'free') {
             const betAmount = this.getBetAmount();

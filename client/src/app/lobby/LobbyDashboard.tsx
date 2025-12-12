@@ -286,24 +286,39 @@ export default function LobbyDashboard() {
                                         ${item.type === 'join' ? 'bg-blue-100 text-blue-600' :
                                             item.type === 'deposit' ? 'bg-green-100 text-green-600' :
                                                 item.type === 'withdraw' ? 'bg-red-100 text-red-600' :
-                                                    item.type === 'win' ? 'bg-green-100 text-green-600' :
+                                                    (item.type === 'win' || item.type === 'game_win') ? 'bg-green-100 text-green-600' :
                                                         'bg-amber-100 text-amber-600'}`}>
                                         {item.type === 'join' ? '👋' :
                                             item.type === 'deposit' ? '💰' :
                                                 item.type === 'withdraw' ? '🏧' :
-                                                    item.type === 'win' ? '🏆' : '🎰'}
+                                                    (item.type === 'win' || item.type === 'game_win') ? '🏆' : '🎰'}
                                     </div>
 
                                     {/* 活动详情 */}
                                     <div className="flex-1">
                                         <p className="text-sm text-gray-800">
-                                            <span className="font-bold text-amber-900">{item.user}</span>
-                                            {' '}
-                                            {item.type === 'join' && <span className="text-gray-500">{t.feed_joined}</span>}
-                                            {item.type === 'deposit' && <span className="text-gray-500">{t.feed_deposit}: {item.amount} Pi</span>}
-                                            {item.type === 'withdraw' && <span className="text-gray-500">{t.feed_withdraw}: {item.amount} Pi</span>}
-                                            {item.type === 'win' && <span className="text-gray-500">{t.feed_win} <span className="font-bold text-green-600">{item.amount} Beans</span></span>}
-                                            {item.type === 'jackpot' && <span className="font-bold text-amber-600">{t.feed_jackpot} <span className="text-amber-800">({item.amount})</span></span>}
+                                            {item.type === 'join' ? (
+                                                <>
+                                                    <span className="text-gray-500">Welcome </span>
+                                                    <span className="font-bold text-amber-900">{item.user}</span>
+                                                    <span className="text-gray-500"> entering game lobby</span>
+                                                </>
+                                            ) : item.type === 'game_win' ? (
+                                                <>
+                                                    <span className="text-gray-500">Congrats </span>
+                                                    <span className="font-bold text-amber-900">{item.user}</span>
+                                                    <span className="text-gray-500"> won {item.game}, Title: {item.title}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="font-bold text-amber-900">{item.user}</span>
+                                                    {' '}
+                                                    {item.type === 'deposit' && <span className="text-gray-500">{t.feed_deposit}: {item.amount} Pi</span>}
+                                                    {item.type === 'withdraw' && <span className="text-gray-500">{t.feed_withdraw}: {item.amount} Pi</span>}
+                                                    {item.type === 'win' && <span className="text-gray-500">{t.feed_win} <span className="font-bold text-green-600">{item.amount} Beans</span></span>}
+                                                    {item.type === 'jackpot' && <span className="font-bold text-amber-600">{t.feed_jackpot} <span className="text-amber-800">({item.amount})</span></span>}
+                                                </>
+                                            )}
                                         </p>
                                         <p className="text-xs text-gray-400 mt-1">{item.time}</p>
                                     </div>
