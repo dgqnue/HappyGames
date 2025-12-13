@@ -84,6 +84,39 @@ export default function HomePage() {
         checkLogin();
     }, []);
 
+    // ========== 事件处理：社交媒体跳转 ==========
+    const handleSocialClick = (e: React.MouseEvent, platform: 'x' | 'telegram') => {
+        e.preventDefault();
+        
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (platform === 'x') {
+            const webUrl = 'https://x.com/HappyGames2025';
+            const appUrl = 'twitter://user?screen_name=HappyGames2025';
+            
+            if (isMobile) {
+                // 尝试打开 App
+                window.location.href = appUrl;
+                
+                // 如果 App 没打开（浏览器未挂起），则跳转网页
+                setTimeout(() => {
+                    // 简单的检测：如果页面还在前台，说明 App 没拉起
+                    if (!document.hidden) {
+                        window.open(webUrl, '_blank');
+                    }
+                }, 1500);
+            } else {
+                window.open(webUrl, '_blank');
+            }
+        } else if (platform === 'telegram') {
+            const webUrl = 'https://t.me/+2O5kln2Jac8xNWY1';
+            // Telegram 的 web 链接通常能很好地唤起 App，但也可以尝试 tg://
+            // const appUrl = 'tg://resolve?domain=...'; 
+            // 对于群组链接，直接用 webUrl 即可，Telegram 官网脚本会处理
+            window.open(webUrl, '_blank');
+        }
+    };
+
     // ========== 事件处理：Pi 登录 ==========
     const handlePiLogin = async (retryCount = 0) => {
         setLoading(true);
@@ -174,9 +207,8 @@ export default function HomePage() {
                         {/* X (Twitter) */}
                         <a 
                             href="https://x.com/HappyGames2025" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="w-9 h-9 bg-black rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
+                            onClick={(e) => handleSocialClick(e, 'x')}
+                            className="w-9 h-9 bg-black rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm cursor-pointer"
                             title="Follow us on X"
                         >
                             <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
@@ -187,9 +219,8 @@ export default function HomePage() {
                         {/* Telegram */}
                         <a 
                             href="https://t.me/+2O5kln2Jac8xNWY1" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="w-9 h-9 bg-[#0088cc] rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
+                            onClick={(e) => handleSocialClick(e, 'telegram')}
+                            className="w-9 h-9 bg-[#0088cc] rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm cursor-pointer"
                             title="Join our Telegram Group"
                         >
                             <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
