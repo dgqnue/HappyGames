@@ -74,6 +74,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [players, setPlayers] = useState<any[]>([]);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -91,13 +92,18 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const state = tableClient.getState?.();
       const isGamePlaying = state?.status === 'playing';
       setIsPlaying(isGamePlaying);
+      
+      // 获取玩家信息
+      const currentPlayers = state?.players || [];
+      setPlayers(currentPlayers);
 
       console.log('[ChineseChessDisplay] updateGameState:', { 
         turn: newCurrentTurn, 
         mySide: newMySide, 
         isPlaying: isGamePlaying, 
         boardRows: newBoardData ? newBoardData.length : 'null',
-        tableState: state?.status
+        tableState: state?.status,
+        playersCount: currentPlayers.length
       });
 
       setBoardData(newBoardData);
@@ -416,6 +422,82 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     }
   };
 
+  // 渲染玩家信息组件
+  const renderPlayerInfo = (player: any, isTop: boolean) => {
+    if (!player) return <div className="w-16 h-16" />; // 占位符
+
+    // 确定玩家阵营
+    // 在 ChineseChessTable.js 中，players[0] 是红方，players[1] 是黑方
+    // 但这里我们可能需要根据 userId 或其他逻辑来确定
+    // 简单起见，假设 players[0] 是红方，players[1] 是黑方
+    // 如果 mySide 是 'b' (黑方)，则视角翻转，红方在上方，黑方在下方
+    // 如果 mySide 是 'r' (红方)，则红方在下方，黑方在上方
+    
+    // 实际上，我们应该根据 isTop 和 mySide 来决定显示哪个玩家
+    // 但这里传入的 player 已经是确定的对象
+    
+    // 确定是否轮到该玩家
+    // 假设 player 对象中有 userId，我们需要知道该玩家是红方还是黑方
+    // 我们可以通过 players 数组的索引来判断：index 0 是红方，index 1 是黑方
+    const playerIndex = players.findIndex(p => p.userId === player.userId);
+    const playerSide = playerIndex === 0 ? 'r' : 'b';
+    const isTurn = currentTurn === playerSide;
+    
+    // 头像 URL 处理
+    const avatarUrl = player.avatar || '/images/default-avatar.png?v=new';
+    
+    return (
+      <div className="flex flex-row items-center gap-2" style={{ 
+        flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右（或根据设计调整）
+        // 根据截图，上方玩家头像在左，名字在右
+      }}>
+        {/* 头像容器 */}
+        <div className="relative">
+          <div 
+            className={`w-12 h-12 rounded-full overflow-hidden border-2 ${isTurn ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-pulse' : 'border-amber-800'}`}
+            style={{
+              transition: 'box-shadow 0.3s ease-in-out'
+            }}
+          >
+            <img 
+              src={avatarUrl} 
+              alt={player.nickname || 'Player'} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {/* 阵营标识 (可选) */}
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-white flex items-center justify-center text-[10px] text-white ${playerSide === 'r' ? 'bg-red-600' : 'bg-black'}`}>
+            {playerSide === 'r' ? '帅' : '将'}
+          </div>
+        </div>
+        
+        {/* 玩家名字 */}
+        <div className="flex flex-col">
+          <span className="text-amber-100 text-sm font-bold drop-shadow-md">
+            {player.nickname || '等待加入...'}
+          </span>
+          {/* 称号 (可选) */}
+          {player.title && (
+            <span className="text-xs" style={{ color: player.titleColor || '#fbbf24' }}>
+              {player.title}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // 确定上下方玩家
+  // 默认：players[0] (红) 在下，players[1] (黑) 在上
+  // 如果我是黑方 (mySide === 'b')，则翻转：黑在下，红在上
+  let bottomPlayer = players[0]; // 红方
+  let topPlayer = players[1];    // 黑方
+  
+  if (mySide === 'b') {
+    bottomPlayer = players[1]; // 黑方
+    topPlayer = players[0];    // 红方
+  }
+
   return (
     <div 
       className="w-screen min-h-screen overflow-visible flex flex-col"
@@ -431,12 +513,14 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         minWidth: '100vw'
       }}
     >
-      {/* 棋盘顶部空白占位符 - 实现下移 */}
-      <div style={{ height: 'calc(100vh / 6)' }} />
+      {/* 顶部玩家信息栏 (绝对定位或作为第一项) */}
+      <div className="w-full flex justify-start px-4 pt-4 pb-2" style={{ maxWidth: '500px', margin: '0 auto' }}>
+        {renderPlayerInfo(topPlayer, true)}
+      </div>
 
       {/* 棋盘套件容器 */}
       <div 
-        className="w-full flex flex-col items-center justify-start"
+        className="w-full flex flex-col items-center justify-start flex-1"
       >
         <div 
           style={{ 
@@ -445,16 +529,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'
           }}
         >
-          {/* 原棋盘组件代码已注释掉，改用棋盘套件 */}
-          {/*
-          <ChessBoard 
-            pieces={pieces}
-            selectedPiece={selectedPiece}
-            onPieceClick={handleBoardClick}
-            isMyTable={isMyTable}
-          />
-          */}
-          
           {/* 使用棋盘套件显示棋盘 */}
           <ChessBoardKit
             pieces={pieces}
@@ -468,6 +542,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </div>
       </div>
 
+      {/* 底部玩家信息栏 */}
+      <div className="w-full flex justify-end px-4 pt-2 pb-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
+        {renderPlayerInfo(bottomPlayer, false)}
+      </div>
+
       {/* 游戏操作按钮栏 */}
       <div 
         style={{
@@ -476,27 +555,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           alignItems: 'center',
           justifyContent: 'center',
           gap: '10px',
-          zIndex: 9999
+          zIndex: 9999,
+          paddingBottom: '20px'
         }}
       >
-        {/* 调试信息栏 */}
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          padding: '5px',
-          fontSize: '12px',
-          zIndex: 10000,
-          pointerEvents: 'none'
-        }}>
-          <div>Status: {isPlaying ? 'Playing' : 'Not Playing'}</div>
-          <div>Turn: {currentTurn === 'r' ? 'Red' : 'Black'}</div>
-          <div>My Side: {mySide === 'r' ? 'Red' : (mySide === 'b' ? 'Black' : 'Spectator')}</div>
-          <div>Is My Turn: {currentTurn === mySide ? 'Yes' : 'No'}</div>
-        </div>
-
         {/* 催促 */}
         <div 
           style={{
