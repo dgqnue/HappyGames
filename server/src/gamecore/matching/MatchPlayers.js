@@ -929,12 +929,20 @@ class MatchPlayers {
      * Player ready - Internal implementation
      */
     _playerReady(socket) {
+        const userId = socket.user._id.toString();
+        
+        // 🔧 幂等性检查：如果玩家已经准备好了，直接忽略重复请求
+        // 这可以防止用户快速点击或网络延迟导致的 "Game starting" 错误
+        const player = this.matchState.players.find(p => p.userId === userId);
+        if (player && player.ready) {
+            return;
+        }
+
         if (this.isLocked) {
             socket.emit('error', { message: 'Game starting, cannot change state' });
             return;
         }
 
-        const userId = socket.user._id.toString();
         const result = this.matchState.setPlayerReady(userId, true);
 
         this.table.broadcastRoomState();
