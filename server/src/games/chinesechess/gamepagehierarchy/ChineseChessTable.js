@@ -3,6 +3,7 @@ const ChineseChessRules = require('../logic/ChineseChessRules');
 const EloService = require('../../../gamecore/EloService');
 const Grade = require('../grade/Grade');
 const LobbyFeed = require('../../../models/LobbyFeed');
+const { getFullAvatarUrl } = require('../../../utils/avatarUtils');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -96,7 +97,7 @@ class ChineseChessTable extends GameTable {
             players: this.players.map(p => ({
                 userId: p.userId,
                 nickname: p.nickname,
-                avatar: p.avatar || '/images/default-avatar.png',
+                avatar: getFullAvatarUrl(p.avatar),
                 ready: p.ready
             })),
             winner: null // TODO: 如果已结束，需要发送 winner
@@ -142,7 +143,7 @@ class ChineseChessTable extends GameTable {
                 userId: p.userId,
                 nickname: p.nickname,
                 title: p.title || '无',
-                avatar: p.avatar || '/images/default-avatar.png' // 信任内存状态
+                avatar: getFullAvatarUrl(p.avatar) // 信任内存状态
             };
         });
 
@@ -530,7 +531,7 @@ class ChineseChessTable extends GameTable {
                     userId: effectiveUserId,
                     nickname: latestData.nickname || p.nickname,
                     // 架构优化：直接使用内存中的头像，它是入座时获取的正确数据
-                    avatar: p.avatar || '/images/default-avatar.png', 
+                    avatar: getFullAvatarUrl(p.avatar), 
                     ready: p.ready,
                     title: latestData.title || p.title,
                     titleColor: latestData.titleColor || p.titleColor,
@@ -637,7 +638,7 @@ class ChineseChessTable extends GameTable {
             return {
                 userId: p.userId,
                 nickname: p.nickname,
-                avatar: p.avatar || '/images/default-avatar.png', // 信任内存状态
+                avatar: getFullAvatarUrl(p.avatar), // 信任内存状态
                 ready: p.ready,
                 title: p.title,
                 titleColor: p.titleColor,

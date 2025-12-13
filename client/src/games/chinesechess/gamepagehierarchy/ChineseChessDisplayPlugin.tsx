@@ -506,7 +506,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/urge.png"
+            src="/images/chinesechess/buttoms/urge.png?v=new"
             alt="催促"
             title="催促"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
@@ -523,7 +523,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/review.png"
+            src="/images/chinesechess/buttoms/review.png?v=new"
             alt="复盘"
             title="复盘"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
@@ -540,7 +540,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/start.png"
+            src="/images/chinesechess/buttoms/start.png?v=new"
             alt="开始"
             title="开始"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
@@ -557,7 +557,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/undo.png"
+            src="/images/chinesechess/buttoms/undo.png?v=new"
             alt="悔棋"
             title="悔棋"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
@@ -574,7 +574,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/resign.png"
+            src="/images/chinesechess/buttoms/resign.png?v=new"
             alt="认输"
             title="认输"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
@@ -591,7 +591,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/draw.png"
+            src="/images/chinesechess/buttoms/draw.png?v=new"
             alt="讲和"
             title="讲和"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
@@ -608,7 +608,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           }}
         >
           <img
-            src="/images/chinesechess/buttoms/exit.png"
+            src="/images/chinesechess/buttoms/exit.png?v=new"
             alt="退出"
             title="退出"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}

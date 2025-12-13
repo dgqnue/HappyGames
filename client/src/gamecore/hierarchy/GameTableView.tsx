@@ -195,7 +195,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const seat1Player = seats[1] || null;
 
     // 公共默认头像路径（前端本地文件）
-    const DEFAULT_AVATAR = '/images/default-avatar.png';
+    const DEFAULT_AVATAR = '/images/default-avatar.png?v=new';
 
     // 监听roomClient状态变化，确保isMyTable正确更新
     useEffect(() => {
@@ -426,7 +426,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const displayTitle = player.title || '初出茅庐';
         // 头像优先级：player.avatar > userObj.avatar > 默认头像
         // player.avatar 来自 broadcastRoomState，已经是完整 URL 并优先级最高
-        let avatarUrl = player.avatar || userObj.avatar || '/images/default-avatar.png';
+        let avatarUrl = player.avatar || userObj.avatar || DEFAULT_AVATAR;
         
         // 智能修正：如果是浏览器环境，且当前访问的不是 localhost
         if (typeof window !== 'undefined' && 

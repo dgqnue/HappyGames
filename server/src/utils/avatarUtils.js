@@ -26,7 +26,7 @@ const getFullAvatarUrl = (avatarPath) => {
     // 优化：如果是默认头像，直接返回相对路径
     // 这样前端可以直接使用本地资源，避免跨域问题或服务器静态资源配置问题
     if (avatarPath === '/images/default-avatar.png') {
-        return avatarPath;
+        return '/images/default-avatar.png?v=new';
     }
 
     // Render / 生产环境：优先使用 API_BASE_URL，其次使用固定线上域名
@@ -63,7 +63,7 @@ async function fetchLatestAvatarUrl(userId) {
         if (user && user.avatar) {
             // 拦截旧的 SVG Base64 默认头像，强制使用新的图片文件默认头像
             if (user.avatar.startsWith('data:image/svg+xml') || user.avatar.endsWith('.svg')) {
-                return '/images/default-avatar.png';
+                return '/images/default-avatar.png?v=new';
             }
 
             // 数据库有记录，转换并返回

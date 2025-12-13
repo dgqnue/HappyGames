@@ -48,7 +48,7 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
 
     /** 当前头像展示用的 URL（后端返回或前端默认） */
-    const [avatarSrc, setAvatarSrc] = useState('/images/default-avatar.png');
+    const [avatarSrc, setAvatarSrc] = useState('/images/default-avatar.png?v=new');
 
     /** 是否正在编辑昵称 */
     const [isEditing, setIsEditing] = useState(false);
@@ -122,7 +122,7 @@ export default function UserProfile() {
             if (res.ok) {
                 const { data } = await res.json();
                 setProfile(data);
-                setAvatarSrc(data.avatar || '/images/default-avatar.png');
+                setAvatarSrc(data.avatar || '/images/default-avatar.png?v=new');
             } else {
                 // Token 失效或请求失败
                 console.error('Failed to fetch profile:', res.status);
