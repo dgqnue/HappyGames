@@ -169,6 +169,35 @@ export default function HomePage() {
                     <img src="/images/logo.png" alt="HappyGames Logo" className="h-12 w-12 object-contain drop-shadow-md hover:scale-110 transition-transform" />
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Social Media Links */}
+                    <div className="flex items-center gap-2 mr-2">
+                        {/* X (Twitter) */}
+                        <a 
+                            href="https://x.com/HappyGames2025" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="w-9 h-9 bg-black rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
+                            title="Follow us on X"
+                        >
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                        </a>
+
+                        {/* Telegram */}
+                        <a 
+                            href="https://t.me/+2O5kln2Jac8xNWY1" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="w-9 h-9 bg-[#0088cc] rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
+                            title="Join our Telegram Group"
+                        >
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
+                                <path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l.002.001-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
+                            </svg>
+                        </a>
+                    </div>
+
                     <LanguageSwitcher />
                     {user && (
                         <div
