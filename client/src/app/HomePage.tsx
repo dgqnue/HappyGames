@@ -167,7 +167,6 @@ export default function HomePage() {
             <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-20">
                 <div className="flex items-center gap-3">
                     <img src="/images/logo.png" alt="HappyGames Logo" className="h-12 w-12 object-contain drop-shadow-md hover:scale-110 transition-transform" />
-                    <div className="font-bold text-mobile-xl text-amber-900 tracking-tight">{t.home_title}</div>
                 </div>
                 <div className="flex items-center gap-4">
                     <LanguageSwitcher />
