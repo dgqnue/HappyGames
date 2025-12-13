@@ -551,9 +551,9 @@ export default function UserProfile() {
                                     {profile.gameStats.map((stat: any, index: number) => (
                                         <div key={index} className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 hover:shadow-md transition-shadow">
                                             <div className="flex justify-between items-center mb-3">
-                                                <h4 className="text-lg text-amber-900">{stat.gameName}</h4>
-                                                <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-sm shadow-sm">
-                                                    {stat.rating}
+                                                <h4 className="text-lg text-amber-900">{stat.gameName === 'Chinese Chess' ? '中国象棋' : stat.gameName}</h4>
+                                                <span className="text-amber-900 text-lg font-medium">
+                                                    等级分：{stat.rating}
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3 text-sm">
