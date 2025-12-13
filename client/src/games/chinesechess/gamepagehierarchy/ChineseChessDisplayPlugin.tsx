@@ -454,9 +454,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {/* 头像容器 */}
         <div className="relative">
           <div 
-            className={`w-12 h-12 rounded-full overflow-hidden border-2 ${isTurn ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-pulse' : 'border-amber-800'}`}
+            className={`w-12 h-12 rounded-full overflow-hidden ${isTurn ? 'shadow-[0_0_20px_5px_rgba(255,0,0,0.9)] animate-pulse' : 'border border-amber-800/30'}`}
             style={{
-              transition: 'box-shadow 0.3s ease-in-out'
+              transition: 'all 0.3s ease-in-out'
             }}
           >
             <img 
@@ -464,10 +464,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               alt={player.nickname || 'Player'} 
               className="w-full h-full object-cover"
             />
-          </div>
-          {/* 阵营标识 (可选) */}
-          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-white flex items-center justify-center text-[10px] text-white ${playerSide === 'r' ? 'bg-red-600' : 'bg-black'}`}>
-            {playerSide === 'r' ? '帅' : '将'}
           </div>
         </div>
         
