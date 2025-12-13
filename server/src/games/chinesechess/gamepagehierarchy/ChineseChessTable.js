@@ -221,7 +221,7 @@ class ChineseChessTable extends GameTable {
         const isValidMove = ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn);
         if (!isValidMove) {
             console.log(`[ChineseChessTable] handleMove rejected: invalid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
-            socket.emit('error', { message: '非法移动' });
+            // socket.emit('error', { message: '非法移动' }); // 用户要求不再弹窗提示
             return;
         }
 
@@ -229,7 +229,16 @@ class ChineseChessTable extends GameTable {
         // 检查移动后己方是否被将军
         if (ChineseChessRules.isSelfCheckAfterMove(this.board, fromX, fromY, toX, toY, this.turn)) {
             console.log(`[ChineseChessTable] handleMove rejected: self check (suicide)`);
-            socket.emit('error', { message: '不能送将' });
+            
+            // 区分 "必须应将" 和 "不能送将"
+            const kingPos = ChineseChessRules.getKingPosition(this.board, this.turn);
+            const isAlreadyInCheck = kingPos && ChineseChessRules.isKingUnderAttack(this.board, kingPos.x, kingPos.y, this.turn);
+            
+            if (isAlreadyInCheck) {
+                socket.emit('error', { message: '您必须应将' });
+            } else {
+                socket.emit('error', { message: '您不能送将' });
+            }
             return;
         }
 
