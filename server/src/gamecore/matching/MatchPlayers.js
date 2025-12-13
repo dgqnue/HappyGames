@@ -852,6 +852,13 @@ class MatchPlayers {
                     this.countdownTimer = null;
                     console.log(`[MatchPlayers] Cleared countdown timer because all players left`);
                 }
+            } else {
+                // 🔧 关键修复：如果还有玩家，且游戏未开始，重置所有人的准备状态
+                // 这样可以防止剩下的玩家处于“已准备”但界面显示“开始”的不一致状态
+                if (statusAfter !== StateMappingRules.TABLE_STATUS.PLAYING) {
+                    console.log(`[MatchPlayers] Resetting ready status for remaining players due to player leave`);
+                    this.matchState.resetReadyStatus();
+                }
             }
             
             // Broadcast new room state
