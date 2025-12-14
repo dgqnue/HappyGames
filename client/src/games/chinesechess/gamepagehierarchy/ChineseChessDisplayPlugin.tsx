@@ -74,14 +74,24 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const handleStart = () => {
     console.log('[ChineseChessDisplay] User clicked Start/Ready');
     if (tableClient) {
+        // 优先使用 sendReady 方法
         if (typeof (tableClient as any).sendReady === 'function') {
+            console.log('[ChineseChessDisplay] Calling tableClient.sendReady(true)');
             (tableClient as any).sendReady(true);
-        } else if ((tableClient as any).socket) {
-            // Fallback to direct socket emit if sendReady is not exposed
-            console.log('[ChineseChessDisplay] sendReady not found, using socket.emit playerReady');
-            (tableClient as any).socket.emit('playerReady');
+        } 
+        // 其次尝试 setReady 方法 (GameTableClient 基类方法)
+        else if (typeof (tableClient as any).setReady === 'function') {
+            console.log('[ChineseChessDisplay] Calling tableClient.setReady(true)');
+            (tableClient as any).setReady(true);
+        }
+        // 最后尝试直接 socket 发送
+        else if ((tableClient as any).socket) {
+            console.log('[ChineseChessDisplay] sendReady/setReady not found, using socket.emit player_ready');
+            (tableClient as any).socket.emit('player_ready'); // 注意：事件名通常是 player_ready
         }
         playSound('select');
+    } else {
+        console.error('[ChineseChessDisplay] tableClient is null, cannot start game');
     }
   };
 
@@ -572,7 +582,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.5, // 设置50%透明度
+          // opacity: 0.5, // 移除透明度，完全不透明
           zIndex: -1,
           pointerEvents: 'none'
         }}

@@ -646,6 +646,18 @@ export abstract class GameTableClient {
     }
 
     /**
+     * 发送准备状态
+     * @param ready - 是否准备
+     */
+    public sendReady(ready: boolean): void {
+        console.log(`[${this.gameType}TableClient] Sending ready:`, ready);
+        const event = ready ? 'player_ready' : 'player_unready';
+        this.socket.emit(event);
+        // 乐观更新本地状态
+        this.updateState({ ready: ready });
+    }
+
+    /**
      * 发送棋子移动
      */
     public sendMove(fromX: number, fromY: number, toX: number, toY: number): void {
