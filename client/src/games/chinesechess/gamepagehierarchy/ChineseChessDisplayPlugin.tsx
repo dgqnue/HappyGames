@@ -175,16 +175,20 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const prevGameEnded = (tableClient as any).onGameEnded;
       (tableClient as any).onGameEnded = (data: any) => {
         console.log('[ChineseChessDisplay] onGameEnded callback triggered:', data);
-        // 检查是否是己方获胜
-        if (data?.result?.winner === mySide) {
-          console.log('[ChineseChessDisplay] Playing win sound');
-          playSound('win');
-          setGameResult('win');
-        } else if (data?.result?.winner && data?.result?.winner !== mySide) {
-          console.log('[ChineseChessDisplay] Playing lose sound');
-          playSound('lose');
-          setGameResult('lose');
-        }
+        
+        // 延迟播放胜利/失败音效，确保最后一步的音效（吃子/将军）能先播放完
+        setTimeout(() => {
+          // 检查是否是己方获胜
+          if (data?.result?.winner === mySide) {
+            console.log('[ChineseChessDisplay] Playing win sound');
+            playSound('win');
+            setGameResult('win');
+          } else if (data?.result?.winner && data?.result?.winner !== mySide) {
+            console.log('[ChineseChessDisplay] Playing lose sound');
+            playSound('lose');
+            setGameResult('lose');
+          }
+        }, 1000); // 延迟1秒
       };
 
       // 监听加入失败并显示消息
@@ -502,19 +506,31 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="w-screen min-h-screen overflow-visible flex flex-col"
+      className="w-screen min-h-screen overflow-visible flex flex-col relative"
       style={{
-        position: 'static',
-        backgroundImage: 'url(/images/chinesechess/ui/back.bmp)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
         margin: 0,
         padding: 0,
         minWidth: '100vw'
       }}
     >
+      {/* 背景图片层 - 独立出来以控制透明度 */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundImage: 'url(/images/chinesechess/ui/back.bmp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.5, // 设置50%透明度
+          zIndex: -1,
+          pointerEvents: 'none'
+        }}
+      />
+
       {/* 顶部玩家信息栏 (绝对定位或作为第一项) */}
       <div className="w-full flex justify-start px-4 pt-4 pb-2" style={{ maxWidth: '500px', margin: '0 auto' }}>
         {renderPlayerInfo(topPlayer, true)}
