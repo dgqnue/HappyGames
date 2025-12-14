@@ -105,6 +105,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [gameEndStats, setGameEndStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [resourcesLoaded, setResourcesLoaded] = useState(false);
 
   // 资源预加载
   useEffect(() => {
@@ -160,12 +161,23 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       } catch (err) {
         console.error('Resource loading failed:', err);
       } finally {
-        setIsLoading(false);
+        setResourcesLoaded(true);
       }
     };
 
     preloadResources();
   }, []);
+
+  // 监听资源加载和游戏状态，决定何时关闭加载页
+  useEffect(() => {
+    if (resourcesLoaded && boardData) {
+      // 稍微延迟一点点，确保渲染完成
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [resourcesLoaded, boardData]);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
