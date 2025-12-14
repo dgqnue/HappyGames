@@ -578,14 +578,16 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     const avatarUrl = player.avatar || '/images/default-avatar.png?v=new';
     
     return (
-      <div className="flex flex-row items-center gap-2" style={{ 
-        flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右（或根据设计调整）
-        // 根据截图，上方玩家头像在左，名字在右
-      }}>
+      <div 
+        className="flex flex-row items-center gap-3 px-4 py-2 rounded-xl bg-gray-200/90 shadow-lg border border-white/40 backdrop-blur-sm" 
+        style={{ 
+          flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右
+        }}
+      >
         {/* 头像容器 */}
         <div className="relative">
           <div 
-            className={`w-12 h-12 rounded-full overflow-hidden ${isTurn ? 'shadow-[0_0_20px_5px_rgba(255,0,0,0.9)] animate-pulse' : 'border border-amber-800/30'}`}
+            className={`w-12 h-12 rounded-full overflow-hidden ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
             style={{
               transition: 'all 0.3s ease-in-out'
             }}
@@ -599,13 +601,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </div>
         
         {/* 玩家名字 */}
-        <div className="flex flex-col">
-          <span className="text-amber-100 text-sm font-bold drop-shadow-md">
+        <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'}`}>
+          <span className="text-gray-800 text-sm font-bold tracking-wide">
             {player.nickname || '等待加入...'}
           </span>
           {/* 称号 (可选) */}
           {player.title && (
-            <span className="text-xs" style={{ color: player.titleColor || '#fbbf24' }}>
+            <span className="text-xs font-medium mt-0.5" style={{ color: player.titleColor || '#d97706' }}>
               {player.title}
             </span>
           )}
