@@ -637,10 +637,21 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
                     {isMyTableLocal && timeLeft !== null && (localState.countdown?.type === 'start' || (localState.countdown?.type === 'ready' && !isReady)) ? (
-                        <div className="text-center animate-pulse">
-                            <p className="text-red-500 text-lg font-medium">
-                                {timeLeft}
-                            </p>
+                        <div className="text-center animate-pulse flex justify-center items-center gap-1">
+                            {(tableClient as any).gameType === 'chinesechess' ? (
+                                String(timeLeft).split('').map((digit, index) => (
+                                    <img 
+                                        key={index}
+                                        src={`/images/chinesechess/number/${digit}.png`}
+                                        alt={digit}
+                                        className="h-10 object-contain"
+                                    />
+                                ))
+                            ) : (
+                                <p className="text-red-500 text-lg font-medium">
+                                    {timeLeft}
+                                </p>
+                            )}
                         </div>
                     ) : (
                         <div className="invisible h-full w-full"></div>
