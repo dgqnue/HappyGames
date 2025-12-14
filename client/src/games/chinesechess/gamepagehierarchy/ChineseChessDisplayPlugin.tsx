@@ -75,6 +75,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
   const [players, setPlayers] = useState<any[]>([]);
+  const [gameResult, setGameResult] = useState<'win' | 'lose' | 'draw' | null>(null);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -178,6 +179,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         if (data?.result?.winner === mySide) {
           console.log('[ChineseChessDisplay] Playing win sound');
           playSound('win');
+          setGameResult('win');
+        } else if (data?.result?.winner && data?.result?.winner !== mySide) {
+          console.log('[ChineseChessDisplay] Playing lose sound');
+          playSound('lose');
+          setGameResult('lose');
         }
       };
 
@@ -499,7 +505,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       className="w-screen min-h-screen overflow-visible flex flex-col"
       style={{
         position: 'static',
-        backgroundImage: 'url(/images/chinesechess/ymbj/ymbg.jpg)',
+        backgroundImage: 'url(/images/chinesechess/ui/back.bmp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -660,9 +666,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {/* 退出 */}
         <div 
           style={{
-            display: isPlaying ? 'flex' : 'none',
+            display: (isPlaying || gameResult) ? 'flex' : 'none',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            zIndex: 10001 // 确保在遮罩层之上
           }}
         >
           <img
@@ -674,6 +681,37 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           />
         </div>
       </div>
+
+      {/* 游戏结束结算弹窗 */}
+      {gameResult && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 pointer-events-none"
+          style={{ animation: 'fadeIn 0.5s ease-in-out' }}
+        >
+          <div className="relative flex flex-col items-center">
+            <img 
+              src={gameResult === 'win' ? '/images/chinesechess/ui/victory.png' : '/images/chinesechess/ui/defeat.png'} 
+              alt={gameResult === 'win' ? 'Victory' : 'Defeat'}
+              style={{ 
+                maxWidth: '80vw', 
+                maxHeight: '60vh', 
+                objectFit: 'contain',
+                animation: 'zoomIn 0.5s ease-out'
+              }}
+            />
+          </div>
+          <style jsx>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes zoomIn {
+              from { transform: scale(0.5); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
