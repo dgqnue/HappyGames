@@ -630,16 +630,20 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         <img 
           src="/images/chinesechess/ui/load.jpg" 
           alt="Loading..." 
-          className="w-full h-full object-cover"
+          className="w-full h-full"
+          style={{ objectFit: 'fill' }}
         />
-        <div className="absolute bottom-10 w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+        {/* 加载条容器 */}
+        <div className="absolute bottom-20 w-3/4 max-w-md h-4 bg-gray-800/80 rounded-full overflow-hidden border border-gray-600 backdrop-blur-sm">
+          {/* 进度条 */}
           <div 
-            className="h-full bg-amber-500 transition-all duration-300 ease-out"
+            className="h-full bg-gradient-to-r from-amber-600 to-yellow-400 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(251,191,36,0.5)]"
             style={{ width: `${loadingProgress}%` }}
           />
         </div>
-        <div className="absolute bottom-4 text-amber-500 text-sm font-bold">
-          Loading... {loadingProgress}%
+        {/* 百分比文字 */}
+        <div className="absolute bottom-12 text-amber-400 text-lg font-bold tracking-wider drop-shadow-md">
+          正在加载资源... {loadingProgress}%
         </div>
       </div>
     );
