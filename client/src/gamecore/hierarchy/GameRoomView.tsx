@@ -113,7 +113,7 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
 
     // 显示游戏室 - 房间列表，包含所有表格
     return (
-        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
+        <main className="min-h-screen p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
             {/* Header */}
                 <div className="flex items-center gap-4 mb-8">

@@ -1282,7 +1282,7 @@ class MatchPlayers {
         // Broadcast room state update, refresh room list (from playing to matching)
         this.table.broadcastRoomState();
 
-        this.startRematchCountdown();
+        // this.startRematchCountdown(); // Disable auto rematch countdown to prevent auto-kick
     }
 
     /**
