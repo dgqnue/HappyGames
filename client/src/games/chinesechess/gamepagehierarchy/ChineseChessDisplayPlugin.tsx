@@ -267,24 +267,32 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const prevGameEnded = (tableClient as any).onGameEnded;
       (tableClient as any).onGameEnded = (data: any) => {
         console.log('[ChineseChessDisplay] onGameEnded callback triggered:', data);
+        console.log('[ChineseChessDisplay] Current mySide:', mySide);
+        
         // setGameEndStats(data); // 延迟设置，避免在胜负弹窗前显示结算信息
         setIsRoundEnded(true); // 强制设置回合结束状态，确保开始按钮显示
         
         // 延迟播放胜利/失败音效，确保最后一步的音效（吃子/将军）能先播放完
         setTimeout(() => {
+          const winner = data?.result?.winner;
+          console.log('[ChineseChessDisplay] Processing game result. Winner:', winner, 'MySide:', mySide);
+
           // 检查是否是己方获胜
-          if (data?.result?.winner === mySide) {
-            console.log('[ChineseChessDisplay] Playing win sound');
+          if (winner === mySide) {
+            console.log('[ChineseChessDisplay] Playing win sound and showing victory');
             playSound('win');
             setGameResult('win');
-          } else if (data?.result?.winner && data?.result?.winner !== mySide) {
-            console.log('[ChineseChessDisplay] Playing lose sound');
+          } else if (winner && winner !== mySide) {
+            console.log('[ChineseChessDisplay] Playing lose sound and showing defeat');
             playSound('lose');
             setGameResult('lose');
+          } else {
+            console.warn('[ChineseChessDisplay] Winner condition not met or draw?', { winner, mySide });
           }
 
           // 3秒后自动关闭胜负弹窗
           setTimeout(() => {
+              console.log('[ChineseChessDisplay] Clearing game result popup');
               setGameResult(null);
               setGameEndStats(data); // 胜负弹窗关闭后，再显示结算信息
           }, 3000);
@@ -702,7 +710,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               style={{ 
                 animation: 'fadeIn 0.5s ease-in-out',
                 backgroundColor: 'rgba(0,0,0,0.5)', // 仅遮罩棋盘区域
-                transform: mySide === 'b' ? 'rotate(180deg)' : 'none' // 如果棋盘翻转了，需要反向翻转回来
+                transform: mySide === 'b' ? 'rotate(180deg)' : 'none', // 如果棋盘翻转了，需要反向翻转回来
+                zIndex: 10000 // Ensure high z-index
               }}
             >
               <div className="relative flex flex-col items-center">
