@@ -128,7 +128,8 @@ export class ChineseChessTableClient extends GameTableClient {
         // 更新游戏状态
         this.updateState({
             // status: 'matching', // 基类已处理
-            winner: data.result?.winner
+            winner: data.result?.winner,
+            isRoundEnded: true // 标记回合结束，触发UI显示开始按钮
         });
 
         // 触发游戏结束回调

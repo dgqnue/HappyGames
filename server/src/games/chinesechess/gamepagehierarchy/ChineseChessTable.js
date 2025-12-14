@@ -50,9 +50,20 @@ class ChineseChessTable extends GameTable {
         const userId = socket.user._id.toString();
         const player = this.players.find(p => p.userId === userId);
         if (player) {
+            // 检查回合是否处于活跃状态
+            // 如果回合已经结束（例如已经分出胜负，正在等待结算或新回合），则不触发判负
+            if (!this.round || !this.round.isActive) {
+                console.log(`[ChineseChessTable] Player ${userId} left but round is not active. Ignoring forfeit.`);
+                return;
+            }
+
             console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting.`);
+            
+            // 确定当前的红黑方
+            const isSwap = this.roundCount % 2 === 0;
+            const redPlayer = isSwap ? this.players[1] : this.players[0];
+            
             // 判对方获胜
-            const redPlayer = this.players[0];
             const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
             this.handleWin(winnerSide);
             // handleWin 会调用 endGame -> onGameEnd，该方法会将状态设为 MATCHING 并广播

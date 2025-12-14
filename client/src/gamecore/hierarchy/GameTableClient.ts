@@ -61,6 +61,7 @@ export interface GameTableState {
     maxPlayers: number;
     ready: boolean;  // 统一使用ready，而非isReady
     canStart: boolean;
+    isRoundEnded?: boolean; // 回合是否结束（用于显示开始按钮）
     countdown?: {
         type: 'ready' | 'start' | 'rematch';
         timeout?: number;
@@ -291,6 +292,11 @@ export abstract class GameTableClient {
             if (data.winner !== undefined) stateUpdate.winner = data.winner;
             if (data.mySide) stateUpdate.mySide = data.mySide;
         }
+        
+        // 同步回合结束状态
+        if (data.isRoundEnded !== undefined) {
+            stateUpdate.isRoundEnded = data.isRoundEnded;
+        }
 
         this.updateState(stateUpdate);
     }
@@ -345,7 +351,8 @@ export abstract class GameTableClient {
             players: players,
             canStart: canStart,
             ...(data.board ? { board: data.board } : {}),
-            ...(data.turn ? { turn: data.turn } : {})
+            ...(data.turn ? { turn: data.turn } : {}),
+            ...(data.isRoundEnded !== undefined ? { isRoundEnded: data.isRoundEnded } : {})
         };
 
         // 关键修复：同步当前用户的 ready 状态
@@ -370,6 +377,7 @@ export abstract class GameTableClient {
                 canStart: false, // 游戏开始后不能再开始
                 ready: false, // 重置准备状态
                 countdown: null, // 清除倒计时
+                isRoundEnded: data.isRoundEnded, // 同步回合结束状态
                 // 关键：更新游戏数据
                 board: data.board,
                 turn: data.turn,
@@ -446,7 +454,8 @@ export abstract class GameTableClient {
                 status: 'playing',
                 ...data,
                 canStart: false, // 游戏开始后不能再开始
-                ready: false // 重置准备状态
+                ready: false, // 重置准备状态
+                isRoundEnded: false // 新回合开始，重置回合结束标记
             };
 
             // 关键修复：处理 players 字段的数据类型不一致问题
