@@ -100,7 +100,8 @@ export abstract class GameTableClient {
             players: [],
             maxPlayers: 2,
             ready: false,
-            canStart: false
+            canStart: false,
+            isRoundEnded: false
         };
     }
 
@@ -513,9 +514,15 @@ export abstract class GameTableClient {
 
         this.updateState({
             tableId: null,
+            status: 'idle',
             players: [],
             ready: false,
-            canStart: false
+            canStart: false,
+            isRoundEnded: false,
+            winner: undefined,
+            board: undefined,
+            turn: undefined,
+            countdown: null
         });
     }
 
