@@ -674,7 +674,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
       {/* 棋盘套件容器 */}
       <div 
-        className="w-full flex flex-col items-center justify-start flex-1"
+        className="w-full flex flex-col items-center justify-start"
       >
         <div 
           style={{ 
