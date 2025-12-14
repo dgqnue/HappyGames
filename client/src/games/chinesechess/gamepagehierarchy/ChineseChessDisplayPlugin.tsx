@@ -579,7 +579,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     
     return (
       <div 
-        className="flex flex-row items-center gap-3 px-4 py-2 rounded-xl bg-gray-200/90 shadow-lg border border-white/40 backdrop-blur-sm" 
+        className="flex flex-row items-center gap-3 px-4 py-2 rounded-xl bg-gray-200 shadow-lg border border-white/40" 
         style={{ 
           flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右
         }}
@@ -602,12 +602,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         
         {/* 玩家名字 */}
         <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'}`}>
-          <span className="text-gray-800 text-sm font-bold tracking-wide">
+          <span className="text-black text-sm tracking-wide">
             {player.nickname || '等待加入...'}
           </span>
           {/* 称号 (可选) */}
           {player.title && (
-            <span className="text-xs font-medium mt-0.5" style={{ color: player.titleColor || '#d97706' }}>
+            <span className="text-xs mt-0.5" style={{ color: player.titleColor || '#d97706' }}>
               {player.title}
             </span>
           )}
