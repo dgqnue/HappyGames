@@ -962,6 +962,15 @@ class MatchPlayers {
             return;
         }
 
+        // Allow ready if status is MATCHING or WAITING
+        // Also allow ready if status is PLAYING but gameEnded is true (rematch phase)
+        const canReady = this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING || this.gameEnded;
+
+        if (!canReady) {
+             console.warn(`[MatchPlayers] Player ${userId} tried to ready while playing (game not ended)`);
+             return;
+        }
+
         const result = this.matchState.setPlayerReady(userId, true);
 
         this.table.broadcastRoomState();
@@ -1247,8 +1256,8 @@ class MatchPlayers {
         this.gameEnded = true;
         this.matchState.gameEnded = true; // Sync to matchState for getRoomInfo
 
-        // Reset ready status
-        // this.matchState.resetReadyStatus(); // Keep ready status for now
+        // Reset ready status so players can click Start again
+        this.matchState.resetReadyStatus(); 
 
         // Status becomes matching (waiting for rematch)
         // this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING; // Keep status as PLAYING

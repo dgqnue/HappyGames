@@ -661,9 +661,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {/* 开始 */}
         <div 
           style={{
-            display: (!isPlaying || gameResult || isRoundEnded) ? 'flex' : 'none',
+            display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            opacity: (!isPlaying || gameResult || isRoundEnded) ? 1 : 0.5,
+            pointerEvents: (!isPlaying || gameResult || isRoundEnded) ? 'auto' : 'none',
+            filter: (!isPlaying || gameResult || isRoundEnded) ? 'none' : 'grayscale(100%)'
           }}
         >
           <img
