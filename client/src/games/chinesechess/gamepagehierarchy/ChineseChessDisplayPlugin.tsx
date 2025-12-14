@@ -70,12 +70,29 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     }
   };
 
+  // 处理开始/准备
+  const handleStart = () => {
+    console.log('[ChineseChessDisplay] User clicked Start/Ready');
+    if (tableClient) {
+        if (typeof (tableClient as any).sendReady === 'function') {
+            (tableClient as any).sendReady(true);
+        } else if ((tableClient as any).socket) {
+            // Fallback to direct socket emit if sendReady is not exposed
+            console.log('[ChineseChessDisplay] sendReady not found, using socket.emit playerReady');
+            (tableClient as any).socket.emit('playerReady');
+        }
+        playSound('select');
+    }
+  };
+
   const [boardData, setBoardData] = useState<(string | null)[][] | null>(null);
   const [currentTurn, setCurrentTurn] = useState<'r' | 'b' | string>('r');
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
   const [players, setPlayers] = useState<any[]>([]);
   const [gameResult, setGameResult] = useState<'win' | 'lose' | 'draw' | null>(null);
+  const [isRoundEnded, setIsRoundEnded] = useState(false);
+  const [gameEndStats, setGameEndStats] = useState<any>(null);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -93,6 +110,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const state = tableClient.getState?.();
       const isGamePlaying = state?.status === 'playing';
       setIsPlaying(isGamePlaying);
+      setIsRoundEnded(state?.isRoundEnded || false);
       
       // 获取玩家信息
       const currentPlayers = state?.players || [];
@@ -102,6 +120,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         turn: newCurrentTurn, 
         mySide: newMySide, 
         isPlaying: isGamePlaying, 
+        isRoundEnded: state?.isRoundEnded,
         boardRows: newBoardData ? newBoardData.length : 'null',
         tableState: state?.status,
         playersCount: currentPlayers.length
@@ -175,6 +194,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const prevGameEnded = (tableClient as any).onGameEnded;
       (tableClient as any).onGameEnded = (data: any) => {
         console.log('[ChineseChessDisplay] onGameEnded callback triggered:', data);
+        setGameEndStats(data);
         
         // 延迟播放胜利/失败音效，确保最后一步的音效（吃子/将军）能先播放完
         setTimeout(() => {
@@ -188,8 +208,33 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             playSound('lose');
             setGameResult('lose');
           }
+
+          // 3秒后自动关闭胜负弹窗
+          setTimeout(() => {
+              setGameResult(null);
+          }, 3000);
+
         }, 1000); // 延迟1秒
       };
+
+      // 监听游戏开始事件以清除结果弹窗
+      // 尝试多种方式监听游戏开始
+      const onGameStartHandler = (data: any) => {
+          console.log('[ChineseChessDisplay] Game started, clearing result');
+          setGameResult(null);
+          setGameEndStats(null); // Clear stats on new game
+      };
+
+      if (typeof (tableClient as any).addGameStartListener === 'function') {
+          (tableClient as any).addGameStartListener(onGameStartHandler);
+      } else {
+          // Fallback: hook into onGameStart property
+          const prevGameStart = (tableClient as any).onGameStart;
+          (tableClient as any).onGameStart = (data: any) => {
+              onGameStartHandler(data);
+              if (prevGameStart) prevGameStart(data);
+          };
+      }
 
       // 监听加入失败并显示消息
       const prevJoinFailed = (tableClient as any).onJoinFailed;
@@ -614,7 +659,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {/* 开始 */}
         <div 
           style={{
-            display: 'flex',
+            display: (!isPlaying || gameResult || isRoundEnded) ? 'flex' : 'none',
             alignItems: 'center',
             justifyContent: 'center'
           }}
@@ -624,7 +669,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             alt="开始"
             title="开始"
             style={{ width: '50px', height: '50px', cursor: 'pointer', display: 'block' }}
-            onClick={() => console.log('开始')}
+            onClick={handleStart}
           />
         </div>
 
@@ -727,6 +772,60 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             }
           `}</style>
         </div>
+      )}
+
+      {/* 回合结算信息 (当胜负弹窗关闭后显示) */}
+      {isRoundEnded && gameEndStats && !gameResult && (
+          <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-black/80 p-4 rounded-lg text-white text-center z-50 border border-amber-500/50 shadow-lg backdrop-blur-sm">
+              <h3 className="text-lg font-bold mb-2 text-amber-400">本局结算</h3>
+              {(() => {
+                  // 解析 ELO 数据
+                  const winnerId = gameEndStats.result?.winnerId;
+                  const eloData = gameEndStats.result?.elo;
+                  
+                  // 找到当前玩家的数据
+                  // 如果我是赢家，我是 playerA；如果我是输家，我是 playerB
+                  // 注意：这里假设 playerA 总是 winnerId (根据 EloService.processMatchResult 调用顺序)
+                  
+                  // 查找当前用户的 ID
+                  // 我们需要知道当前用户的 ID，但这里只有 mySide ('r' or 'b')
+                  // 我们可以通过 players 数组找到自己的 ID
+                  const myPlayer = players.find((p, idx) => {
+                      const side = idx === 0 ? 'r' : 'b';
+                      return side === mySide;
+                  });
+                  
+                  if (!myPlayer || !eloData) return null;
+                  
+                  const isWinner = myPlayer.userId === winnerId;
+                  const myStats = isWinner ? eloData.playerA : eloData.playerB;
+                  
+                  if (!myStats) return null;
+
+                  const delta = myStats.delta;
+                  const newRating = myStats.newRating;
+                  
+                  return (
+                      <div className="flex flex-col gap-1">
+                          <div className="text-base">
+                              等级分: <span className="text-yellow-300">{newRating}</span>
+                              <span className={delta >= 0 ? "text-green-400 ml-2" : "text-red-400 ml-2"}>
+                                  {delta >= 0 ? `+${delta}` : delta}
+                              </span>
+                          </div>
+                          {/* 如果有称号变化，也可以显示 */}
+                          {gameEndStats.result?.title && gameEndStats.result.title[myPlayer.userId] && (
+                              <div className="text-sm text-purple-300 mt-1">
+                                  当前称号: {gameEndStats.result.title[myPlayer.userId].title}
+                              </div>
+                          )}
+                      </div>
+                  );
+              })()}
+              <div className="mt-3 text-xs text-gray-400 animate-pulse">
+                  请点击下方“开始”继续，或“退出”离开
+              </div>
+          </div>
       )}
     </div>
   );

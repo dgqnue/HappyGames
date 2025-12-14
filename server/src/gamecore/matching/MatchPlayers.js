@@ -278,7 +278,12 @@ class MatchRoomState {
 
         const newState = StateMappingRules.getStateAfterPlayerLeave(this.players.length, this.maxPlayers);
         if (newState) {
-            this.transitionStatus(newState, { userId, reason: 'player_leave' });
+            // If game ended but not all players left, keep status as PLAYING
+            if (this.gameEnded && this.players.length > 0) {
+                console.log(`[MatchPlayers] Game ended, keeping status as PLAYING until all players leave`);
+            } else {
+                this.transitionStatus(newState, { userId, reason: 'player_leave' });
+            }
         }
 
         if (this.players.length === 0) {
@@ -455,6 +460,7 @@ class MatchRoomState {
         return {
             roomId: this.roomId,
             status: this.status,
+            isRoundEnded: this.gameEnded || false, // Add isRoundEnded flag
             players: this.players.length,
             maxPlayers: this.maxPlayers,
             spectators: this.spectators.length,
@@ -816,6 +822,17 @@ class MatchPlayers {
 
         // Record previous status
         const wasMatching = statusBefore === StateMappingRules.TABLE_STATUS.MATCHING;
+        const wasPlaying = statusBefore === StateMappingRules.TABLE_STATUS.PLAYING;
+
+        // Handle forfeit if leaving during game (and game not ended)
+        if (wasPlaying && !this.gameEnded) {
+            // Check if player is actually in the game (not spectator)
+            const player = this.matchState.players.find(p => p.userId === userId);
+            if (player && typeof this.table.onPlayerLeaveDuringGame === 'function') {
+                console.log(`[MatchPlayers] Player ${userId} leaving during game, triggering forfeit`);
+                this.table.onPlayerLeaveDuringGame(socket);
+            }
+        }
 
         // Remove from player list (this method automatically calculates new status)
         const wasPlayer = this.matchState.removePlayer(userId);
@@ -904,7 +921,8 @@ class MatchPlayers {
         const wasInGame = this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING;
 
         // If disconnected during game, record disconnect stats
-        if (wasInGame) {
+        // Only record if game is NOT ended
+        if (wasInGame && !this.gameEnded) {
             try {
                 await DisconnectTracker.recordDisconnect(
                     socket.user._id,
@@ -920,7 +938,8 @@ class MatchPlayers {
         this.playerLeave(socket);
 
         // If disconnected during game, notify table to handle (e.g. forfeit)
-        if (wasInGame && typeof this.table.onPlayerDisconnectDuringGame === 'function') {
+        // Only forfeit if game is NOT ended
+        if (wasInGame && !this.gameEnded && typeof this.table.onPlayerDisconnectDuringGame === 'function') {
             this.table.onPlayerDisconnectDuringGame(userId);
         }
     }
@@ -1153,6 +1172,9 @@ class MatchPlayers {
     startGame() {
         console.log(`[MatchPlayers] startGame called for room ${this.roomId}`);
         
+        this.gameEnded = false; // Reset game ended flag
+        this.matchState.gameEnded = false; // Sync to matchState
+
         // Clear all timers, ensure no more state changes
         // Note: Do not set isLocked = false, as game is starting
         // Only release lock when game truly ends
@@ -1221,11 +1243,15 @@ class MatchPlayers {
         // Reset ready countdown cancelled flag, so next round can use 30s countdown
         this.readyCheckCancelled = false;
 
+        // Mark game as ended but keep status as PLAYING until players leave
+        this.gameEnded = true;
+        this.matchState.gameEnded = true; // Sync to matchState for getRoomInfo
+
         // Reset ready status
-        this.matchState.resetReadyStatus();
+        // this.matchState.resetReadyStatus(); // Keep ready status for now
 
         // Status becomes matching (waiting for rematch)
-        this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING;
+        // this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING; // Keep status as PLAYING
 
         // Clear previous rematch requests
         this.matchState.rematchRequests.clear();
@@ -1237,9 +1263,9 @@ class MatchPlayers {
         });
 
         // Immediately broadcast cancel ready status, ensure client receives
-        this.table.broadcast('players_unready', {
-            reason: 'Game ended, ready status cleared'
-        });
+        // this.table.broadcast('players_unready', {
+        //     reason: 'Game ended, ready status cleared'
+        // });
 
         // After game ends, send updated user stats to all players
         // So players can see updated title, rating etc immediately when returning to room
@@ -1374,6 +1400,8 @@ class MatchPlayers {
     reset() {
         console.log(`[MatchPlayers] Resetting room ${this.roomId}`);
         
+        this.gameEnded = false; // Reset game ended flag
+        this.matchState.gameEnded = false; // Sync to matchState
         this.matchState.resetReadyStatus();
         this.matchState.status = StateMappingRules.TABLE_STATUS.IDLE;
         this.matchState.rematchRequests.clear();

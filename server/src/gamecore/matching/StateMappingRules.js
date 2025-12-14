@@ -358,7 +358,7 @@ class StateMappingRules {
             'idle': ['waiting'],                    // idle只能转为waiting（玩家入座）
             'waiting': ['matching', 'idle'],        // waiting可以转为matching（满座）或idle（所有人离座）
             'matching': ['playing', 'waiting', 'idle'],  // matching可以转为playing（游戏开始）、waiting（有人离座）或idle（全部离座）
-            'playing': ['matching', 'idle']         // playing可以转为matching（游戏结束）或idle（所有人离座）
+            'playing': ['matching', 'idle', 'playing'] // playing可以转为matching（游戏结束）、idle（所有人离座）或playing（新回合开始）
         };
 
         const allowedTargets = validTransitions[fromStatus];
@@ -476,6 +476,9 @@ class StateMappingRules {
         } else if (fromStatus === 'playing' && toStatus === 'matching') {
             transitionType = 'game_end';
             details = '游戏结束，进入再来一局阶段';
+        } else if (fromStatus === 'playing' && toStatus === 'playing') {
+            transitionType = 'new_round';
+            details = '新回合开始';
         } else if (toStatus === 'waiting' && playerCount < maxPlayers) {
             transitionType = 'player_leave';
             details = `玩家离座，剩余玩家数: ${playerCount}`;

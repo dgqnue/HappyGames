@@ -1,5 +1,6 @@
 const GameTable = require('../../../gamecore/hierarchy/GameTable');
 const ChineseChessRules = require('../logic/ChineseChessRules');
+const ChineseChessRound = require('./ChineseChessRound');
 const EloService = require('../../../gamecore/EloService');
 const Grade = require('../grade/Grade');
 const LobbyFeed = require('../../../models/LobbyFeed');
@@ -20,9 +21,21 @@ class ChineseChessTable extends GameTable {
         super(io, tableId, gameType, maxPlayers, tier);
 
         // 游戏特定状态
-        this.board = null;
-        this.turn = null;
-        this.history = [];
+        this.round = new ChineseChessRound(this);
+        
+        // 兼容旧代码，保留 getter/setter 代理到 round
+        Object.defineProperty(this, 'board', {
+            get: () => this.round.board,
+            set: (v) => this.round.board = v
+        });
+        Object.defineProperty(this, 'turn', {
+            get: () => this.round.turn,
+            set: (v) => this.round.turn = v
+        });
+        Object.defineProperty(this, 'history', {
+            get: () => this.round.history,
+            set: (v) => this.round.history = v
+        });
 
         // 初始化空棋盘
         this.resetBoard();
@@ -110,29 +123,16 @@ class ChineseChessTable extends GameTable {
      * 重置棋盘
      */
     resetBoard() {
-        // 标准开局 (红方在下，黑方在上)
-        this.board = [
-            ['r', 'n', 'b', 'a', 'k', 'a', 'b', 'n', 'r'],
-            [null, null, null, null, null, null, null, null, null],
-            [null, 'c', null, null, null, null, null, 'c', null],
-            ['p', null, 'p', null, 'p', null, 'p', null, 'p'],
-            [null, null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null, null],
-            ['P', null, 'P', null, 'P', null, 'P', null, 'P'],
-            [null, 'C', null, null, null, null, null, 'C', null],
-            [null, null, null, null, null, null, null, null, null],
-            ['R', 'N', 'B', 'A', 'K', 'A', 'B', 'N', 'R']
-        ];
-        this.turn = 'r'; // 红方先行
-        this.history = [];
+        this.round.resetBoard();
     }
-
-
 
     /**
      * 游戏开始回调
      */
     async onGameStart() {
+        // 开始新回合
+        this.round.start();
+
         // 分配阵营：第一个玩家是红方，第二个是黑方
         const redPlayer = this.players[0];
         const blackPlayer = this.players[1];
@@ -196,104 +196,37 @@ class ChineseChessTable extends GameTable {
         const blackPlayer = this.players[1];
 
         // 验证是否是当前玩家的回合
-        const isRed = userId === redPlayer.userId;
-        const isBlack = userId === blackPlayer.userId;
-
-        if (!isRed && !isBlack) {
-            console.log(`[ChineseChessTable] handleMove rejected: userId ${userId} is neither red player (${redPlayer?.userId}) nor black player (${blackPlayer?.userId})`);
-            return; // 旁观者不能移动
-        }
-
-        const side = isRed ? 'r' : 'b';
-        if (side !== this.turn) {
-            console.log(`[ChineseChessTable] handleMove rejected: side ${side} is not current turn ${this.turn}`);
-            return; // 不是你的回合
-        }
-
-        // 检查源位置的棋子是否存在
-        const piece = this.board[fromY] ? this.board[fromY][fromX] : null;
-        if (!piece) {
-            console.log(`[ChineseChessTable] handleMove rejected: no piece at (${fromX},${fromY}), board state: ${JSON.stringify(this.board[fromY])}`);
-            return;
-        }
-
-        // 1. 基础规则验证 (棋子行走规则)
-        const isValidMove = ChineseChessRules.isValidMoveV2(this.board, fromX, fromY, toX, toY, this.turn);
-        if (!isValidMove) {
-            console.log(`[ChineseChessTable] handleMove rejected: invalid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
-            // socket.emit('error', { message: '非法移动' }); // 用户要求不再弹窗提示
-            return;
-        }
-
-        // 2. 规则一：对方将军必须应将 (即不能送将)
-        // 检查移动后己方是否被将军
-        if (ChineseChessRules.isSelfCheckAfterMove(this.board, fromX, fromY, toX, toY, this.turn)) {
-            console.log(`[ChineseChessTable] handleMove rejected: self check (suicide)`);
-            
-            // 区分 "必须应将" 和 "不能送将"
-            const kingPos = ChineseChessRules.getKingPosition(this.board, this.turn);
-            const isAlreadyInCheck = kingPos && ChineseChessRules.isKingUnderAttack(this.board, kingPos.x, kingPos.y, this.turn);
-            
-            if (isAlreadyInCheck) {
+        const validation = this.round.validateMove(fromX, fromY, toX, toY, userId, redPlayer.userId, blackPlayer.userId);
+        
+        if (!validation.valid) {
+            console.log(`[ChineseChessTable] handleMove rejected: ${validation.reason}`);
+            if (validation.reason === 'Must resolve check') {
                 socket.emit('error', { message: '您必须应将' });
-            } else {
+            } else if (validation.reason === 'Cannot move into check') {
                 socket.emit('error', { message: '您不能送将' });
+            } else if (validation.reason === 'Flying general') {
+                socket.emit('error', { message: '将帅不能照面' });
             }
             return;
         }
 
-        // 3. 飞将检查 (将帅不能对脸)
-        if (ChineseChessRules.isFlyingGeneralAfterMove(this.board, fromX, fromY, toX, toY)) {
-            console.log(`[ChineseChessTable] handleMove rejected: flying general`);
-            socket.emit('error', { message: '将帅不能照面' });
-            return;
-        }
-
-        console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${piece}`);
-
-        // 在执行移动前保存棋盘快照，用于将军检测，避免使用已被修改的棋盘
-        const boardBeforeMove = this.board.map(row => [...row]);
+        console.log(`[ChineseChessTable] handleMove accepted: valid move from (${fromX},${fromY}) to (${toX},${toY}), piece=${validation.piece}`);
 
         // 执行移动
-        const captured = this.board[toY][toX];
+        const result = this.round.executeMove(fromX, fromY, toX, toY, validation.piece);
 
-        this.board[toY][toX] = piece;
-        this.board[fromY][fromX] = null;
-
-        this.history.push({ ...move, piece, captured });
-
-        // 检查胜利条件（吃掉将/帅）
-        if (captured && captured.toLowerCase() === 'k') {
-            this.handleWin(side); // 当前方获胜
+        // 检查胜利条件
+        if (result.win) {
+            this.handleWin(validation.side); // 当前方获胜
             return;
-        }
-
-        // 切换回合
-        this.turn = this.turn === 'r' ? 'b' : 'r';
-
-        // 规则二 & 三：对方无子可走（困毙）判负
-        // 检查对方是否有合法移动
-        const opponentHasMoves = ChineseChessRules.hasLegalMove(this.board, this.turn);
-        if (!opponentHasMoves) {
-            console.log(`[ChineseChessTable] Opponent ${this.turn} has no legal moves. Current player ${side} wins.`);
-            this.handleWin(side); // 当前方获胜
-            return;
-        }
-
-        // 检查是否形成将军（使用移动前的棋盘做模拟，若检测异常不中断广播）
-        let check = false;
-        try {
-            check = ChineseChessRules.isCheckAfterMove(boardBeforeMove, fromX, fromY, toX, toY, side);
-        } catch (err) {
-            console.warn('[ChineseChessTable] isCheckAfterMove failed, continue without check flag:', err);
         }
 
         // 广播移动
-        console.log(`[ChineseChessTable] Broadcasting move: captured=${captured ? captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${check}`);
+        console.log(`[ChineseChessTable] Broadcasting move: captured=${result.captured ? result.captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${result.check}`);
         this.broadcast('move', {
             move,
-            captured: captured ? captured : null,
-            check: check,
+            captured: result.captured ? result.captured : null,
+            check: result.check,
             turn: this.turn,
             board: this.board
         });
@@ -308,6 +241,9 @@ class ChineseChessTable extends GameTable {
 
         const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
         const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
+
+        // 结束回合
+        this.round.end({ winner: winnerSide });
 
         // 1. ELO 结算（将更新后的 rating 写入数据库）
         const eloResult = await EloService.processMatchResult(

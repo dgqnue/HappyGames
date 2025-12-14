@@ -76,9 +76,10 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
         // 从 tableClient 的状态查找（最可靠的来源）
         const tableState = tableClient.getState();
         console.log(`[GameRoomView] tableClient status:`, tableState.status);
-        if (tableState.status === 'playing') {
+        // 关键修改：如果状态是 playing 或者有 winner (游戏刚结束)，都保持在游戏界面
+        if (tableState.status === 'playing' || tableState.winner) {
             shouldShowGame = true;
-            console.log('[GameRoomView] ✓ Game starting - detected from tableClient');
+            console.log('[GameRoomView] ✓ Game starting/ended - detected from tableClient');
         } else {
             // 备选：从 roomState.tables 查找（备用来源）
             if (roomState.tables && roomState.tables.length > 0) {
