@@ -73,9 +73,18 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     if (myTableId && tableClient) {
         console.log(`[GameRoomView] Checking game status for myTableId: ${myTableId}`);
         
-        // 只要入座了，就显示游戏界面
-        shouldShowGame = true;
-        console.log('[GameRoomView] ✓ User seated - showing game view');
+        const tableState = tableClient.getState();
+        const isPlaying = tableState.status === 'playing';
+        const isRoundEnded = tableState.isRoundEnded;
+        
+        // 只有在游戏进行中或回合结束（结算/复盘）时才显示全屏游戏界面
+        // 入座但未开始时，显示房间列表和卡片
+        if (isPlaying || isRoundEnded) {
+            shouldShowGame = true;
+            console.log('[GameRoomView] ✓ Game playing or round ended - showing game view');
+        } else {
+            console.log('[GameRoomView] ✗ Game not playing and not round ended - showing room list');
+        }
     }
 
     // 如果游戏已开始，GameTableView会直接显示游戏界面

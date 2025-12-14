@@ -548,7 +548,10 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     }
 
     // 如果是我的游戏桌，且有插件，显示游戏界面
-    if (isMyTableLocal && tableClient && gameDisplayPlugin) {
+    // 只有在游戏进行中或回合结束时才显示插件，否则显示等待卡片
+    const shouldShowPlugin = localState.status === 'playing' || localState.isRoundEnded;
+
+    if (isMyTableLocal && tableClient && gameDisplayPlugin && shouldShowPlugin) {
         console.log('[GameTableView] ✅ Rendering game display with plugin:', gameDisplayPlugin.gameType);
         const { Component: GameDisplay } = gameDisplayPlugin;
         return (
