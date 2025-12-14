@@ -206,8 +206,9 @@ export abstract class GameTableClient {
         // 游戏结束（再来一局倒计时）
         this.socket.on('game_ended', (data: any) => {
             this.updateState({
-                status: 'matching',
+                // status: 'matching', // 保持 playing 状态，直到玩家点击退出
                 ready: false,  // 取消准备状态
+                isRoundEnded: true, // 标记回合结束，防止UI立即退出
                 countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
             });
         });
@@ -389,7 +390,16 @@ export abstract class GameTableClient {
             this.socket.emit('request_table_state');
         } else {
             // 非playing状态，正常更新
-            this.updateState(updateObj);
+            // 如果当前是 playing 且收到了 matching/idle，且 isRoundEnded 为 true，则忽略状态变更，保持 playing
+            // 这样可以防止游戏结束后立即退出界面
+            if (this.state.status === 'playing' && (data.status === 'matching' || data.status === 'idle') && this.state.isRoundEnded) {
+                console.log(`[${this.gameType}TableClient] Ignoring status change to ${data.status} because round ended but user hasn't left`);
+                // 只更新其他数据，不更新 status
+                const { status, ...rest } = updateObj;
+                this.updateState(rest);
+            } else {
+                this.updateState(updateObj);
+            }
         }
     }
 
