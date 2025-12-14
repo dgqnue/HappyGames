@@ -898,8 +898,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                           </div>
                           {/* 如果有称号变化，也可以显示 */}
                           {gameEndStats.result?.title && gameEndStats.result.title[myPlayer.userId] && (
-                              <div className="text-sm mt-1" style={{ color: gameEndStats.result.title[myPlayer.userId].color || '#fbbf24' }}>
-                                  当前称号: {gameEndStats.result.title[myPlayer.userId].title}
+                              <div className="text-sm mt-1 text-blue-200">
+                                  当前称号: <span style={{ color: gameEndStats.result.title[myPlayer.userId].color || '#fbbf24' }}>{gameEndStats.result.title[myPlayer.userId].title}</span>
                               </div>
                           )}
                       </div>
