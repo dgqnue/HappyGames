@@ -680,7 +680,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           style={{ 
             width: '90vw', 
             maxWidth: '500px',
-            transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'
+            transform: mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)',
+            position: 'relative'
           }}
         >
           {/* 使用棋盘套件显示棋盘 */}
@@ -693,6 +694,41 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             showPieces={true}
             mySide={mySide}
           />
+
+          {/* 游戏结束结算弹窗 (移至棋盘容器内) */}
+          {gameResult && (
+            <div 
+              className="absolute inset-0 z-[10000] flex items-center justify-center pointer-events-none"
+              style={{ 
+                animation: 'fadeIn 0.5s ease-in-out',
+                backgroundColor: 'rgba(0,0,0,0.5)', // 仅遮罩棋盘区域
+                transform: mySide === 'b' ? 'rotate(180deg)' : 'none' // 如果棋盘翻转了，需要反向翻转回来
+              }}
+            >
+              <div className="relative flex flex-col items-center">
+                <img 
+                  src={gameResult === 'win' ? '/images/chinesechess/ui/victory.png' : '/images/chinesechess/ui/defeat.png'} 
+                  alt={gameResult === 'win' ? 'Victory' : 'Defeat'}
+                  style={{ 
+                    maxWidth: '80%', 
+                    maxHeight: '60%', 
+                    objectFit: 'contain',
+                    animation: 'zoomIn 0.5s ease-out'
+                  }}
+                />
+              </div>
+              <style jsx>{`
+                @keyframes fadeIn {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+                }
+                @keyframes zoomIn {
+                  from { transform: scale(0.5); opacity: 0; }
+                  to { transform: scale(1); opacity: 1; }
+                }
+              `}</style>
+            </div>
+          )}
         </div>
       </div>
 
@@ -837,36 +873,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         </div>
       </div>
 
-      {/* 游戏结束结算弹窗 */}
-      {gameResult && (
-        <div 
-          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 pointer-events-none"
-          style={{ animation: 'fadeIn 0.5s ease-in-out' }}
-        >
-          <div className="relative flex flex-col items-center">
-            <img 
-              src={gameResult === 'win' ? '/images/chinesechess/ui/victory.png' : '/images/chinesechess/ui/defeat.png'} 
-              alt={gameResult === 'win' ? 'Victory' : 'Defeat'}
-              style={{ 
-                maxWidth: '80vw', 
-                maxHeight: '60vh', 
-                objectFit: 'contain',
-                animation: 'zoomIn 0.5s ease-out'
-              }}
-            />
-          </div>
-          <style jsx>{`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes zoomIn {
-              from { transform: scale(0.5); opacity: 0; }
-              to { transform: scale(1); opacity: 1; }
-            }
-          `}</style>
-        </div>
-      )}
+      {/* 游戏结束结算弹窗 - 已移动到棋盘容器内 */}
+
 
       {/* 回合结算信息 (当胜负弹窗关闭后显示) */}
       {isRoundEnded && gameEndStats && !gameResult && (
