@@ -73,24 +73,9 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     if (myTableId && tableClient) {
         console.log(`[GameRoomView] Checking game status for myTableId: ${myTableId}`);
         
-        // 从 tableClient 的状态查找（最可靠的来源）
-        const tableState = tableClient.getState();
-        console.log(`[GameRoomView] tableClient status:`, tableState.status);
-        // 关键修改：如果状态是 playing 或者有 winner (游戏刚结束)，都保持在游戏界面
-        if (tableState.status === 'playing' || tableState.winner) {
-            shouldShowGame = true;
-            console.log('[GameRoomView] ✓ Game starting/ended - detected from tableClient');
-        } else {
-            // 备选：从 roomState.tables 查找（备用来源）
-            if (roomState.tables && roomState.tables.length > 0) {
-                const myTable = roomState.tables.find((t: any) => t.tableId === myTableId);
-                console.log(`[GameRoomView] Found table in roomState.tables:`, myTable);
-                if (myTable && myTable.status === 'playing') {
-                    shouldShowGame = true;
-                    console.log('[GameRoomView] ✓ Game starting - detected from roomState.tables');
-                }
-            }
-        }
+        // 只要入座了，就显示游戏界面
+        shouldShowGame = true;
+        console.log('[GameRoomView] ✓ User seated - showing game view');
     }
 
     // 如果游戏已开始，GameTableView会直接显示游戏界面
@@ -114,7 +99,7 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
 
     // 显示游戏室 - 房间列表，包含所有表格
     return (
-        <main className="min-h-screen p-4 md:p-8">
+        <main className="min-h-screen bg-amber-50 p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
             {/* Header */}
                 <div className="flex items-center gap-4 mb-8">

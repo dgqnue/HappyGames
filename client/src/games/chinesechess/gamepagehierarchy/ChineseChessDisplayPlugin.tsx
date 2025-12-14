@@ -563,30 +563,14 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="w-screen min-h-screen overflow-visible flex flex-col relative"
+      className="w-screen min-h-screen bg-amber-50 overflow-visible flex flex-col relative"
       style={{
         margin: 0,
         padding: 0,
         minWidth: '100vw'
       }}
     >
-      {/* 背景图片层 - 独立出来以控制透明度 */}
-      <div 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundImage: 'url(/images/chinesechess/ui/back.bmp)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          // opacity: 0.5, // 移除透明度，完全不透明
-          zIndex: -1,
-          pointerEvents: 'none'
-        }}
-      />
+      {/* Background removed to match Game Center style */}
 
       {/* 顶部玩家信息栏 (绝对定位或作为第一项) */}
       <div className="w-full flex justify-start px-4 pt-4 pb-2" style={{ maxWidth: '500px', margin: '0 auto' }}>
