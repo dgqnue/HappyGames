@@ -43,6 +43,14 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     const myTableId = roomState.selectedTableId;
     console.log('[GameRoomView] tableClient:', tableClient, 'myTableId:', myTableId);
 
+    // 追踪是否已经进入过游戏（用于区分“刚入座”和“游戏结束”）
+    const [hasEnteredGame, setHasEnteredGame] = useState(false);
+
+    // 当桌子改变时，重置 hasEnteredGame
+    useEffect(() => {
+        setHasEnteredGame(false);
+    }, [myTableId]);
+
     useEffect(() => {
         if (!tableClient) return;
 
@@ -50,6 +58,7 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
             console.log('[GameRoomView] tableClient state update:', state.status);
             if (state.status === 'playing') {
                 console.log('[GameRoomView] Game is now playing, forcing re-render');
+                setHasEnteredGame(true); // 标记已进入游戏
                 setRoomState(prev => ({ ...prev, _timestamp: Date.now() }));
             }
         };
@@ -57,6 +66,7 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
         const initialState = tableClient.getState();
         if (initialState.status === 'playing') {
             console.log('[GameRoomView] Initial table state is playing');
+            setHasEnteredGame(true); // 标记已进入游戏
             setRoomState(prev => ({ ...prev, _timestamp: Date.now() }));
         }
 
@@ -77,11 +87,11 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
         const isPlaying = tableState.status === 'playing';
         const isRoundEnded = tableState.isRoundEnded;
         
-        // 只有在游戏进行中或回合结束（结算/复盘）时才显示全屏游戏界面
-        // 入座但未开始时，显示房间列表和卡片
-        if (isPlaying || isRoundEnded) {
+        // 只有在游戏进行中，或者（回合结束且之前已经在游戏中）时才显示全屏游戏界面
+        // 这样可以防止刚入座时因为残留的 isRoundEnded 状态而错误进入游戏界面
+        if (isPlaying || (isRoundEnded && hasEnteredGame)) {
             shouldShowGame = true;
-            console.log('[GameRoomView] ✓ Game playing or round ended - showing game view');
+            console.log('[GameRoomView] ✓ Game playing or round ended (and entered) - showing game view');
         } else {
             console.log('[GameRoomView] ✗ Game not playing and not round ended - showing room list');
         }

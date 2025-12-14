@@ -538,6 +538,21 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const borderWidth = '1px';
     const componentHeight = '280px'; // 再降低一点高度
 
+    // 追踪是否已经进入过游戏（用于区分“刚入座”和“游戏结束”）
+    const [hasEnteredGame, setHasEnteredGame] = useState(false);
+
+    // 当桌子改变时，重置 hasEnteredGame
+    useEffect(() => {
+        setHasEnteredGame(false);
+    }, [table.tableId]);
+
+    // 监听状态变化，如果变为 playing，则标记为已进入游戏
+    useEffect(() => {
+        if (localState.status === 'playing') {
+            setHasEnteredGame(true);
+        }
+    }, [localState.status]);
+
     // ========== 游戏界面显示逻辑 - 使用插件系统 ==========
     // 查找合适的游戏显示插件
     // 只要是我的桌子，就尝试加载插件
@@ -548,8 +563,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     }
 
     // 如果是我的游戏桌，且有插件，显示游戏界面
-    // 只有在游戏进行中或回合结束时才显示插件，否则显示等待卡片
-    const shouldShowPlugin = localState.status === 'playing' || localState.isRoundEnded;
+    // 只有在游戏进行中，或者（回合结束且之前已经在游戏中）时才显示插件，否则显示等待卡片
+    const shouldShowPlugin = localState.status === 'playing' || (localState.isRoundEnded && hasEnteredGame);
 
     if (isMyTableLocal && tableClient && gameDisplayPlugin && shouldShowPlugin) {
         console.log('[GameTableView] ✅ Rendering game display with plugin:', gameDisplayPlugin.gameType);

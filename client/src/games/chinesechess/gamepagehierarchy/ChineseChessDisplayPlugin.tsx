@@ -103,6 +103,69 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [gameResult, setGameResult] = useState<'win' | 'lose' | 'draw' | null>(null);
   const [isRoundEnded, setIsRoundEnded] = useState(false);
   const [gameEndStats, setGameEndStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // 资源预加载
+  useEffect(() => {
+    const preloadResources = async () => {
+      const imagesToLoad = [
+        '/images/chinesechess/ui/load.jpg',
+        '/images/chinesechess/ui/victory.png',
+        '/images/chinesechess/ui/defeat.png',
+        '/images/chinesechess/buttoms/start.png?v=new',
+        '/images/chinesechess/buttoms/undo.png?v=new',
+        '/images/chinesechess/buttoms/resign.png?v=new',
+        '/images/chinesechess/buttoms/draw.png?v=new',
+        '/images/chinesechess/buttoms/exit.png?v=new',
+        '/images/chinesechess/select/r_select/r_select.png',
+        '/images/chinesechess/select/b_select/b_select.png',
+        // 棋子图片
+        ...['red', 'black'].flatMap(color => 
+          ['rook', 'knight', 'bishop', 'guard', 'king', 'cannon', 'pawn'].map(type => 
+            `/images/chinesechess/pieces/${color}/${type}.png`
+          )
+        )
+      ];
+
+      const totalResources = imagesToLoad.length;
+      let loadedCount = 0;
+
+      const updateProgress = () => {
+        loadedCount++;
+        setLoadingProgress(Math.round((loadedCount / totalResources) * 100));
+      };
+
+      const loadPromises = imagesToLoad.map(src => {
+        return new Promise((resolve, reject) => {
+          const img = new window.Image();
+          img.src = src;
+          img.onload = () => {
+            updateProgress();
+            resolve(src);
+          };
+          img.onerror = () => {
+            console.warn(`Failed to load image: ${src}`);
+            updateProgress(); // 即使失败也算完成，避免卡死
+            resolve(src);
+          };
+        });
+      });
+
+      // 至少显示1.5秒加载页，避免闪烁
+      const minTimePromise = new Promise(resolve => setTimeout(resolve, 1500));
+
+      try {
+        await Promise.all([...loadPromises, minTimePromise]);
+      } catch (err) {
+        console.error('Resource loading failed:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    preloadResources();
+  }, []);
 
   // 更新游戏状态的函数
   const updateGameState = useCallback(() => {
@@ -559,6 +622,27 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   if (mySide === 'b') {
     bottomPlayer = players[1]; // 黑方
     topPlayer = players[0];    // 红方
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
+        <img 
+          src="/images/chinesechess/ui/load.jpg" 
+          alt="Loading..." 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute bottom-10 w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-amber-500 transition-all duration-300 ease-out"
+            style={{ width: `${loadingProgress}%` }}
+          />
+        </div>
+        <div className="absolute bottom-4 text-amber-500 text-sm font-bold">
+          Loading... {loadingProgress}%
+        </div>
+      </div>
+    );
   }
 
   return (
