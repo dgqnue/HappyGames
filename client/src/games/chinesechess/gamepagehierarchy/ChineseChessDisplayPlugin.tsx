@@ -411,7 +411,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             loadBuffer('/audio/effects/CHESS_SELECT.mp3', 'select'),
             loadBuffer('/audio/effects/CHESS_EAT.mp3', 'eat'),
             loadBuffer('/audio/effects/CHESS_WIN.mp3', 'win'),
-            loadBuffer('/audio/effects/嘟.mp3', 'lose'), // 使用 '嘟.mp3' 作为失败音效
+            // loadBuffer('/audio/effects/嘟.mp3', 'lose'), // 失败音效暂时空缺
             loadBuffer('/audio/effects/jiangjun.mp3', 'check'),
             loadBuffer('/audio/effects/MOVE.WAV', 'move')
           ]);

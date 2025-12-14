@@ -318,6 +318,16 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         roomClientRef.current = roomClient;
     }, [tableClient, isMyTableLocal, roomClient]);
 
+    // 监听倒计时变化播放音效
+    useEffect(() => {
+        if (timeLeft !== null && isMyTableLocal && (tableClient as any)?.gameType === 'chinesechess') {
+            // 播放倒计时音效
+            const audio = new Audio('/audio/effects/du.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.warn('Failed to play countdown sound:', e));
+        }
+    }, [timeLeft, isMyTableLocal, tableClient]);
+
     useEffect(() => {
         // 标记是否已经执行过离座，避免重复执行
         let hasLeft = false;
@@ -637,7 +647,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
                     {isMyTableLocal && timeLeft !== null && (localState.countdown?.type === 'start' || (localState.countdown?.type === 'ready' && !isReady)) ? (
-                        <div className="text-center animate-pulse flex justify-center items-center gap-1">
+                        <div className="text-center animate-pulse flex justify-center items-center gap-0">
                             {(tableClient as any).gameType === 'chinesechess' ? (
                                 String(timeLeft).split('').map((digit, index) => (
                                     <img 
