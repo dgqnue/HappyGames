@@ -321,6 +321,16 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 监听倒计时变化播放音效
     // 使用 ref 记录上一次的 timeLeft，避免重复播放或不播放
     const lastTimeLeftRef = useRef<number | null>(null);
+    // 预加载音频对象，避免频繁创建导致播放中断
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        // 初始化音频对象
+        audioRef.current = new Audio('/audio/effects/du.mp3');
+        audioRef.current.volume = 0.5;
+        // 预加载
+        audioRef.current.load();
+    }, []);
 
     useEffect(() => {
         if (timeLeft !== null && isMyTableLocal && (tableClient as any)?.gameType === 'chinesechess') {
@@ -328,9 +338,11 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             if (lastTimeLeftRef.current !== timeLeft) {
                 lastTimeLeftRef.current = timeLeft;
                 // 播放倒计时音效
-                const audio = new Audio('/audio/effects/du.mp3');
-                audio.volume = 0.5;
-                audio.play().catch(e => console.warn('Failed to play countdown sound:', e));
+                if (audioRef.current) {
+                    // 重置播放进度，确保连续播放
+                    audioRef.current.currentTime = 0;
+                    audioRef.current.play().catch(e => console.warn('Failed to play countdown sound:', e));
+                }
             }
         } else {
             lastTimeLeftRef.current = null;
@@ -656,14 +668,14 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
                     {isMyTableLocal && timeLeft !== null && (localState.countdown?.type === 'start' || (localState.countdown?.type === 'ready' && !isReady)) ? (
-                        <div className="text-center animate-pulse flex justify-center items-center" style={{ gap: '-5px' }}>
+                        <div className="text-center animate-pulse flex justify-center items-center">
                             {(tableClient as any).gameType === 'chinesechess' ? (
                                 String(timeLeft).split('').map((digit, index) => (
                                     <img 
                                         key={index}
                                         src={`/images/chinesechess/number/${digit}.png`}
                                         alt={digit}
-                                        className="h-10 object-contain"
+                                        className={`h-10 w-auto object-contain ${index > 0 ? '-ml-3' : ''}`}
                                     />
                                 ))
                             ) : (
