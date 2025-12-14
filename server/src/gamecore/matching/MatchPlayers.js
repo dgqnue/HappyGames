@@ -294,6 +294,10 @@ class MatchRoomState {
             this.firstPlayerJoinedAt = null;
             this.matchSettings = { ...StateMappingRules.DEFAULT_SETTINGS };
             this.rematchRequests.clear();
+            this.gameEnded = false; // Reset gameEnded flag when room is empty
+            if (this.matchState) {
+                this.matchState.gameEnded = false;
+            }
             console.log(`[MatchRoom] Room emptied, match settings reset to default`);
         }
 
@@ -1254,7 +1258,9 @@ class MatchPlayers {
 
         // Mark game as ended but keep status as PLAYING until players leave
         this.gameEnded = true;
-        this.matchState.gameEnded = true; // Sync to matchState for getRoomInfo
+        if (this.matchState) {
+            this.matchState.gameEnded = true; // Sync to matchState for getRoomInfo
+        }
 
         // Reset ready status so players can click Start again
         this.matchState.resetReadyStatus(); 
