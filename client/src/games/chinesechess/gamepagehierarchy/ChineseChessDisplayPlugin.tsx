@@ -635,31 +635,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     topPlayer = players[0];    // 红方
   }
 
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
-        <img 
-          src="/images/chinesechess/ui/load.jpg" 
-          alt="Loading..." 
-          className="w-full h-full"
-          style={{ objectFit: 'fill' }}
-        />
-        {/* 加载条容器 */}
-        <div className="absolute bottom-20 w-3/4 max-w-md h-4 bg-gray-800/80 rounded-full overflow-hidden border border-gray-600 backdrop-blur-sm">
-          {/* 进度条 */}
-          <div 
-            className="h-full bg-gradient-to-r from-amber-600 to-yellow-400 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(251,191,36,0.5)]"
-            style={{ width: `${loadingProgress}%` }}
-          />
-        </div>
-        {/* 百分比文字 */}
-        <div className="absolute bottom-12 text-amber-400 text-lg font-bold tracking-wider drop-shadow-md">
-          正在加载资源... {loadingProgress}%
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div 
       className="w-screen min-h-screen overflow-visible flex flex-col relative"
@@ -673,6 +648,25 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         backgroundRepeat: 'no-repeat'
       }}
     >
+      {isLoading ? (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center">
+          <img 
+            src="/images/chinesechess/ui/load.jpg" 
+            alt="Loading..." 
+            className="w-full h-full object-contain"
+          />
+          <div className="absolute bottom-20 w-64 h-2 bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
+            <div 
+              className="h-full bg-yellow-500 transition-all duration-300"
+              style={{ width: `${loadingProgress}%` }}
+            />
+          </div>
+          <div className="absolute bottom-12 text-yellow-200 font-bold text-lg drop-shadow-md">
+            Loading... {loadingProgress}%
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Background removed to match Game Center style */}
 
       {/* 顶部玩家信息栏 (绝对定位或作为第一项) */}
@@ -937,6 +931,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                   请点击下方“开始”继续，或“退出”离开
               </div>
           </div>
+      )}
+        </>
       )}
     </div>
   );
