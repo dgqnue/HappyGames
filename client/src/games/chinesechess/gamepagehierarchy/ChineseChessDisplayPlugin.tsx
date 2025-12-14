@@ -668,7 +668,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       {/* Background removed to match Game Center style */}
 
       {/* 顶部玩家信息栏 (绝对定位或作为第一项) */}
-      <div className="w-full flex justify-start px-4 pt-4 pb-2" style={{ maxWidth: '500px', margin: '0 auto' }}>
+      <div className="w-full flex justify-start px-4 py-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
         {renderPlayerInfo(topPlayer, true)}
       </div>
 
@@ -697,7 +697,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       </div>
 
       {/* 底部玩家信息栏 */}
-      <div className="w-full flex justify-end px-4 pt-2 pb-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
+      <div className="w-full flex justify-end px-4 py-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
         {renderPlayerInfo(bottomPlayer, false)}
       </div>
 
