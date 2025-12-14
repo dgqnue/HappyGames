@@ -22,6 +22,7 @@ class ChineseChessTable extends GameTable {
 
         // 游戏特定状态
         this.round = new ChineseChessRound(this);
+        this.roundCount = 0; // 记录回合数，用于换边
         
         // 兼容旧代码，保留 getter/setter 代理到 round
         Object.defineProperty(this, 'board', {
@@ -98,15 +99,25 @@ class ChineseChessTable extends GameTable {
      * 发送完整游戏桌状态给特定玩家
      */
     sendTableState(socket) {
-        const redPlayer = this.players[0];
-        const blackPlayer = this.players[1];
+        // 确定红黑方 (根据 roundCount)
+        // 如果是第一回合(roundCount=1)，players[0]是红方
+        // 如果是第二回合(roundCount=2)，players[1]是红方
+        // 注意：这里需要与 onGameStart 的逻辑保持一致
+        // 如果游戏还没开始(roundCount=0)，默认 players[0] 是红方
+        
+        const isSwap = this.roundCount > 0 && this.roundCount % 2 === 0;
+        const redPlayer = isSwap ? this.players[1] : this.players[0];
+        const blackPlayer = isSwap ? this.players[0] : this.players[1];
+
         const isRed = redPlayer && socket.user._id.toString() === redPlayer.userId;
+        const isBlack = blackPlayer && socket.user._id.toString() === blackPlayer.userId;
         
         socket.emit('table_update', {
             status: this.status,
+            isRoundEnded: this.matchPlayers.gameEnded, // 同步回合结束状态
             board: this.board,
             turn: this.turn,
-            mySide: isRed ? 'r' : (blackPlayer && socket.user._id.toString() === blackPlayer.userId ? 'b' : null),
+            mySide: isRed ? 'r' : (isBlack ? 'b' : null),
             players: this.players.map(p => ({
                 userId: p.userId,
                 nickname: p.nickname,
@@ -114,6 +125,18 @@ class ChineseChessTable extends GameTable {
                 ready: p.ready
             })),
             winner: null // TODO: 如果已结束，需要发送 winner
+        });
+    }
+
+    /**
+     * 广播完整游戏桌状态给所有玩家
+     */
+    broadcastTableState() {
+        this.players.forEach(player => {
+            const socket = this.io.sockets.sockets.get(player.socketId);
+            if (socket) {
+                this.sendTableState(socket);
+            }
         });
     }
 
@@ -130,12 +153,20 @@ class ChineseChessTable extends GameTable {
      * 游戏开始回调
      */
     async onGameStart() {
+        // 增加回合数
+        this.roundCount++;
+        
         // 开始新回合
         this.round.start();
 
-        // 分配阵营：第一个玩家是红方，第二个是黑方
-        const redPlayer = this.players[0];
-        const blackPlayer = this.players[1];
+        // 分配阵营：根据回合数决定红黑方
+        // 奇数回合：players[0] 红, players[1] 黑
+        // 偶数回合：players[1] 红, players[0] 黑
+        const isSwap = this.roundCount % 2 === 0;
+        const redPlayer = isSwap ? this.players[1] : this.players[0];
+        const blackPlayer = isSwap ? this.players[0] : this.players[1];
+
+        console.log(`[ChineseChess] Round ${this.roundCount} starting. Red: ${redPlayer?.nickname}, Black: ${blackPlayer?.nickname}`);
 
         // 架构优化：直接使用内存中的玩家状态
         const playerInfos = this.players.map(p => {
@@ -192,8 +223,10 @@ class ChineseChessTable extends GameTable {
         const { fromX, fromY, toX, toY } = move;
         const userId = socket.user._id.toString();
 
-        const redPlayer = this.players[0];
-        const blackPlayer = this.players[1];
+        // 确定当前的红黑方
+        const isSwap = this.roundCount % 2 === 0;
+        const redPlayer = isSwap ? this.players[1] : this.players[0];
+        const blackPlayer = isSwap ? this.players[0] : this.players[1];
 
         // 验证是否是当前玩家的回合
         const validation = this.round.validateMove(fromX, fromY, toX, toY, userId, redPlayer.userId, blackPlayer.userId);
@@ -236,8 +269,10 @@ class ChineseChessTable extends GameTable {
      * 处理胜利
      */
     async handleWin(winnerSide) {
-        const redPlayer = this.players[0];
-        const blackPlayer = this.players[1];
+        // 确定当前的红黑方
+        const isSwap = this.roundCount % 2 === 0;
+        const redPlayer = isSwap ? this.players[1] : this.players[0];
+        const blackPlayer = isSwap ? this.players[0] : this.players[1];
 
         const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
         const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
@@ -461,6 +496,7 @@ class ChineseChessTable extends GameTable {
             tableId: this.tableId,              // 确保 tableId 被设置
             roomId: this.tableId,               // 保留 roomId 作为备选
             status: currentStatus,              // 游戏桌状态（idle, waiting, matching, playing）
+            isRoundEnded: this.matchPlayers.gameEnded, // 同步回合结束状态
             players: currentPlayers.map(p => {
                 // 优先使用从数据库获取的最新信息 (仅限动态数据如称号、积分)
                 const latestData = playerDataMap[p.userId] || {};

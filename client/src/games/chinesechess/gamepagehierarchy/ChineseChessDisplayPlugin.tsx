@@ -195,6 +195,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       (tableClient as any).onGameEnded = (data: any) => {
         console.log('[ChineseChessDisplay] onGameEnded callback triggered:', data);
         setGameEndStats(data);
+        setIsRoundEnded(true); // 强制设置回合结束状态，确保开始按钮显示
         
         // 延迟播放胜利/失败音效，确保最后一步的音效（吃子/将军）能先播放完
         setTimeout(() => {
@@ -223,6 +224,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           console.log('[ChineseChessDisplay] Game started, clearing result');
           setGameResult(null);
           setGameEndStats(null); // Clear stats on new game
+          setIsRoundEnded(false); // 回合开始，隐藏开始按钮
       };
 
       if (typeof (tableClient as any).addGameStartListener === 'function') {
