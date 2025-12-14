@@ -267,7 +267,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const prevGameEnded = (tableClient as any).onGameEnded;
       (tableClient as any).onGameEnded = (data: any) => {
         console.log('[ChineseChessDisplay] onGameEnded callback triggered:', data);
-        setGameEndStats(data);
+        // setGameEndStats(data); // 延迟设置，避免在胜负弹窗前显示结算信息
         setIsRoundEnded(true); // 强制设置回合结束状态，确保开始按钮显示
         
         // 延迟播放胜利/失败音效，确保最后一步的音效（吃子/将军）能先播放完
@@ -286,6 +286,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           // 3秒后自动关闭胜负弹窗
           setTimeout(() => {
               setGameResult(null);
+              setGameEndStats(data); // 胜负弹窗关闭后，再显示结算信息
           }, 3000);
 
         }, 1000); // 延迟1秒
@@ -651,11 +652,15 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
   return (
     <div 
-      className="w-screen min-h-screen bg-amber-50 overflow-visible flex flex-col relative"
+      className="w-screen min-h-screen overflow-visible flex flex-col relative"
       style={{
         margin: 0,
         padding: 0,
-        minWidth: '100vw'
+        minWidth: '100vw',
+        backgroundImage: 'url("/images/chinesechess/ui/woodenPlankBackground.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }}
     >
       {/* Background removed to match Game Center style */}
