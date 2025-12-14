@@ -860,7 +860,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       {/* 回合结算信息 (当胜负弹窗关闭后显示) */}
       {isRoundEnded && gameEndStats && !gameResult && (
           <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-red-100/30 p-4 rounded-lg text-blue-200 text-center z-50 border border-red-200/30 shadow-lg backdrop-blur-md">
-              <h3 className="text-lg font-bold mb-2 text-blue-100">本局结算</h3>
+              <h3 className="text-lg mb-2 text-blue-100">本局结算</h3>
               {(() => {
                   // 解析 ELO 数据
                   const winnerId = gameEndStats.result?.winnerId;
@@ -891,14 +891,14 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                   return (
                       <div className="flex flex-col gap-1">
                           <div className="text-base text-blue-100">
-                              等级分: <span className="text-blue-50 font-bold">{newRating}</span>
-                              <span className={delta >= 0 ? "text-green-300 ml-2" : "text-red-300 ml-2"}>
+                              等级分: <span className="text-blue-50">{newRating}</span>
+                              <span className={delta >= 0 ? "text-green-500 ml-2" : "text-red-500 ml-2"}>
                                   {delta >= 0 ? `+${delta}` : delta}
                               </span>
                           </div>
                           {/* 如果有称号变化，也可以显示 */}
                           {gameEndStats.result?.title && gameEndStats.result.title[myPlayer.userId] && (
-                              <div className="text-sm text-blue-200 mt-1">
+                              <div className="text-sm mt-1" style={{ color: gameEndStats.result.title[myPlayer.userId].color || '#fbbf24' }}>
                                   当前称号: {gameEndStats.result.title[myPlayer.userId].title}
                               </div>
                           )}
