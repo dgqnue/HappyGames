@@ -60,9 +60,11 @@ class ChineseChessTable extends GameTable {
             
             // 🛡️ 防护机制：回合开始后的前3秒内（或回合未真正开始时）有人离开，视为连接问题，取消游戏
             // 这样可以避免因为加载慢、网络延迟等问题导致的误判
-            const withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
+            // 🔧 修正：只在第一局（roundCount <= 1）启用此保护，后续回合直接判负，防止第二局开始时误判
+            const isFirstRound = this.roundCount <= 1;
+            const withinGracePeriod = isFirstRound && (!this.roundStartTime || (Date.now() - this.roundStartTime < 3000));
             
-            console.log(`[ChineseChessTable]   - withinGracePeriod: ${withinGracePeriod}`);
+            console.log(`[ChineseChessTable]   - withinGracePeriod: ${withinGracePeriod} (isFirstRound: ${isFirstRound})`);
             
             if (withinGracePeriod) {
                 console.log(`[ChineseChessTable] Player left within 3s of round start (or before round start). Cancelling game instead of forfeiting.`);
