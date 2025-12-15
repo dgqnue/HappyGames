@@ -1479,6 +1479,14 @@ class MatchPlayers {
 
         this.matchState.zombieTimer = setTimeout(() => {
             console.log(`[DEBUG_TRACE] [MatchPlayers] Zombie timer fired for room ${this.roomId}. Checking isZombieRoom...`);
+            
+            // 🛡️ Safety: Never kick if game is playing
+            // This prevents kicking players if the timer fires during a long game or subsequent rounds
+            if (this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
+                console.log(`[DEBUG_TRACE] [MatchPlayers] Zombie timer fired but game is PLAYING. Ignoring.`);
+                return;
+            }
+
             if (this.matchState.isZombieRoom()) {
                 console.log(`[DEBUG_TRACE] [MatchPlayers] Room ${this.roomId} IS a zombie room. Kicking players...`);
                 console.log(`[MatchPlayers] Room ${this.roomId} is a zombie room, cleaning up...`);
