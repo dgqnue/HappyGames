@@ -1331,12 +1331,12 @@ class MatchPlayers {
     }
 
     /**
-     * Game end handler
-     * @param {Object} result - Game result
+     * Round end handler (回合结束处理)
+     * @param {Object} result - Round result
      */
-    async onGameEnd(result) {
-        console.log(`[MatchPlayers] Game ended in room ${this.roomId}`);
-        console.log(`[MatchPlayers] onGameEnd state before update: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
+    async onRoundEnd(result) {
+        console.log(`[MatchPlayers] Round ended in room ${this.roomId}`);
+        console.log(`[MatchPlayers] onRoundEnd state before update: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
 
         // Release game lock (game ended, can match again)
         this.isLocked = false;
