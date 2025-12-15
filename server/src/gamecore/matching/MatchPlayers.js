@@ -836,9 +836,9 @@ class MatchPlayers {
         if (wasPlaying && !this.gameEnded) {
             // Check if player is actually in the game (not spectator)
             const player = this.matchState.players.find(p => p.userId === userId);
-            if (player && typeof this.table.onPlayerLeaveDuringGame === 'function') {
-                console.log(`[MatchPlayers] Player ${userId} leaving during game, triggering forfeit`);
-                this.table.onPlayerLeaveDuringGame(socket);
+            if (player && typeof this.table.onPlayerLeaveDuringRound === 'function') {
+                console.log(`[MatchPlayers] Player ${userId} leaving during round, triggering forfeit`);
+                this.table.onPlayerLeaveDuringRound(socket);
             }
         }
 
@@ -1353,11 +1353,11 @@ class MatchPlayers {
         // Reset ready status so players can click Start again
         this.matchState.resetReadyStatus(); 
 
-        // 🔧 CRITICAL FIX: Reset gameStartTime to prevent stale timestamp in grace period check
-        // Without this, when checking "player left within 3s", it compares against the OLD game start time
-        if (this.table && this.table.gameStartTime !== undefined) {
-            this.table.gameStartTime = null;
-            console.log(`[MatchPlayers] Reset table.gameStartTime to null after game end`);
+        // 🔧 CRITICAL FIX: Reset roundStartTime to prevent stale timestamp in grace period check
+        // Without this, when checking "player left within 3s", it compares against the OLD round start time
+        if (this.table && this.table.roundStartTime !== undefined) {
+            this.table.roundStartTime = null;
+            console.log(`[MatchPlayers] Reset table.roundStartTime to null after round end`);
         }
 
         // 🔧 Update: Set status to MATCHING (as requested)

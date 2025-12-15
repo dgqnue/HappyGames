@@ -46,9 +46,9 @@ class ChineseChessTable extends GameTable {
      * 玩家在游戏中离开时的处理（判负逻辑）
      * 重写基类的钩子方法
      */
-    onPlayerLeaveDuringGame(socket) {
+    onPlayerLeaveDuringRound(socket) {
         const userId = socket.user._id.toString();
-        console.log(`[ChineseChessTable] onPlayerLeaveDuringGame called for userId: ${userId}`);
+        console.log(`[ChineseChessTable] onPlayerLeaveDuringRound called for userId: ${userId}`);
         const player = this.players.find(p => p.userId === userId);
         if (player) {
             // 检查回合是否处于活跃状态
@@ -60,11 +60,13 @@ class ChineseChessTable extends GameTable {
 
             console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting. Round active: ${this.round.isActive}`);
             
-            // 🛡️ 防护机制：如果游戏刚开始 3 秒内有人离开，视为游戏取消，不判负
-            // 这可以防止因客户端加载失败、网络波动或同步问题导致的“开局即输”
-            // 🔧 Fix: If gameStartTime is null, it means game is just initializing, so also cancel.
-            if (!this.gameStartTime || (Date.now() - this.gameStartTime < 3000)) {
-                console.log(`[ChineseChessTable] Player left within 3s of start (or initializing). Cancelling game instead of forfeiting.`);
+            // 🛡️ 防护机制：只有第一回合的前3秒内有人离开，才视为游戏取消
+            // 第二回合及之后如果有人离开，直接判负（因为已经不是初始连接问题了）
+            const isFirstRound = this.roundCount === 1;
+            const withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
+            
+            if (isFirstRound && withinGracePeriod) {
+                console.log(`[ChineseChessTable] First round, player left within 3s of start (or initializing). Cancelling game instead of forfeiting.`);
                 this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
                 
                 // 强制结束回合，但不产生胜负
@@ -100,7 +102,7 @@ class ChineseChessTable extends GameTable {
      */
     resetGameData() {
         this.resetBoard();
-        this.gameStartTime = null; // 🔧 Reset start time to prevent stale data race condition
+        this.roundStartTime = null; // 🔧 Reset start time to prevent stale data race condition
     }
 
     /**
@@ -199,7 +201,7 @@ class ChineseChessTable extends GameTable {
 
         // 开始新回合
         this.round.start();
-        this.gameStartTime = Date.now(); // 记录回合开始时间，用于防止开局秒退判负
+        this.roundStartTime = Date.now(); // 记录回合开始时间，用于防止开局秒退判负
 
         // 分配阵营：根据回合数决定红黑方
         // 奇数回合：players[0] 红, players[1] 黑

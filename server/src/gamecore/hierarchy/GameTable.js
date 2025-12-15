@@ -104,12 +104,12 @@ class GameTable {
 
     /**
      * 处理玩家离开游戏桌
-     * 基类提供通用逻辑，子类可以通过 onPlayerLeaveDuringGame 钩子实现游戏特定的处理
+     * 基类提供通用逻辑，子类可以通过 onPlayerLeaveDuringRound 钩子实现游戏特定的处理
      */
     playerLeave(socket) {
         // 调用游戏特定的离开处理（如游戏中离开的判负逻辑）
         if (this.status === 'playing') {
-            this.onPlayerLeaveDuringGame(socket);
+            this.onPlayerLeaveDuringRound(socket);
         }
 
         // 移除游戏特定事件监听
@@ -122,7 +122,7 @@ class GameTable {
         console.log(`[${gameType}Table] playerLeave: returned result=${result}, table status now=${this.matchPlayers.matchState.status}, players count=${playerCountAfter}`);
         
         // 关键修复：如果所有玩家都离开了，需要立即重置游戏桌状态为 IDLE
-        // 这很重要，因为在游戏中离开时会先调用 onPlayerLeaveDuringGame（可能触发 handleWin），
+        // 这很重要，因为在游戏中离开时会先调用 onPlayerLeaveDuringRound（可能触发 handleWin），
         // 将状态设为 MATCHING，然后才移除玩家，所以需要在移除后检查是否还有玩家
         if (playerCountAfter === 0) {
             console.log(`[${gameType}Table] All players left table ${this.tableId}, resetting game state to IDLE`);
@@ -156,7 +156,7 @@ class GameTable {
      * 玩家在游戏中离开时的处理钩子
      * 子类可重写此方法实现游戏特定逻辑（如判负）
      */
-    onPlayerLeaveDuringGame(socket) {
+    onPlayerLeaveDuringRound(socket) {
         // 默认不做处理，子类可重写
     }
 
