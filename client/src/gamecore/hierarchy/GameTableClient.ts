@@ -198,9 +198,17 @@ export abstract class GameTableClient {
         // 游戏开始倒计时
         this.socket.on('game_countdown', (data: any) => {
             console.log('[GameTableClient] game_countdown event received:', data);
-            this.updateState({
-                countdown: { type: 'start', count: data.count, message: data.message }
-            });
+            
+            // 如果 count 为 0，表示倒计时结束，清除倒计时状态
+            if (data.count === 0) {
+                this.updateState({
+                    countdown: null
+                });
+            } else {
+                this.updateState({
+                    countdown: { type: 'start', count: data.count, message: data.message }
+                });
+            }
         });
 
         // 回合结束（再来一局倒计时）
