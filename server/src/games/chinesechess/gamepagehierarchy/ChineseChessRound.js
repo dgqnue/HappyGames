@@ -83,18 +83,20 @@ class ChineseChessRound extends GameRound {
         // Switch turn
         this.turn = this.turn === 'r' ? 'b' : 'r';
 
+        // Calculate check status (Always calculate it now, because we need it for sound effect even if it's a win)
+        let check = false;
+        try {
+            // The player who moved is the opposite of current turn
+            const whoMoved = this.turn === 'r' ? 'b' : 'r';
+            check = ChineseChessRules.isCheckAfterMove(boardBeforeMove, fromX, fromY, toX, toY, whoMoved);
+        } catch (err) {
+            console.warn('Check detection failed', err);
+        }
+
         // Check stalemate (Opponent has no moves)
         const opponentHasMoves = ChineseChessRules.hasLegalMove(this.board, this.turn);
         if (!opponentHasMoves) {
-            return { captured, win: true, reason: 'stalemate' };
-        }
-
-        // Check if checking opponent
-        let check = false;
-        try {
-            check = ChineseChessRules.isCheckAfterMove(boardBeforeMove, fromX, fromY, toX, toY, this.turn === 'r' ? 'b' : 'r');
-        } catch (err) {
-            console.warn('Check detection failed', err);
+            return { captured, win: true, reason: 'stalemate', check };
         }
 
         return { captured, win: false, check };
