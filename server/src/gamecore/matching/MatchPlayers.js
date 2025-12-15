@@ -839,8 +839,32 @@ class MatchPlayers {
             }
         }
 
+        // 🔧 Update: If game ended (between rounds) and a player leaves, dissolve the room
+        if (this.gameEnded && wasPlayer) {
+            console.log(`[MatchPlayers] Player ${userId} left after game ended. Dissolving room.`);
+            
+            // Kick remaining players (if any)
+            // We iterate backwards to safely remove
+            for (let i = this.matchState.players.length - 1; i >= 0; i--) {
+                const p = this.matchState.players[i];
+                if (p.userId !== userId) { // Don't kick the leaver again (will be removed below)
+                    const s = this.io.sockets.sockets.get(p.socketId);
+                    if (s) {
+                        s.emit('kicked', { reason: 'Opponent left', code: 'OPPONENT_LEFT' });
+                        // We don't call _playerLeave recursively here to avoid infinite loops or complexity
+                        // Just remove from state and let them know
+                        s.leave(this.roomId);
+                    }
+                    this.matchState.removePlayer(p.userId);
+                }
+            }
+            // Now the leaver will be removed by standard logic below
+        }
+
         // Remove from player list (this method automatically calculates new status)
-        const wasPlayer = this.matchState.removePlayer(userId);
+        const wasPlayerResult = this.matchState.removePlayer(userId);
+        // wasPlayer variable name conflict fix
+        const wasPlayerActuallyRemoved = wasPlayerResult; 
 
         // Remove from spectator list
         const wasSpectator = this.matchState.removeSpectator(userId);
@@ -848,9 +872,9 @@ class MatchPlayers {
         const statusAfter = this.matchState.status;
         const playerCountAfter = this.matchState.players.length;
         
-        console.log(`[MatchPlayers] After removePlayer - wasPlayer: ${wasPlayer}, wasSpectator: ${wasSpectator}, players: ${playerCountBefore}->${playerCountAfter}, status: ${statusBefore}->${statusAfter}`);
+        console.log(`[MatchPlayers] After removePlayer - wasPlayer: ${wasPlayerActuallyRemoved}, wasSpectator: ${wasSpectator}, players: ${playerCountBefore}->${playerCountAfter}, status: ${statusBefore}->${statusAfter}`);
 
-        if (wasPlayer || wasSpectator) {
+        if (wasPlayerActuallyRemoved || wasSpectator) {
             socket.leave(this.roomId);
             console.log(`[MatchPlayers] Socket left room, will broadcast room state. Current players: ${playerCountAfter}, status: ${statusAfter}`);
             
@@ -905,7 +929,7 @@ class MatchPlayers {
             console.log(`[MatchPlayers] Player ${userId} was not in the room as player or spectator`);
         }
 
-        return wasPlayer || wasSpectator;
+        return wasPlayerActuallyRemoved || wasSpectator;
     }
 
     /**
@@ -1307,8 +1331,9 @@ class MatchPlayers {
         // Reset ready status so players can click Start again
         this.matchState.resetReadyStatus(); 
 
-        // Status becomes matching (waiting for rematch)
-        // this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING; // Keep status as PLAYING
+        // 🔧 Update: Set status to MATCHING (as requested)
+        // This allows players to see "Start" button again
+        this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING;
 
         // Clear previous rematch requests
         this.matchState.rematchRequests.clear();
