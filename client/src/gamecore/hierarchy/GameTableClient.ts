@@ -199,10 +199,12 @@ export abstract class GameTableClient {
         this.socket.on('game_countdown', (data: any) => {
             console.log('[GameTableClient] game_countdown event received:', data);
             
-            // 如果 count 为 0，表示倒计时结束，清除倒计时状态
+            // 如果 count 为 0，表示倒计时结束，但我们保留 countdown 状态为 0
+            // 这样可以保持 shouldShowPlugin 为 true，防止游戏面板闪烁/消失
+            // 真正的清除会在 handleGameStart 中进行
             if (data.count === 0) {
                 this.updateState({
-                    countdown: null
+                    countdown: { type: 'start', count: 0, message: data.message }
                 });
             } else {
                 this.updateState({
@@ -489,7 +491,8 @@ export abstract class GameTableClient {
                 ...data,
                 canStart: false, // 游戏开始后不能再开始
                 ready: false, // 重置准备状态
-                isRoundEnded: false // 新回合开始，重置回合结束标记
+                isRoundEnded: false, // 新回合开始，重置回合结束标记
+                countdown: null // 游戏开始，清除倒计时
             };
 
             // 关键修复：处理 players 字段的数据类型不一致问题
