@@ -51,28 +51,34 @@ class ChineseChessTable extends GameTable {
         console.log(`[ChineseChessTable] onPlayerLeaveDuringRound called for userId: ${userId}`);
         const player = this.players.find(p => p.userId === userId);
         if (player) {
-            // 检查回合是否处于活跃状态
-            // 如果回合已经结束（例如已经分出胜负，正在等待结算或新回合），则不触发判负
-            if (!this.round || !this.round.isActive) {
-                console.log(`[ChineseChessTable] Player ${userId} left but round is not active. Ignoring forfeit.`);
-                return;
-            }
-
-            console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting. Round active: ${this.round.isActive}`);
+            console.log(`[ChineseChessTable] Player ${userId} left during round. Round active: ${this.round ? this.round.isActive : 'no round'}, roundCount: ${this.roundCount}`);
             
-            // 🛡️ 防护机制：只有第一回合的前3秒内有人离开，才视为游戏取消
+            // 🛡️ 防护机制：只有第一回合的前3秒内（或回合未真正开始时）有人离开，才视为游戏取消
             // 第二回合及之后如果有人离开，直接判负（因为已经不是初始连接问题了）
             const isFirstRound = this.roundCount === 1;
             const withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
             
             if (isFirstRound && withinGracePeriod) {
-                console.log(`[ChineseChessTable] First round, player left within 3s of start (or initializing). Cancelling game instead of forfeiting.`);
+                console.log(`[ChineseChessTable] First round, player left within grace period. Cancelling game instead of forfeiting.`);
                 this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
                 
                 // 强制结束回合，但不产生胜负
-                this.round.end({ cancelled: true });
+                if (this.round) {
+                    this.round.end({ cancelled: true });
+                }
                 
-                // 重置游戏状态为 IDLE (通过 MatchPlayers 逻辑处理，这里只需确保不调用 handleWin)
+                // 通知 MatchPlayers 取消游戏（重置到 IDLE 状态）
+                if (this.matchPlayers && typeof this.matchPlayers.cancelGame === 'function') {
+                    this.matchPlayers.cancelGame();
+                }
+                
+                return;
+            }
+
+            // 检查回合是否已经结束（例如已经分出胜负，正在等待结算或新回合）
+            // 如果已经结束，则不触发判负
+            if (this.round && this.round.isActive === false) {
+                console.log(`[ChineseChessTable] Player ${userId} left but round already ended. Ignoring forfeit.`);
                 return;
             }
 

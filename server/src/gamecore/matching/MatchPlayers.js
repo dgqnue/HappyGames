@@ -195,15 +195,9 @@ class MatchRoomState {
         this.zombieTimer = null;
         this.zombieTimeout = StateMappingRules.COUNTDOWN_CONFIG.zombieTimeout;
 
-        this.rematchTimer = null;
-        this.rematchTimeout = StateMappingRules.COUNTDOWN_CONFIG.rematchTimeout;
-
         // Record timestamps
         this.createdAt = Date.now();
         this.firstPlayerJoinedAt = null;
-
-        // Rematch requests set
-        this.rematchRequests = new Set();
     }
 
     canPlayerJoin(playerStats, playerSettings = null) {
@@ -269,7 +263,6 @@ class MatchRoomState {
         if (index === -1) return false;
 
         this.players.splice(index, 1);
-        this.rematchRequests.delete(userId);
 
         if (this.readyTimer) {
             clearTimeout(this.readyTimer);
@@ -450,13 +443,7 @@ class MatchRoomState {
         return StateMappingRules.isZombieTable(this.firstPlayerJoinedAt, this.status);
     }
 
-    requestRematch(userId) {
-        if (this.players.find(p => p.userId === userId)) {
-            this.rematchRequests.add(userId);
-            return this.rematchRequests.size === this.players.length; // If everyone agrees, return true
-        }
-        return false;
-    }
+
 
     getRoomInfo() {
         return {
@@ -477,7 +464,6 @@ class MatchRoomState {
                 winRate: p.winRate,
                 disconnectRate: p.disconnectRate,
                 ready: p.ready,
-                wantsRematch: this.rematchRequests.has(p.userId),
                 seatIndex: p.seatIndex
             }))
         };
@@ -531,7 +517,6 @@ class MatchRoomState {
     cleanup() {
         if (this.readyTimer) clearTimeout(this.readyTimer);
         if (this.zombieTimer) clearTimeout(this.zombieTimer);
-        if (this.rematchTimer) clearTimeout(this.rematchTimer);
     }
 }
 
@@ -544,7 +529,7 @@ class MatchRoomState {
 /**
  * Player Match Manager (MatchPlayers)
  * 
- * Handles player matching, ready status, countdowns, rematch logic for game tables.
+ * Handles player matching, ready status, and countdowns for game tables.
  * Integrates MatchRoomState and StateMappingRules.
  */
 class MatchPlayers {
@@ -890,12 +875,7 @@ class MatchPlayers {
                 this.readyCheckCancelled = false;
                 this.isLocked = false;
                 
-                // 🔧 Clear all active timers, ensure state restores immediately (no need to wait for 10s rematch countdown)
-                if (this.matchState.rematchTimer) {
-                    clearTimeout(this.matchState.rematchTimer);
-                    this.matchState.rematchTimer = null;
-                    console.log(`[MatchPlayers] Cleared rematch timer because all players left`);
-                }
+                // 🔧 Clear all active timers, ensure state restores immediately
                 if (this.countdownTimer) {
                     clearTimeout(this.countdownTimer);
                     this.countdownTimer = null;
@@ -1171,33 +1151,18 @@ class MatchPlayers {
             locked: true
         });
 
-        // 🔧 Optimization: If game ended (rematch), start immediately without 3s countdown
-        if (this.gameEnded) {
-            console.log(`[MatchPlayers] Rematch detected, skipping countdown`);
-            
-            // 🔧 CRITICAL FIX: Clear rematch timer IMMEDIATELY when countdown starts (even if skipped)
-            // This prevents onRematchTimeout from firing during the 100ms delay or subsequent execution
-            if (this.matchState.rematchTimer) {
-                clearTimeout(this.matchState.rematchTimer);
-                this.matchState.rematchTimer = null;
-                console.log(`[MatchPlayers] Cleared rematch timer in startRoundCountdown (rematch path)`);
-            }
-
-            // Directly start round without countdown or delay
+        // 只在第一回合显示321倒计时，第二回合及之后直接开始
+        const roundCount = this.table.roundCount || 0;
+        if (roundCount > 0) {
+            console.log(`[MatchPlayers] Round ${roundCount + 1}, skipping countdown`);
             this.startRound();
             return;
         }
 
+        // 第一回合：显示321倒计时
+        console.log(`[MatchPlayers] First round, showing 3-2-1 countdown`);
         let countdown = 3;
         this.table.broadcast('game_countdown', { count: countdown });
-
-        // 🔧 CRITICAL FIX: Clear rematch timer IMMEDIATELY when countdown starts
-        // This prevents onRematchTimeout from firing during the 3s countdown
-        if (this.matchState.rematchTimer) {
-            clearTimeout(this.matchState.rematchTimer);
-            this.matchState.rematchTimer = null;
-            console.log(`[MatchPlayers] Cleared rematch timer in startRoundCountdown (normal path)`);
-        }
 
         this.countdownTimer = setInterval(() => {
             countdown--;
@@ -1205,7 +1170,7 @@ class MatchPlayers {
             if (countdown > 0) {
                 this.table.broadcast('game_countdown', { count: countdown });
             } else {
-                // 🔧 Ensure timer is cleared and reference removed
+                // 清除定时器
                 if (this.countdownTimer) {
                     clearInterval(this.countdownTimer);
                     this.countdownTimer = null;
@@ -1237,6 +1202,44 @@ class MatchPlayers {
             message: 'Countdown cancelled',
             locked: false
         });
+    }
+
+    /**
+     * Cancel game and reset to IDLE state
+     * Used when a player disconnects during the grace period
+     */
+    cancelGame() {
+        console.log(`[MatchPlayers] cancelGame called for room ${this.roomId}`);
+        
+        // Stop any active countdown
+        this.cancelGameCountdown();
+        
+        // Clear all timers
+        if (this.matchState.readyTimer) {
+            clearTimeout(this.matchState.readyTimer);
+            this.matchState.readyTimer = null;
+        }
+        if (this.matchState.zombieTimer) {
+            clearTimeout(this.matchState.zombieTimer);
+            this.matchState.zombieTimer = null;
+        }
+        
+        // Reset game state
+        this.gameEnded = false;
+        this.matchState.gameEnded = false;
+        this.isLocked = false;
+        this.readyCheckCancelled = false;
+        
+        // Reset ready status
+        this.matchState.resetReadyStatus();
+        
+        // Set status back to MATCHING (players can choose to leave or ready again)
+        this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING;
+        
+        // Broadcast updated room state
+        this.table.broadcastRoomState();
+        
+        console.log(`[MatchPlayers] Game cancelled, status reset to MATCHING`);
     }
 
     /**
@@ -1278,12 +1281,6 @@ class MatchPlayers {
         if (this.matchState.zombieTimer) {
             clearTimeout(this.matchState.zombieTimer);
             this.matchState.zombieTimer = null;
-        }
-
-        // 🔧 Ensure rematch timer is cleared (prevent auto-kick if it was running)
-        if (this.matchState.rematchTimer) {
-            clearTimeout(this.matchState.rematchTimer);
-            this.matchState.rematchTimer = null;
         }
 
         // Set to playing state
@@ -1364,15 +1361,10 @@ class MatchPlayers {
         // This allows players to see "Start" button again
         this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING;
 
-        // Clear previous rematch requests
-        this.matchState.rematchRequests.clear();
-
         // Broadcast round end
-        // 🔧 Fix: Send rematchTimeout as 0 to prevent frontend from starting a countdown/sound
         console.log(`[MatchPlayers] Broadcasting round_ended event with result:`, result);
         this.table.broadcast('round_ended', {
-            result,
-            rematchTimeout: 0 // Disabled
+            result
         });
         console.log(`[MatchPlayers] round_ended event broadcasted successfully`);
 
@@ -1433,102 +1425,7 @@ class MatchPlayers {
         }
     }
 
-    /**
-     * Start rematch countdown
-     * ⚠️ DEPRECATED: Rematch countdown is disabled by default.
-     * This method is kept only for compatibility but will do nothing if timeout is 0.
-     */
-    startRematchCountdown() {
-        // 🔧 Force clear any existing timer first
-        if (this.matchState.rematchTimer) {
-            clearTimeout(this.matchState.rematchTimer);
-            this.matchState.rematchTimer = null;
-        }
 
-        // If timeout is 0 or disabled, do not start timer
-        if (!this.matchState.rematchTimeout || this.matchState.rematchTimeout <= 0) {
-            console.log(`[MatchPlayers] Rematch countdown disabled (timeout=${this.matchState.rematchTimeout})`);
-            return;
-        }
-
-        console.log(`[MatchPlayers] Starting rematch countdown for room ${this.roomId}`);
-
-        this.matchState.rematchTimer = setTimeout(() => {
-            this.onRematchTimeout();
-            // 🔧 Ensure timer reference is cleared after execution
-            this.matchState.rematchTimer = null;
-        }, this.matchState.rematchTimeout);
-    }
-
-    /**
-     * Player request rematch
-     */
-    playerRequestRematch(socket) {
-        const userId = socket.user._id.toString();
-        const allAgreed = this.matchState.requestRematch(userId);
-
-        this.table.broadcast('rematch_update', {
-            userId,
-            wantsRematch: true,
-            agreedCount: this.matchState.rematchRequests.size,
-            totalPlayers: this.matchState.players.length
-        });
-
-        if (allAgreed) {
-            // Everyone agreed, start new round immediately
-            if (this.matchState.rematchTimer) {
-                clearTimeout(this.matchState.rematchTimer);
-                this.matchState.rematchTimer = null;
-            }
-            this.startRound();
-        }
-    }
-
-    /**
-     * Rematch countdown timeout
-     */
-    onRematchTimeout() {
-        console.log(`[MatchPlayers] Rematch timeout for room ${this.roomId}`);
-
-        const players = [...this.matchState.players];
-        const agreedPlayers = [];
-        const kickedPlayers = [];
-
-        players.forEach(p => {
-            if (this.matchState.rematchRequests.has(p.userId)) {
-                agreedPlayers.push(p);
-            } else {
-                kickedPlayers.push(p);
-            }
-        });
-
-        // Kick players who didn't agree
-        kickedPlayers.forEach(p => {
-            const socket = this.io.sockets.sockets.get(p.socketId);
-            if (socket) {
-                socket.emit('kicked', {
-                    reason: 'Rematch not confirmed',
-                    code: 'REMATCH_TIMEOUT'
-                });
-                this.playerLeave(socket);
-            } else {
-                this.matchState.removePlayer(p.userId);
-            }
-        });
-
-        // If players remain, status becomes waiting, wait for new players
-        if (this.matchState.players.length > 0) {
-            this.matchState.status = StateMappingRules.TABLE_STATUS.WAITING;
-            this.matchState.rematchRequests.clear();
-            this.table.broadcastRoomState();
-
-            // Restart zombie check
-            this.startZombieCheck();
-        } else {
-            // Room empty, reset
-            this.reset();
-        }
-    }
 
     /**
      * Game end reset
@@ -1540,14 +1437,8 @@ class MatchPlayers {
         this.matchState.gameEnded = false; // Sync to matchState
         this.matchState.resetReadyStatus();
         this.matchState.status = StateMappingRules.TABLE_STATUS.IDLE;
-        this.matchState.rematchRequests.clear();
         
         // 🔧 Ensure all active timers are cleared
-        if (this.matchState.rematchTimer) {
-            clearTimeout(this.matchState.rematchTimer);
-            this.matchState.rematchTimer = null;
-            console.log(`[MatchPlayers] Cleared rematch timer in reset()`);
-        }
         if (this.countdownTimer) {
             clearTimeout(this.countdownTimer);
             this.countdownTimer = null;
