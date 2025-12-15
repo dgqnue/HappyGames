@@ -1098,17 +1098,19 @@ class MatchPlayers {
                 const socket = this.io.sockets.sockets.get(player.socketId);
                 if (socket) {
                     console.log(`[DEBUG_TRACE] [MatchPlayers] Kicking player ${player.userId} for ready timeout`);
+                    // 🔧 Disabled kicking for ready timeout as per user request
+                    /*
                     socket.emit('kicked', {
                         reason: 'Ready timeout',
                         code: 'READY_TIMEOUT'
                     });
                     // Use _playerLeave directly since we are already in queue
                     this._playerLeave(socket);
+                    */
                 } else {
                     console.log(`[MatchPlayers] Removing player ${player.userId} from match state`);
-                    this.matchState.removePlayer(player.userId);
-                    // _playerLeave handles broadcast, but removePlayer doesn't
-                    // However, we will broadcast at the end anyway
+                    // 🔧 Disabled removing player for ready timeout
+                    // this.matchState.removePlayer(player.userId);
                 }
             }
 
