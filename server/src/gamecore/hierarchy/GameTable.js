@@ -44,7 +44,7 @@ class GameTable {
     onJoin(player) { }
     onLeave(player) { }
     onGameStart() { }
-    onGameEnd() { }
+    onRoundEnd() { }
 
     /**
      * 处理玩家加入游戏桌

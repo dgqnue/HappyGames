@@ -285,7 +285,7 @@ class MatchRoomState {
             this.firstPlayerJoinedAt = null;
             this.matchSettings = { ...StateMappingRules.DEFAULT_SETTINGS };
             this.rematchRequests.clear();
-            this.gameEnded = false; // Reset gameEnded flag when room is empty
+            this.roundEnded = false; // Reset gameEnded flag when room is empty
             if (this.matchState) {
                 this.matchState.gameEnded = false;
             }
@@ -449,7 +449,7 @@ class MatchRoomState {
         return {
             roomId: this.roomId,
             status: this.status,
-            isRoundEnded: this.gameEnded || false, // Add isRoundEnded flag
+            isRoundEnded: this.roundEnded || false, // Add isRoundEnded flag
             players: this.players.length,
             maxPlayers: this.maxPlayers,
             spectators: this.spectators.length,
@@ -818,7 +818,7 @@ class MatchPlayers {
         const wasPlayer = this.matchState.players.some(p => p.userId === userId);
 
         // Handle forfeit if leaving during game (and game not ended)
-        if (wasPlaying && !this.gameEnded) {
+        if (wasPlaying && !this.roundEnded) {
             // Check if player is actually in the game (not spectator)
             const player = this.matchState.players.find(p => p.userId === userId);
             if (player && typeof this.table.onPlayerLeaveDuringRound === 'function') {
@@ -829,7 +829,7 @@ class MatchPlayers {
 
         // 🔧 Update: If game ended (between rounds) and a player leaves, dissolve the room
         // Only trigger if we are NOT in playing state (double check)
-        if (this.gameEnded && wasPlayer && this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING) {
+        if (this.roundEnded && wasPlayer && this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING) {
             console.log(`[MatchPlayers] Player ${userId} left after game ended (and not playing). Dissolving room.`);
             
             // Kick remaining players (if any)
@@ -934,7 +934,7 @@ class MatchPlayers {
 
         // If disconnected during game, record disconnect stats
         // Only record if game is NOT ended
-        if (wasInGame && !this.gameEnded) {
+        if (wasInGame && !this.roundEnded) {
             try {
                 await DisconnectTracker.recordDisconnect(
                     socket.user._id,
@@ -951,7 +951,7 @@ class MatchPlayers {
 
         // If disconnected during game, notify table to handle (e.g. forfeit)
         // Only forfeit if game is NOT ended
-        if (wasInGame && !this.gameEnded && typeof this.table.onPlayerDisconnectDuringGame === 'function') {
+        if (wasInGame && !this.roundEnded && typeof this.table.onPlayerDisconnectDuringGame === 'function') {
             this.table.onPlayerDisconnectDuringGame(userId);
         }
     }
@@ -976,7 +976,7 @@ class MatchPlayers {
 
         // Allow ready if status is MATCHING or WAITING
         // Also allow ready if status is PLAYING but gameEnded is true (rematch phase)
-        const canReady = this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING || this.gameEnded;
+        const canReady = this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING || this.roundEnded;
 
         if (!canReady) {
              console.warn(`[MatchPlayers] Player ${userId} tried to ready while playing (game not ended)`);
@@ -1238,7 +1238,7 @@ class MatchPlayers {
         }
         
         // Reset game state
-        this.gameEnded = false;
+        this.roundEnded = false;
         this.matchState.gameEnded = false;
         this.isLocked = false;
         this.readyCheckCancelled = false;
@@ -1266,7 +1266,7 @@ class MatchPlayers {
         console.log(`[MatchPlayers] startRound state before reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
         
         // 🔧 Safety: Ensure gameEnded is false immediately
-        this.gameEnded = false; 
+        this.roundEnded = false; 
         this.matchState.gameEnded = false; 
 
         // 🔧 Safety: Mark ready check as cancelled to prevent any pending timeouts
@@ -1346,7 +1346,7 @@ class MatchPlayers {
      */
     async onRoundEnd(result) {
         console.log(`[MatchPlayers] Round ended in room ${this.roomId}`);
-        console.log(`[MatchPlayers] onRoundEnd state before update: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
+        console.log(`[MatchPlayers] onRoundEnd state before update: roundEnded=${this.roundEnded}, status=${this.matchState.status}`);
 
         // Release game lock (game ended, can match again)
         this.isLocked = false;
@@ -1355,7 +1355,7 @@ class MatchPlayers {
         this.readyCheckCancelled = false;
 
         // Mark game as ended but keep status as PLAYING until players leave
-        this.gameEnded = true;
+        this.roundEnded = true;
         if (this.matchState) {
             this.matchState.gameEnded = true; // Sync to matchState for getRoomInfo
         }

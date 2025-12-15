@@ -615,7 +615,9 @@ class ChineseChessTable extends GameTable {
             // 如果正在游戏中，附带游戏状态
             ...(currentStatus === 'playing' ? {
                 board: this.board,
-                turn: this.turn
+                turn: this.turn,
+                // 🔧 关键修复：确保 isRoundEnded 为 false，防止客户端误判
+                isRoundEnded: false 
             } : {})
         };
 
