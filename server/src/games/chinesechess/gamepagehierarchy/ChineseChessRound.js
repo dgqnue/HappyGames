@@ -77,7 +77,15 @@ class ChineseChessRound extends GameRound {
 
         // Check win (Capture King)
         if (captured && captured.toLowerCase() === 'k') {
-            return { captured, win: true };
+            // Calculate check status even for win (for sound effect)
+            let check = false;
+            try {
+                const whoMoved = piece.toLowerCase() === piece ? 'b' : 'r';
+                check = ChineseChessRules.isCheckAfterMove(boardBeforeMove, fromX, fromY, toX, toY, whoMoved);
+            } catch (err) {
+                console.warn('Check detection failed', err);
+            }
+            return { captured, win: true, check };
         }
 
         // Switch turn

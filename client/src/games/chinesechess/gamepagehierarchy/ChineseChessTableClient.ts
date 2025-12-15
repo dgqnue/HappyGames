@@ -70,7 +70,7 @@ export class ChineseChessTableClient extends GameTableClient {
         // 监听回合结束事件
         this.socket.on('round_ended', (data: any) => {
             console.log(`[${this.gameType}TableClient] Round ended event received from server:`, data);
-            this.handleGameEnded(data);
+            this.handleRoundEnded(data);
         });
 
         // join_failed 监听器现在在基类 GameTableClient 中处理
@@ -122,9 +122,9 @@ export class ChineseChessTableClient extends GameTableClient {
     }
 
     /**
-     * 处理游戏结束事件
+     * 处理回合结束事件
      */
-    protected handleGameEnded(data: any): void {
+    protected handleRoundEnded(data: any): void {
         // 更新游戏状态
         this.updateState({
             // status: 'matching', // 基类已处理
@@ -132,12 +132,12 @@ export class ChineseChessTableClient extends GameTableClient {
             isRoundEnded: true // 标记回合结束，触发UI显示开始按钮
         });
 
-        // 触发游戏结束回调
+        // 触发回合结束回调
         if (this.onGameEnded) {
-            console.log(`[ChineseChessTableClient] handleGameEnded: Calling onGameEnded callback, winner=${data.result?.winner}`);
+            console.log(`[ChineseChessTableClient] handleRoundEnded: Calling onGameEnded callback, winner=${data.result?.winner}`);
             this.onGameEnded(data);
         } else {
-            console.log(`[ChineseChessTableClient] handleGameEnded: No onGameEnded callback registered`);
+            console.log(`[ChineseChessTableClient] handleRoundEnded: No onGameEnded callback registered`);
         }
     }
 

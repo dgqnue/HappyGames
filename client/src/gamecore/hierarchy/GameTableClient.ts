@@ -205,12 +205,18 @@ export abstract class GameTableClient {
 
         // 回合结束（再来一局倒计时）
         this.socket.on('round_ended', (data: any) => {
+            console.log('[GameTableClient] round_ended event received:', data);
             this.updateState({
                 // status: 'matching', // 保持 playing 状态，直到玩家点击退出
                 ready: false,  // 取消准备状态
                 isRoundEnded: true, // 标记回合结束，防止UI立即退出
                 countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
             });
+            
+            // 调用子类的处理方法
+            if (typeof this.handleRoundEnded === 'function') {
+                this.handleRoundEnded(data);
+            }
         });
 
         // 玩家取消准备
