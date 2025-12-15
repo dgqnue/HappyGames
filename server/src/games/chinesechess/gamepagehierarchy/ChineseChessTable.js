@@ -23,7 +23,6 @@ class ChineseChessTable extends GameTable {
         // 游戏特定状态
         this.round = new ChineseChessRound(this);
         this.roundCount = 0; // 记录回合数，用于换边
-        this.gameStartCount = 0; // 记录是否已经执行过321倒计时，0=未执行，1=已执行
         
         // 兼容旧代码，保留 getter/setter 代理到 round
         Object.defineProperty(this, 'board', {
@@ -116,6 +115,7 @@ class ChineseChessTable extends GameTable {
     resetGameData() {
         this.resetBoard();
         this.roundStartTime = null; // 🔧 Reset start time to prevent stale data race condition
+        this.roundCount = 0; // 🔧 Reset round count when table is reset (e.g. all players left)
     }
 
     /**

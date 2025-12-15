@@ -1152,26 +1152,22 @@ class MatchPlayers {
         });
 
         // 检查是否已经执行过321倒计时
-        const gameStartCount = this.table.gameStartCount || 0;
-        console.log(`[MatchPlayers] startRoundCountdown called, gameStartCount: ${gameStartCount}`);
+        // 使用 roundCount 来判断是否是第一局
+        // 如果 roundCount > 0，说明已经进行过至少一局游戏，直接开始
+        const roundCount = this.table.roundCount || 0;
+        console.log(`[MatchPlayers] startRoundCountdown called, roundCount: ${roundCount}`);
         
-        if (gameStartCount > 0) {
+        if (roundCount > 0) {
             // 已经执行过321倒计时，直接开始游戏
-            console.log(`[MatchPlayers] 321 countdown already executed, starting game immediately`);
+            console.log(`[MatchPlayers] Not first round (roundCount > 0), starting game immediately`);
             
-            // 🔧 Fix: Send "Game Start" signal (count: 0) even if skipping countdown
-            // This ensures frontend receives the expected signal to switch UI/State
-            this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
-
-            // Add a small delay to match the behavior of the first round (give frontend time to process)
-            setTimeout(() => {
-                this.startRound();
-            }, 500);
+            // 直接开始游戏，不发送倒计时，也不等待
+            this.startRound();
             return;
         }
 
         // 第一次开始游戏：显示321倒计时
-        console.log(`[MatchPlayers] First time starting game, showing 3-2-1 countdown`);
+        console.log(`[MatchPlayers] First time starting game (roundCount=0), showing 3-2-1 countdown`);
         let countdown = 3;
         this.table.broadcast('game_countdown', { count: countdown });
 
@@ -1188,10 +1184,11 @@ class MatchPlayers {
                     console.log(`[MatchPlayers] Countdown timer cleared and will never start again`);
                 }
 
-                // 设置gameStartCount = 1，标记已经执行过321倒计时
-                this.table.gameStartCount = 1;
-                console.log(`[MatchPlayers] Set gameStartCount = 1, countdown will never execute again`);
+                // 倒计时结束，开始游戏
+                // 注意：不需要手动设置 gameStartCount，因为 startRound 会增加 roundCount
+                console.log(`[MatchPlayers] Countdown finished, starting game`);
 
+                // 发送 0 倒计时作为开始信号（仅第一局）
                 this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
 
                 setTimeout(() => {
