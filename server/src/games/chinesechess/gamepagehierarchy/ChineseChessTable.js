@@ -81,7 +81,7 @@ class ChineseChessTable extends GameTable {
             // 判对方获胜
             const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
             this.handleWin(winnerSide);
-            // handleWin 会调用 endGame -> onGameEnd，该方法会将状态设为 MATCHING 并广播
+            // handleWin 会调用 endRound -> onRoundEnd，该方法会将状态设为 MATCHING 并广播
         }
     }
 
@@ -129,7 +129,7 @@ class ChineseChessTable extends GameTable {
         // 确定红黑方 (根据 roundCount)
         // 如果是第一回合(roundCount=1)，players[0]是红方
         // 如果是第二回合(roundCount=2)，players[1]是红方
-        // 注意：这里需要与 onGameStart 的逻辑保持一致
+        // 注意：这里需要与 onRoundStart 的逻辑保持一致
         // 如果游戏还没开始(roundCount=0)，默认 players[0] 是红方
         
         const isSwap = this.roundCount > 0 && this.roundCount % 2 === 0;
@@ -177,22 +177,29 @@ class ChineseChessTable extends GameTable {
     }
 
     /**
-     * 游戏开始回调
+     * 开始回合 (对外接口)
      */
-    async onGameStart() {
+    startRound() {
+        return this.onRoundStart();
+    }
+
+    /**
+     * 回合开始回调
+     */
+    async onRoundStart() {
         // 增加回合数
         this.roundCount++;
         
         // 确保玩家数量足够
         if (this.players.length < 2) {
-            console.error(`[ChineseChess] Not enough players to start game: ${this.players.length}`);
+            console.error(`[ChineseChess] Not enough players to start round: ${this.players.length}`);
             this.roundCount--; // Revert round count
             return;
         }
 
         // 开始新回合
         this.round.start();
-        this.gameStartTime = Date.now(); // 记录游戏开始时间，用于防止开局秒退判负
+        this.gameStartTime = Date.now(); // 记录回合开始时间，用于防止开局秒退判负
 
         // 分配阵营：根据回合数决定红黑方
         // 奇数回合：players[0] 红, players[1] 黑
@@ -406,8 +413,8 @@ class ChineseChessTable extends GameTable {
             });
         }
 
-        // 4. 结束游戏，广播包含称号信息的结果
-        this.endGame({
+        // 4. 结束回合，广播包含称号信息的结果
+        this.endRound({
             winner: winnerSide, // 'r' or 'b'
             winnerId: winnerId,
             elo: eloResult,
@@ -416,16 +423,13 @@ class ChineseChessTable extends GameTable {
     }
 
     /**
-     * 结束游戏
+     * 结束回合
      */
-    /**
-     * 结束游戏
-     */
-    endGame(result) {
-        console.log(`[ChineseChess] 游戏结束: ${this.tableId}, 结果:`, result);
+    endRound(result) {
+        console.log(`[ChineseChess] 回合结束: ${this.tableId}, 结果:`, result);
 
-        // 委托给 MatchPlayers 处理游戏结束流程 (包含再来一局逻辑)
-        this.matchPlayers.onGameEnd(result);
+        // 委托给 MatchPlayers 处理回合结束流程 (包含再来一局逻辑)
+        this.matchPlayers.onRoundEnd(result);
     }
 
     /**

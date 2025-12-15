@@ -203,8 +203,8 @@ export abstract class GameTableClient {
             });
         });
 
-        // 游戏结束（再来一局倒计时）
-        this.socket.on('game_ended', (data: any) => {
+        // 回合结束（再来一局倒计时）
+        this.socket.on('round_ended', (data: any) => {
             this.updateState({
                 // status: 'matching', // 保持 playing 状态，直到玩家点击退出
                 ready: false,  // 取消准备状态

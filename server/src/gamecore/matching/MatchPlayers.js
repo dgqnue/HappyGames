@@ -1008,7 +1008,7 @@ class MatchPlayers {
         this.table.broadcastRoomState();
 
         if (result === 'all_ready') {
-            this.startGameCountdown();
+            this.startRoundCountdown();
         }
     }
 
@@ -1152,9 +1152,9 @@ class MatchPlayers {
     }
 
     /**
-     * Start game countdown (3-2-1)
+     * Start round countdown (开始回合倒计时 3-2-1)
      */
-    startGameCountdown() {
+    startRoundCountdown() {
         this.isLocked = true;
 
         // Cancel 30s ready countdown, as all players ready, game starting
@@ -1180,11 +1180,11 @@ class MatchPlayers {
             if (this.matchState.rematchTimer) {
                 clearTimeout(this.matchState.rematchTimer);
                 this.matchState.rematchTimer = null;
-                console.log(`[MatchPlayers] Cleared rematch timer in startGameCountdown (rematch path)`);
+                console.log(`[MatchPlayers] Cleared rematch timer in startRoundCountdown (rematch path)`);
             }
 
-            // Directly start game without countdown or delay
-            this.startGame();
+            // Directly start round without countdown or delay
+            this.startRound();
             return;
         }
 
@@ -1196,7 +1196,7 @@ class MatchPlayers {
         if (this.matchState.rematchTimer) {
             clearTimeout(this.matchState.rematchTimer);
             this.matchState.rematchTimer = null;
-            console.log(`[MatchPlayers] Cleared rematch timer in startGameCountdown (normal path)`);
+            console.log(`[MatchPlayers] Cleared rematch timer in startRoundCountdown (normal path)`);
         }
 
         this.countdownTimer = setInterval(() => {
@@ -1214,7 +1214,7 @@ class MatchPlayers {
                 this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
 
                 setTimeout(() => {
-                    this.startGame();
+                    this.startRound();
                 }, 500);
             }
         }, 1000);
@@ -1342,6 +1342,13 @@ class MatchPlayers {
         // Reset ready status so players can click Start again
         this.matchState.resetReadyStatus(); 
 
+        // 🔧 CRITICAL FIX: Reset gameStartTime to prevent stale timestamp in grace period check
+        // Without this, when checking "player left within 3s", it compares against the OLD game start time
+        if (this.table && this.table.gameStartTime !== undefined) {
+            this.table.gameStartTime = null;
+            console.log(`[MatchPlayers] Reset table.gameStartTime to null after game end`);
+        }
+
         // 🔧 Update: Set status to MATCHING (as requested)
         // This allows players to see "Start" button again
         this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING;
@@ -1349,9 +1356,9 @@ class MatchPlayers {
         // Clear previous rematch requests
         this.matchState.rematchRequests.clear();
 
-        // Broadcast game end and start rematch countdown
+        // Broadcast round end
         // 🔧 Fix: Send rematchTimeout as 0 to prevent frontend from starting a countdown/sound
-        this.table.broadcast('game_ended', {
+        this.table.broadcast('round_ended', {
             result,
             rematchTimeout: 0 // Disabled
         });
@@ -1455,12 +1462,12 @@ class MatchPlayers {
         });
 
         if (allAgreed) {
-            // Everyone agreed, start new game immediately
+            // Everyone agreed, start new round immediately
             if (this.matchState.rematchTimer) {
                 clearTimeout(this.matchState.rematchTimer);
                 this.matchState.rematchTimer = null;
             }
-            this.startGame();
+            this.startRound();
         }
     }
 

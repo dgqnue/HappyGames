@@ -67,9 +67,9 @@ export class ChineseChessTableClient extends GameTableClient {
             this.handleMove(data);
         });
 
-        // 监听游戏结束事件
-        this.socket.on('game_ended', (data: any) => {
-            console.log(`[${this.gameType}TableClient] Game ended event received from server:`, data);
+        // 监听回合结束事件
+        this.socket.on('round_ended', (data: any) => {
+            console.log(`[${this.gameType}TableClient] Round ended event received from server:`, data);
             this.handleGameEnded(data);
         });
 
@@ -115,7 +115,7 @@ export class ChineseChessTableClient extends GameTableClient {
             console.log(`[ChineseChessTableClient:${this.instanceId}] handleMove: No move listeners registered`);
         }
         
-        // 如果有获胜者，可能需要处理（通常由 game_ended 处理，但这里也可以更新状态）
+        // 如果有获胜者，可能需要处理（通常由 round_ended 处理，但这里也可以更新状态）
         if (data.winner) {
             this.updateState({ winner: data.winner });
         }
@@ -146,6 +146,6 @@ export class ChineseChessTableClient extends GameTableClient {
      */
     protected removeTableListeners(): void {
         this.socket.off('move');
-        this.socket.off('game_ended');
+        this.socket.off('round_ended');
     }
 }
