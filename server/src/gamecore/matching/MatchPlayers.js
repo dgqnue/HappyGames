@@ -1158,7 +1158,15 @@ class MatchPlayers {
         if (gameStartCount > 0) {
             // 已经执行过321倒计时，直接开始游戏
             console.log(`[MatchPlayers] 321 countdown already executed, starting game immediately`);
-            this.startRound();
+            
+            // 🔧 Fix: Send "Game Start" signal (count: 0) even if skipping countdown
+            // This ensures frontend receives the expected signal to switch UI/State
+            this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
+
+            // Add a small delay to match the behavior of the first round (give frontend time to process)
+            setTimeout(() => {
+                this.startRound();
+            }, 500);
             return;
         }
 
