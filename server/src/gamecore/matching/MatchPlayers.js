@@ -192,9 +192,6 @@ class MatchRoomState {
         this.readyTimer = null;
         this.readyTimeout = this.gameConfig.readyTimeout || StateMappingRules.COUNTDOWN_CONFIG.readyTimeout;
 
-        this.zombieTimer = null;
-        this.zombieTimeout = StateMappingRules.COUNTDOWN_CONFIG.zombieTimeout;
-
         // Record timestamps
         this.createdAt = Date.now();
         this.firstPlayerJoinedAt = null;
@@ -278,10 +275,6 @@ class MatchRoomState {
         }
 
         if (this.players.length === 0) {
-            if (this.zombieTimer) {
-                clearTimeout(this.zombieTimer);
-                this.zombieTimer = null;
-            }
             this.firstPlayerJoinedAt = null;
             this.matchSettings = { ...StateMappingRules.DEFAULT_SETTINGS };
             this.rematchRequests.clear();
@@ -516,7 +509,6 @@ class MatchRoomState {
 
     cleanup() {
         if (this.readyTimer) clearTimeout(this.readyTimer);
-        if (this.zombieTimer) clearTimeout(this.zombieTimer);
     }
 }
 
@@ -559,9 +551,6 @@ class MatchPlayers {
         
         // Ready countdown cancelled flag - prevent 30s countdown conflict with 3s game countdown
         this.readyCheckCancelled = false;
-
-        // Start zombie check
-        this.startZombieCheck();
     }
 
     /**
@@ -1237,10 +1226,6 @@ class MatchPlayers {
             clearTimeout(this.matchState.readyTimer);
             this.matchState.readyTimer = null;
         }
-        if (this.matchState.zombieTimer) {
-            clearTimeout(this.matchState.zombieTimer);
-            this.matchState.zombieTimer = null;
-        }
         
         // Reset game state
         this.roundEnded = false;
@@ -1293,12 +1278,6 @@ class MatchPlayers {
         if (this.matchState.readyTimer) {
             clearTimeout(this.matchState.readyTimer);
             this.matchState.readyTimer = null;
-        }
-        
-        // Clear zombie check
-        if (this.matchState.zombieTimer) {
-            clearTimeout(this.matchState.zombieTimer);
-            this.matchState.zombieTimer = null;
         }
 
         // Set to playing state
@@ -1465,47 +1444,6 @@ class MatchPlayers {
         
         // Broadcast room state, refresh room list
         this.table.broadcastRoomState();
-        
-        this.startZombieCheck();
-    }
-
-    /**
-     * Start zombie check
-     */
-    startZombieCheck() {
-        if (this.matchState.zombieTimer) clearTimeout(this.matchState.zombieTimer);
-
-        console.log(`[DEBUG_TRACE] [MatchPlayers] startZombieCheck called. Timeout: ${this.matchState.zombieTimeout}`);
-
-        this.matchState.zombieTimer = setTimeout(() => {
-            console.log(`[DEBUG_TRACE] [MatchPlayers] Zombie timer fired for room ${this.roomId}. Checking isZombieRoom...`);
-            
-            // 🛡️ Safety: Never kick if game is playing
-            // This prevents kicking players if the timer fires during a long game or subsequent rounds
-            if (this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
-                console.log(`[DEBUG_TRACE] [MatchPlayers] Zombie timer fired but game is PLAYING. Ignoring.`);
-                return;
-            }
-
-            if (this.matchState.isZombieRoom()) {
-                console.log(`[DEBUG_TRACE] [MatchPlayers] Room ${this.roomId} IS a zombie room. Kicking players...`);
-                console.log(`[MatchPlayers] Room ${this.roomId} is a zombie room, cleaning up...`);
-                // Force clean all players
-                [...this.matchState.players].forEach(p => {
-                    const socket = this.io.sockets.sockets.get(p.socketId);
-                    if (socket) {
-                        console.log(`[DEBUG_TRACE] [MatchPlayers] Kicking player ${p.userId} due to ZOMBIE_ROOM`);
-                        socket.emit('kicked', {
-                            reason: 'Room closed due to inactivity',
-                            code: 'ZOMBIE_ROOM'
-                        });
-                        this.playerLeave(socket);
-                    }
-                });
-            } else {
-                console.log(`[DEBUG_TRACE] [MatchPlayers] Room ${this.roomId} is NOT a zombie room.`);
-            }
-        }, this.matchState.zombieTimeout);
     }
 
     /**

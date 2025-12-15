@@ -90,8 +90,6 @@ class StateMappingRules {
      */
     static COUNTDOWN_CONFIG = {
         readyTimeout: 30000,    // 准备倒计时: 30秒 (满座后所有玩家需在此时间内点击"开始")
-        rematchTimeout: 0,      // 再来一局倒计时: 0 (禁用自动倒计时，完全由玩家手动点击开始)
-        zombieTimeout: 300000   // 僵尸桌清理: 5分钟 (从第一个玩家入座起,5分钟内未开始游戏则清理)
     };
 
     /**
