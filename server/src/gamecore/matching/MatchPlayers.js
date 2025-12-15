@@ -1054,6 +1054,10 @@ class MatchPlayers {
 
         this.matchState.readyTimer = setTimeout(() => {
             this.onReadyTimeout();
+            // 🔧 Ensure timer reference is cleared after execution
+            if (this.matchState.readyTimer) {
+                this.matchState.readyTimer = null;
+            }
         }, this.matchState.readyTimeout);
 
         this.table.broadcastRoomState();
@@ -1171,8 +1175,11 @@ class MatchPlayers {
             if (countdown > 0) {
                 this.table.broadcast('game_countdown', { count: countdown });
             } else {
-                clearInterval(this.countdownTimer);
-                this.countdownTimer = null;
+                // 🔧 Ensure timer is cleared and reference removed
+                if (this.countdownTimer) {
+                    clearInterval(this.countdownTimer);
+                    this.countdownTimer = null;
+                }
 
                 this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
 
@@ -1353,19 +1360,41 @@ class MatchPlayers {
         // Broadcast room state update, refresh room list (from playing to matching)
         this.table.broadcastRoomState();
 
-        // this.startRematchCountdown(); // Disable auto rematch countdown to prevent auto-kick
+        // 🔧 CRITICAL FIX: Explicitly disable rematch countdown
+        // The previous line was commented out, but we want to be absolutely sure
+        // this.startRematchCountdown(); 
+        
+        // Also ensure any existing timer is cleared
+        if (this.matchState.rematchTimer) {
+            clearTimeout(this.matchState.rematchTimer);
+            this.matchState.rematchTimer = null;
+        }
     }
 
     /**
      * Start rematch countdown
+     * ⚠️ DEPRECATED: Rematch countdown is disabled by default.
+     * This method is kept only for compatibility but will do nothing if timeout is 0.
      */
     startRematchCountdown() {
-        if (this.matchState.rematchTimer) clearTimeout(this.matchState.rematchTimer);
+        // 🔧 Force clear any existing timer first
+        if (this.matchState.rematchTimer) {
+            clearTimeout(this.matchState.rematchTimer);
+            this.matchState.rematchTimer = null;
+        }
+
+        // If timeout is 0 or disabled, do not start timer
+        if (!this.matchState.rematchTimeout || this.matchState.rematchTimeout <= 0) {
+            console.log(`[MatchPlayers] Rematch countdown disabled (timeout=${this.matchState.rematchTimeout})`);
+            return;
+        }
 
         console.log(`[MatchPlayers] Starting rematch countdown for room ${this.roomId}`);
 
         this.matchState.rematchTimer = setTimeout(() => {
             this.onRematchTimeout();
+            // 🔧 Ensure timer reference is cleared after execution
+            this.matchState.rematchTimer = null;
         }, this.matchState.rematchTimeout);
     }
 
