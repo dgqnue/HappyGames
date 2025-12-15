@@ -1139,6 +1139,17 @@ class MatchPlayers {
             locked: true
         });
 
+        // 🔧 Optimization: If game ended (rematch), start immediately without 3s countdown
+        if (this.gameEnded) {
+            console.log(`[MatchPlayers] Rematch detected, skipping countdown`);
+            this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
+            // Use a tiny delay to ensure clients process the 'game_locked' and 'game_countdown' events
+            setTimeout(() => {
+                this.startGame();
+            }, 100);
+            return;
+        }
+
         let countdown = 3;
         this.table.broadcast('game_countdown', { count: countdown });
 
