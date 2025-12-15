@@ -61,8 +61,9 @@ class ChineseChessTable extends GameTable {
             
             // 🛡️ 防护机制：如果游戏刚开始 3 秒内有人离开，视为游戏取消，不判负
             // 这可以防止因客户端加载失败、网络波动或同步问题导致的“开局即输”
-            if (this.gameStartTime && (Date.now() - this.gameStartTime < 3000)) {
-                console.log(`[ChineseChessTable] Player left within 3s of start. Cancelling game instead of forfeiting.`);
+            // 🔧 Fix: If gameStartTime is null, it means game is just initializing, so also cancel.
+            if (!this.gameStartTime || (Date.now() - this.gameStartTime < 3000)) {
+                console.log(`[ChineseChessTable] Player left within 3s of start (or initializing). Cancelling game instead of forfeiting.`);
                 this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
                 
                 // 强制结束回合，但不产生胜负
@@ -98,6 +99,7 @@ class ChineseChessTable extends GameTable {
      */
     resetGameData() {
         this.resetBoard();
+        this.gameStartTime = null; // 🔧 Reset start time to prevent stale data race condition
     }
 
     /**
@@ -207,16 +209,19 @@ class ChineseChessTable extends GameTable {
 
         // 架构优化：直接使用内存中的玩家状态
         const playerInfos = this.players.map(p => {
+            // 🔧 Safety check: Ensure p is valid
+            if (!p) return null;
             return {
                 userId: p.userId,
-                nickname: p.nickname,
+                nickname: p.nickname || 'Unknown',
                 title: p.title || '无',
                 avatar: getFullAvatarUrl(p.avatar) // 信任内存状态
             };
-        });
+        }).filter(p => p !== null); // Filter out nulls
 
         // 发送初始状态给所有玩家
         this.players.forEach((player) => {
+            if (!player) return;
             const isRed = player.userId === redPlayer.userId;
             this.sendToPlayer(player.socketId, 'game_start', {
                 board: this.board,

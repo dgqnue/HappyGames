@@ -820,6 +820,9 @@ class MatchPlayers {
         const playerCountBefore = this.matchState.players.length;
         
         console.log(`[MatchPlayers] playerLeave called for userId: ${userId}, roomId: ${this.roomId}`);
+        // 🔧 Debug: Print stack trace to see who called playerLeave
+        console.trace(`[MatchPlayers] playerLeave stack trace for ${userId}`);
+        
         console.log(`[MatchPlayers] Before leave - players: ${playerCountBefore}, status: ${statusBefore}`);
 
         // Record previous status
@@ -1217,6 +1220,9 @@ class MatchPlayers {
         
         this.gameEnded = false; // Reset game ended flag
         this.matchState.gameEnded = false; // Sync to matchState
+
+        // 🔧 Safety: Mark ready check as cancelled to prevent any pending timeouts
+        this.readyCheckCancelled = true;
 
         // Clear all timers, ensure no more state changes
         // Note: Do not set isLocked = false, as game is starting
