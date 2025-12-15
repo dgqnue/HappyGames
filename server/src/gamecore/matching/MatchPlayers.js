@@ -1369,10 +1369,12 @@ class MatchPlayers {
 
         // Broadcast round end
         // 🔧 Fix: Send rematchTimeout as 0 to prevent frontend from starting a countdown/sound
+        console.log(`[MatchPlayers] Broadcasting round_ended event with result:`, result);
         this.table.broadcast('round_ended', {
             result,
             rematchTimeout: 0 // Disabled
         });
+        console.log(`[MatchPlayers] round_ended event broadcasted successfully`);
 
         // Immediately broadcast cancel ready status, ensure client receives
         // this.table.broadcast('players_unready', {

@@ -206,6 +206,7 @@ export abstract class GameTableClient {
         // 回合结束（再来一局倒计时）
         this.socket.on('round_ended', (data: any) => {
             console.log('[GameTableClient] round_ended event received:', data);
+            console.log('[GameTableClient] handleRoundEnded exists?', typeof this.handleRoundEnded);
             this.updateState({
                 // status: 'matching', // 保持 playing 状态，直到玩家点击退出
                 ready: false,  // 取消准备状态
@@ -215,7 +216,10 @@ export abstract class GameTableClient {
             
             // 调用子类的处理方法
             if (typeof this.handleRoundEnded === 'function') {
+                console.log('[GameTableClient] Calling handleRoundEnded...');
                 this.handleRoundEnded(data);
+            } else {
+                console.warn('[GameTableClient] handleRoundEnded method not found on subclass');
             }
         });
 
@@ -447,6 +451,11 @@ export abstract class GameTableClient {
             alert(`无法入座: ${message}`);
         }
     }
+
+    /**
+     * 处理回合结束（子类可以重写此方法）
+     */
+    protected handleRoundEnded?(data: any): void;
 
     /**
      * 处理游戏开始

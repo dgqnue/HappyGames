@@ -323,6 +323,8 @@ class ChineseChessTable extends GameTable {
      * 处理胜利
      */
     async handleWin(winnerSide) {
+        console.log(`[ChineseChessTable] handleWin called, winnerSide: ${winnerSide}`);
+        
         // 确定当前的红黑方
         const isSwap = this.roundCount % 2 === 0;
         const redPlayer = isSwap ? this.players[1] : this.players[0];
@@ -330,6 +332,8 @@ class ChineseChessTable extends GameTable {
 
         const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
         const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
+        
+        console.log(`[ChineseChessTable] Winner: ${winnerId}, Loser: ${loserId}`);
 
         // 结束回合
         this.round.end({ winner: winnerSide });
