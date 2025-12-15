@@ -661,7 +661,15 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       }}
     >
       {isLoading ? (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center">
+        <div 
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+          style={{
+            backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
           <img 
             src="/images/chinesechess/ui/load.jpg" 
             alt="Loading..." 
