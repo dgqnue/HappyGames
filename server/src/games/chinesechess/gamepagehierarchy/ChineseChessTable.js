@@ -57,7 +57,7 @@ class ChineseChessTable extends GameTable {
                 return;
             }
 
-            console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting.`);
+            console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting. Round active: ${this.round.isActive}`);
             
             // 确定当前的红黑方
             const isSwap = this.roundCount % 2 === 0;
@@ -170,12 +170,23 @@ class ChineseChessTable extends GameTable {
         // 开始新回合
         this.round.start();
 
+        // 确保玩家数量足够
+        if (this.players.length < 2) {
+            console.error(`[ChineseChess] Not enough players to start game: ${this.players.length}`);
+            return;
+        }
+
         // 分配阵营：根据回合数决定红黑方
         // 奇数回合：players[0] 红, players[1] 黑
         // 偶数回合：players[1] 红, players[0] 黑
         const isSwap = this.roundCount % 2 === 0;
         const redPlayer = isSwap ? this.players[1] : this.players[0];
         const blackPlayer = isSwap ? this.players[0] : this.players[1];
+
+        if (!redPlayer || !blackPlayer) {
+            console.error(`[ChineseChess] Failed to assign sides. Round: ${this.roundCount}, Players: ${this.players.length}`);
+            return;
+        }
 
         console.log(`[ChineseChess] Round ${this.roundCount} starting. Red: ${redPlayer?.nickname}, Black: ${blackPlayer?.nickname}`);
 
@@ -259,14 +270,8 @@ class ChineseChessTable extends GameTable {
         // 执行移动
         const result = this.round.executeMove(fromX, fromY, toX, toY, validation.piece);
 
-        // 检查胜利条件
-        if (result.win) {
-            this.handleWin(validation.side); // 当前方获胜
-            return;
-        }
-
-        // 广播移动
-        console.log(`[ChineseChessTable] Broadcasting move: captured=${result.captured ? result.captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${result.check}`);
+        // 广播移动 (无论是否胜利，都要先广播移动，让前端更新棋盘)
+        console.log(`[ChineseChessTable] Broadcasting move: captured=${result.captured ? result.captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${result.check}, win=${result.win}`);
         this.broadcast('move', {
             move,
             captured: result.captured ? result.captured : null,
@@ -274,6 +279,12 @@ class ChineseChessTable extends GameTable {
             turn: this.turn,
             board: this.board
         });
+
+        // 检查胜利条件
+        if (result.win) {
+            this.handleWin(validation.side); // 当前方获胜
+            return;
+        }
     }
 
     /**
@@ -292,12 +303,28 @@ class ChineseChessTable extends GameTable {
         this.round.end({ winner: winnerSide });
 
         // 1. ELO 结算（将更新后的 rating 写入数据库）
-        const eloResult = await EloService.processMatchResult(
-            this.gameType,
-            winnerId,
-            loserId,
-            1 // Winner gets 1 point
-        );
+        // 修正：按 players 数组顺序调用，防止前端按位置映射导致显示错误 (playerA=p0, playerB=p1)
+        let eloResult;
+        const p0 = this.players[0];
+        const p1 = this.players[1];
+
+        if (p0 && p1) {
+            const resultForP0 = p0.userId === winnerId ? 1 : 0;
+            eloResult = await EloService.processMatchResult(
+                this.gameType,
+                p0.userId,
+                p1.userId,
+                resultForP0
+            );
+        } else {
+            // 降级处理：如果找不到两个玩家（异常情况），按原逻辑
+            eloResult = await EloService.processMatchResult(
+                this.gameType,
+                winnerId,
+                loserId,
+                1 // Winner gets 1 point
+            );
+        }
         console.log(`[ChineseChessTable] ELO updated:`, eloResult);
 
         // 2. 全局重新计算所有玩家的排名和称号

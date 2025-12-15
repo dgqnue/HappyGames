@@ -1221,6 +1221,12 @@ class MatchPlayers {
             this.matchState.zombieTimer = null;
         }
 
+        // 🔧 Ensure rematch timer is cleared (prevent auto-kick if it was running)
+        if (this.matchState.rematchTimer) {
+            clearTimeout(this.matchState.rematchTimer);
+            this.matchState.rematchTimer = null;
+        }
+
         // Set to playing state
         this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.PLAYING, { reason: 'game_start' });
         console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);

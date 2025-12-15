@@ -94,8 +94,8 @@ class EloService {
         await statsB.save();
 
         return {
-            playerA: { oldRating: statsA.rating - deltaA, newRating: statsA.rating, delta: deltaA },
-            playerB: { oldRating: statsB.rating - deltaB, newRating: statsB.rating, delta: deltaB }
+            playerA: { userId: playerAId, oldRating: statsA.rating - deltaA, newRating: statsA.rating, delta: deltaA },
+            playerB: { userId: playerBId, oldRating: statsB.rating - deltaB, newRating: statsB.rating, delta: deltaB }
         };
     }
 
