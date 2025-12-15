@@ -828,6 +828,9 @@ class MatchPlayers {
         // Record previous status
         const wasMatching = statusBefore === StateMappingRules.TABLE_STATUS.MATCHING;
         const wasPlaying = statusBefore === StateMappingRules.TABLE_STATUS.PLAYING;
+        
+        // Check if user is a player (before removing)
+        const wasPlayer = this.matchState.players.some(p => p.userId === userId);
 
         // Handle forfeit if leaving during game (and game not ended)
         if (wasPlaying && !this.gameEnded) {
@@ -840,8 +843,9 @@ class MatchPlayers {
         }
 
         // 🔧 Update: If game ended (between rounds) and a player leaves, dissolve the room
-        if (this.gameEnded && wasPlayer) {
-            console.log(`[MatchPlayers] Player ${userId} left after game ended. Dissolving room.`);
+        // Only trigger if we are NOT in playing state (double check)
+        if (this.gameEnded && wasPlayer && this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING) {
+            console.log(`[MatchPlayers] Player ${userId} left after game ended (and not playing). Dissolving room.`);
             
             // Kick remaining players (if any)
             // We iterate backwards to safely remove
@@ -850,9 +854,8 @@ class MatchPlayers {
                 if (p.userId !== userId) { // Don't kick the leaver again (will be removed below)
                     const s = this.io.sockets.sockets.get(p.socketId);
                     if (s) {
+                        console.log(`[MatchPlayers] Kicking opponent ${p.userId} because ${userId} left`);
                         s.emit('kicked', { reason: 'Opponent left', code: 'OPPONENT_LEFT' });
-                        // We don't call _playerLeave recursively here to avoid infinite loops or complexity
-                        // Just remove from state and let them know
                         s.leave(this.roomId);
                     }
                     this.matchState.removePlayer(p.userId);
@@ -1241,12 +1244,16 @@ class MatchPlayers {
      */
     startGame() {
         console.log(`[MatchPlayers] startGame called for room ${this.roomId}`);
+        console.log(`[MatchPlayers] startGame state before reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
         
-        this.gameEnded = false; // Reset game ended flag
-        this.matchState.gameEnded = false; // Sync to matchState
+        // 🔧 Safety: Ensure gameEnded is false immediately
+        this.gameEnded = false; 
+        this.matchState.gameEnded = false; 
 
         // 🔧 Safety: Mark ready check as cancelled to prevent any pending timeouts
         this.readyCheckCancelled = true;
+
+        console.log(`[MatchPlayers] startGame state after reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
 
         // Clear all timers, ensure no more state changes
         // Note: Do not set isLocked = false, as game is starting
@@ -1318,6 +1325,7 @@ class MatchPlayers {
      */
     async onGameEnd(result) {
         console.log(`[MatchPlayers] Game ended in room ${this.roomId}`);
+        console.log(`[MatchPlayers] onGameEnd state before update: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
 
         // Release game lock (game ended, can match again)
         this.isLocked = false;

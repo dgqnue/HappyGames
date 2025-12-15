@@ -48,6 +48,7 @@ class ChineseChessTable extends GameTable {
      */
     onPlayerLeaveDuringGame(socket) {
         const userId = socket.user._id.toString();
+        console.log(`[ChineseChessTable] onPlayerLeaveDuringGame called for userId: ${userId}`);
         const player = this.players.find(p => p.userId === userId);
         if (player) {
             // 检查回合是否处于活跃状态
