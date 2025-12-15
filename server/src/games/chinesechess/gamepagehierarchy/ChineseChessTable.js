@@ -23,6 +23,7 @@ class ChineseChessTable extends GameTable {
         // 游戏特定状态
         this.round = new ChineseChessRound(this);
         this.roundCount = 0; // 记录回合数，用于换边
+        this.gameStartCount = 0; // 记录是否已经执行过321倒计时，0=未执行，1=已执行
         
         // 兼容旧代码，保留 getter/setter 代理到 round
         Object.defineProperty(this, 'board', {
@@ -51,12 +52,20 @@ class ChineseChessTable extends GameTable {
         console.log(`[ChineseChessTable] onPlayerLeaveDuringRound called for userId: ${userId}`);
         const player = this.players.find(p => p.userId === userId);
         if (player) {
-            console.log(`[ChineseChessTable] Player ${userId} left during round. Round active: ${this.round ? this.round.isActive : 'no round'}, roundCount: ${this.roundCount}`);
+            console.log(`[ChineseChessTable] Player ${userId} left during round.`);
+            console.log(`[ChineseChessTable]   - roundCount: ${this.roundCount}`);
+            console.log(`[ChineseChessTable]   - round exists: ${!!this.round}`);
+            console.log(`[ChineseChessTable]   - round.isActive: ${this.round ? this.round.isActive : 'N/A'}`);
+            console.log(`[ChineseChessTable]   - roundStartTime: ${this.roundStartTime}`);
+            console.log(`[ChineseChessTable]   - time since round start: ${this.roundStartTime ? (Date.now() - this.roundStartTime) : 'N/A'}ms`);
             
             // 🛡️ 防护机制：只有第一回合的前3秒内（或回合未真正开始时）有人离开，才视为游戏取消
             // 第二回合及之后如果有人离开，直接判负（因为已经不是初始连接问题了）
             const isFirstRound = this.roundCount === 1;
             const withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
+            
+            console.log(`[ChineseChessTable]   - isFirstRound: ${isFirstRound}`);
+            console.log(`[ChineseChessTable]   - withinGracePeriod: ${withinGracePeriod}`);
             
             if (isFirstRound && withinGracePeriod) {
                 console.log(`[ChineseChessTable] First round, player left within grace period. Cancelling game instead of forfeiting.`);

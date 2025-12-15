@@ -1151,16 +1151,19 @@ class MatchPlayers {
             locked: true
         });
 
-        // 只在第一回合显示321倒计时，第二回合及之后直接开始
-        const roundCount = this.table.roundCount || 0;
-        if (roundCount > 0) {
-            console.log(`[MatchPlayers] Round ${roundCount + 1}, skipping countdown`);
+        // 检查是否已经执行过321倒计时
+        const gameStartCount = this.table.gameStartCount || 0;
+        console.log(`[MatchPlayers] startRoundCountdown called, gameStartCount: ${gameStartCount}`);
+        
+        if (gameStartCount > 0) {
+            // 已经执行过321倒计时，直接开始游戏
+            console.log(`[MatchPlayers] 321 countdown already executed, starting game immediately`);
             this.startRound();
             return;
         }
 
-        // 第一回合：显示321倒计时
-        console.log(`[MatchPlayers] First round, showing 3-2-1 countdown`);
+        // 第一次开始游戏：显示321倒计时
+        console.log(`[MatchPlayers] First time starting game, showing 3-2-1 countdown`);
         let countdown = 3;
         this.table.broadcast('game_countdown', { count: countdown });
 
@@ -1174,7 +1177,12 @@ class MatchPlayers {
                 if (this.countdownTimer) {
                     clearInterval(this.countdownTimer);
                     this.countdownTimer = null;
+                    console.log(`[MatchPlayers] Countdown timer cleared and will never start again`);
                 }
+
+                // 设置gameStartCount = 1，标记已经执行过321倒计时
+                this.table.gameStartCount = 1;
+                console.log(`[MatchPlayers] Set gameStartCount = 1, countdown will never execute again`);
 
                 this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
 
