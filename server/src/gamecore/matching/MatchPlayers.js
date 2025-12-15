@@ -1242,9 +1242,12 @@ class MatchPlayers {
     /**
      * Start game
      */
-    startGame() {
-        console.log(`[MatchPlayers] startGame called for room ${this.roomId}`);
-        console.log(`[MatchPlayers] startGame state before reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
+    /**
+     * Start round (开始回合)
+     */
+    startRound() {
+        console.log(`[MatchPlayers] startRound called for room ${this.roomId}`);
+        console.log(`[MatchPlayers] startRound state before reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
         
         // 🔧 Safety: Ensure gameEnded is false immediately
         this.gameEnded = false; 
@@ -1253,7 +1256,7 @@ class MatchPlayers {
         // 🔧 Safety: Mark ready check as cancelled to prevent any pending timeouts
         this.readyCheckCancelled = true;
 
-        console.log(`[MatchPlayers] startGame state after reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
+        console.log(`[MatchPlayers] startRound state after reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
 
         // Clear all timers, ensure no more state changes
         // Note: Do not set isLocked = false, as game is starting
@@ -1284,33 +1287,41 @@ class MatchPlayers {
         }
 
         // Set to playing state
-        this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.PLAYING, { reason: 'game_start' });
+        this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.PLAYING, { reason: 'round_start' });
         console.log(`[MatchPlayers] Status set to PLAYING. Current status getter: ${this.status}`);
 
-        // Note: Do not reset ready status! Ready status should remain until game ends
-        // Reset ready status should only happen in onGameEnd()
+        // Note: Do not reset ready status! Ready status should remain until round ends
+        // Reset ready status should only happen in onRoundEnd()
 
-        // 🔧 CRITICAL FIX: Call table.startGame() FIRST to reset board/data BEFORE broadcasting state
-        // This prevents sending "status: playing" with the OLD board data (from previous game)
-        // which could confuse clients or cause them to think the game is already over.
+        // 🔧 CRITICAL FIX: Call table.startRound() FIRST to reset board/data BEFORE broadcasting state
+        // This prevents sending "status: playing" with the OLD board data (from previous round)
+        // which could confuse clients or cause them to think the round is already over.
         
-        // Notify table to start game
-        if (typeof this.table.startGame === 'function') {
-            console.log(`[MatchPlayers] Calling table.startGame()...`);
+        // Notify table to start round
+        if (typeof this.table.startRound === 'function') {
+            console.log(`[MatchPlayers] Calling table.startRound()...`);
             try {
-                this.table.startGame();
+                this.table.startRound();
             } catch (error) {
-                console.error(`[MatchPlayers] Error calling table.startGame():`, error);
-                // Error handling: Game start failed
+                console.error(`[MatchPlayers] Error calling table.startRound():`, error);
+                // Error handling: Round start failed
                 this.table.broadcast('error', {
-                    message: 'Failed to start game',
+                    message: 'Failed to start round',
                     error: error.message
                 });
                 // If start failed, revert status?
                 return;
             }
+        } else if (typeof this.table.onRoundStart === 'function') {
+            // Fallback for old API
+            console.log(`[MatchPlayers] Calling table.onRoundStart()...`);
+            try {
+                this.table.onRoundStart();
+            } catch (error) {
+                console.error(`[MatchPlayers] Error calling table.onRoundStart():`, error);
+            }
         } else {
-            console.error('[MatchPlayers] Table does not implement startGame()');
+            console.error('[MatchPlayers] Table does not implement startRound() or onRoundStart()');
         }
 
         // Broadcast state update, ensure all clients (including lobby) know status is playing
