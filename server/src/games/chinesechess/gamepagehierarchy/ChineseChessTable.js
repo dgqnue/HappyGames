@@ -59,6 +59,19 @@ class ChineseChessTable extends GameTable {
 
             console.log(`[ChineseChessTable] Player ${userId} left during game, forfeiting. Round active: ${this.round.isActive}`);
             
+            // 🛡️ 防护机制：如果游戏刚开始 3 秒内有人离开，视为游戏取消，不判负
+            // 这可以防止因客户端加载失败、网络波动或同步问题导致的“开局即输”
+            if (this.gameStartTime && (Date.now() - this.gameStartTime < 3000)) {
+                console.log(`[ChineseChessTable] Player left within 3s of start. Cancelling game instead of forfeiting.`);
+                this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
+                
+                // 强制结束回合，但不产生胜负
+                this.round.end({ cancelled: true });
+                
+                // 重置游戏状态为 IDLE (通过 MatchPlayers 逻辑处理，这里只需确保不调用 handleWin)
+                return;
+            }
+
             // 确定当前的红黑方
             const isSwap = this.roundCount % 2 === 0;
             const redPlayer = isSwap ? this.players[1] : this.players[0];
@@ -167,14 +180,16 @@ class ChineseChessTable extends GameTable {
         // 增加回合数
         this.roundCount++;
         
-        // 开始新回合
-        this.round.start();
-
         // 确保玩家数量足够
         if (this.players.length < 2) {
             console.error(`[ChineseChess] Not enough players to start game: ${this.players.length}`);
+            this.roundCount--; // Revert round count
             return;
         }
+
+        // 开始新回合
+        this.round.start();
+        this.gameStartTime = Date.now(); // 记录游戏开始时间，用于防止开局秒退判负
 
         // 分配阵营：根据回合数决定红黑方
         // 奇数回合：players[0] 红, players[1] 黑
