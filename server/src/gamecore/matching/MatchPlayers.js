@@ -1142,16 +1142,30 @@ class MatchPlayers {
         // 🔧 Optimization: If game ended (rematch), start immediately without 3s countdown
         if (this.gameEnded) {
             console.log(`[MatchPlayers] Rematch detected, skipping countdown`);
-            this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
-            // Use a tiny delay to ensure clients process the 'game_locked' and 'game_countdown' events
-            setTimeout(() => {
-                this.startGame();
-            }, 100);
+            
+            // 🔧 CRITICAL FIX: Clear rematch timer IMMEDIATELY when countdown starts (even if skipped)
+            // This prevents onRematchTimeout from firing during the 100ms delay or subsequent execution
+            if (this.matchState.rematchTimer) {
+                clearTimeout(this.matchState.rematchTimer);
+                this.matchState.rematchTimer = null;
+                console.log(`[MatchPlayers] Cleared rematch timer in startGameCountdown (rematch path)`);
+            }
+
+            // Directly start game without countdown or delay
+            this.startGame();
             return;
         }
 
         let countdown = 3;
         this.table.broadcast('game_countdown', { count: countdown });
+
+        // 🔧 CRITICAL FIX: Clear rematch timer IMMEDIATELY when countdown starts
+        // This prevents onRematchTimeout from firing during the 3s countdown
+        if (this.matchState.rematchTimer) {
+            clearTimeout(this.matchState.rematchTimer);
+            this.matchState.rematchTimer = null;
+            console.log(`[MatchPlayers] Cleared rematch timer in startGameCountdown (normal path)`);
+        }
 
         this.countdownTimer = setInterval(() => {
             countdown--;
