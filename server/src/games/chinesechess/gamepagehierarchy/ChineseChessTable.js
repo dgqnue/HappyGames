@@ -59,16 +59,14 @@ class ChineseChessTable extends GameTable {
             console.log(`[ChineseChessTable]   - roundStartTime: ${this.roundStartTime}`);
             console.log(`[ChineseChessTable]   - time since round start: ${this.roundStartTime ? (Date.now() - this.roundStartTime) : 'N/A'}ms`);
             
-            // 🛡️ 防护机制：只有第一回合的前3秒内（或回合未真正开始时）有人离开，才视为游戏取消
-            // 第二回合及之后如果有人离开，直接判负（因为已经不是初始连接问题了）
-            const isFirstRound = this.roundCount === 1;
+            // 🛡️ 防护机制：回合开始后的前3秒内（或回合未真正开始时）有人离开，视为连接问题，取消游戏
+            // 这样可以避免因为加载慢、网络延迟等问题导致的误判
             const withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
             
-            console.log(`[ChineseChessTable]   - isFirstRound: ${isFirstRound}`);
             console.log(`[ChineseChessTable]   - withinGracePeriod: ${withinGracePeriod}`);
             
-            if (isFirstRound && withinGracePeriod) {
-                console.log(`[ChineseChessTable] First round, player left within grace period. Cancelling game instead of forfeiting.`);
+            if (withinGracePeriod) {
+                console.log(`[ChineseChessTable] Player left within 3s of round start (or before round start). Cancelling game instead of forfeiting.`);
                 this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
                 
                 // 强制结束回合，但不产生胜负
