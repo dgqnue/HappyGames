@@ -665,7 +665,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           className="absolute inset-0 z-50 flex flex-col items-center justify-center"
           style={{
             backgroundColor: '#000', // Ensure opaque background
-            backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png")',
+            backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png?v=' + Date.now() + '")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'

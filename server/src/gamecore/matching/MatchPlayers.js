@@ -804,9 +804,10 @@ class MatchPlayers {
         const statusBefore = this.matchState.status;
         const playerCountBefore = this.matchState.players.length;
         
-        console.log(`[MatchPlayers] playerLeave called for userId: ${userId}, roomId: ${this.roomId}`);
+        console.log(`[DEBUG_TRACE] [MatchPlayers] _playerLeave called for userId: ${userId}, roomId: ${this.roomId}`);
+        console.log(`[DEBUG_TRACE] [MatchPlayers] State before leave - Status: ${statusBefore}, Players: ${playerCountBefore}, RoundEnded: ${this.roundEnded}`);
         // 🔧 Debug: Print stack trace to see who called playerLeave
-        console.trace(`[MatchPlayers] playerLeave stack trace for ${userId}`);
+        console.trace(`[DEBUG_TRACE] [MatchPlayers] playerLeave stack trace for ${userId}`);
         
         console.log(`[MatchPlayers] Before leave - players: ${playerCountBefore}, status: ${statusBefore}`);
 
@@ -830,6 +831,9 @@ class MatchPlayers {
         // 🔧 Update: If game ended (between rounds) and a player leaves, dissolve the room
         // Only trigger if we are NOT in playing state (double check)
         if (this.roundEnded && wasPlayer && this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING) {
+            console.log(`[MatchPlayers] Player ${userId} left after game ended. NOT dissolving room to allow opponent to see result.`);
+            // 🔧 Change: Do NOT kick opponent. Let them stay.
+            /*
             console.log(`[MatchPlayers] Player ${userId} left after game ended (and not playing). Dissolving room.`);
             
             // Kick remaining players (if any)
@@ -846,6 +850,7 @@ class MatchPlayers {
                     this.matchState.removePlayer(p.userId);
                 }
             }
+            */
             // Now the leaver will be removed by standard logic below
         }
 
@@ -1080,21 +1085,21 @@ class MatchPlayers {
     async onReadyTimeout() {
         // Use enqueueAction to ensure atomicity and prevent race conditions
         await this.enqueueAction(async () => {
-            console.log(`[MatchPlayers] onReadyTimeout called for room ${this.roomId}, readyCheckCancelled: ${this.readyCheckCancelled}`);
+            console.log(`[DEBUG_TRACE] [MatchPlayers] onReadyTimeout called for room ${this.roomId}, readyCheckCancelled: ${this.readyCheckCancelled}`);
             
             // If ready countdown cancelled (i.e. game countdown started), return immediately
             if (this.readyCheckCancelled) {
-                console.log(`[MatchPlayers] Ready check was already cancelled, skipping timeout processing`);
+                console.log(`[DEBUG_TRACE] [MatchPlayers] Ready check was already cancelled, skipping timeout processing`);
                 return;
             }
             
             // If game already started, do nothing
             if (this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
-                console.log(`[MatchPlayers] Game already playing, skipping ready timeout processing`);
+                console.log(`[DEBUG_TRACE] [MatchPlayers] Game already playing, skipping ready timeout processing`);
                 return;
             }
 
-            console.log(`[MatchPlayers] Ready timeout occurred - kicking out unready players`);
+            console.log(`[DEBUG_TRACE] [MatchPlayers] Ready timeout occurred - kicking out unready players`);
 
             const unreadyPlayers = this.matchState.getUnreadyPlayers();
             console.log(`[MatchPlayers] Unready players:`, unreadyPlayers.map(p => p.userId));
@@ -1103,7 +1108,7 @@ class MatchPlayers {
             for (const player of unreadyPlayers) {
                 const socket = this.io.sockets.sockets.get(player.socketId);
                 if (socket) {
-                    console.log(`[MatchPlayers] Kicking player ${player.userId} for ready timeout`);
+                    console.log(`[DEBUG_TRACE] [MatchPlayers] Kicking player ${player.userId} for ready timeout`);
                     socket.emit('kicked', {
                         reason: 'Ready timeout',
                         code: 'READY_TIMEOUT'
@@ -1262,8 +1267,8 @@ class MatchPlayers {
      * Start round (开始回合)
      */
     startRound() {
-        console.log(`[MatchPlayers] startRound called for room ${this.roomId}`);
-        console.log(`[MatchPlayers] startRound state before reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
+        console.log(`[DEBUG_TRACE] [MatchPlayers] startRound called for room ${this.roomId}`);
+        console.log(`[DEBUG_TRACE] [MatchPlayers] startRound state before reset: gameEnded=${this.gameEnded}, roundEnded=${this.roundEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
         
         // 🔧 Safety: Ensure gameEnded is false immediately
         this.roundEnded = false; 
@@ -1470,13 +1475,18 @@ class MatchPlayers {
     startZombieCheck() {
         if (this.matchState.zombieTimer) clearTimeout(this.matchState.zombieTimer);
 
+        console.log(`[DEBUG_TRACE] [MatchPlayers] startZombieCheck called. Timeout: ${this.matchState.zombieTimeout}`);
+
         this.matchState.zombieTimer = setTimeout(() => {
+            console.log(`[DEBUG_TRACE] [MatchPlayers] Zombie timer fired for room ${this.roomId}. Checking isZombieRoom...`);
             if (this.matchState.isZombieRoom()) {
+                console.log(`[DEBUG_TRACE] [MatchPlayers] Room ${this.roomId} IS a zombie room. Kicking players...`);
                 console.log(`[MatchPlayers] Room ${this.roomId} is a zombie room, cleaning up...`);
                 // Force clean all players
                 [...this.matchState.players].forEach(p => {
                     const socket = this.io.sockets.sockets.get(p.socketId);
                     if (socket) {
+                        console.log(`[DEBUG_TRACE] [MatchPlayers] Kicking player ${p.userId} due to ZOMBIE_ROOM`);
                         socket.emit('kicked', {
                             reason: 'Room closed due to inactivity',
                             code: 'ZOMBIE_ROOM'
@@ -1484,6 +1494,8 @@ class MatchPlayers {
                         this.playerLeave(socket);
                     }
                 });
+            } else {
+                console.log(`[DEBUG_TRACE] [MatchPlayers] Room ${this.roomId} is NOT a zombie room.`);
             }
         }, this.matchState.zombieTimeout);
     }
