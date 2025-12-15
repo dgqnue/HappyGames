@@ -1283,14 +1283,10 @@ class MatchPlayers {
         // Note: Do not reset ready status! Ready status should remain until game ends
         // Reset ready status should only happen in onGameEnd()
 
-        // Broadcast state update, ensure all clients (including lobby) know status is playing
-        console.log(`[MatchPlayers] Broadcasting room state...`);
-        this.table.broadcastRoomState();
-
-        // Note: Do not send game_start event here!
-        // Game logic will handle in table.startGame() and send its own game_start event
-        // This avoids event duplication and data inconsistency
-
+        // 🔧 CRITICAL FIX: Call table.startGame() FIRST to reset board/data BEFORE broadcasting state
+        // This prevents sending "status: playing" with the OLD board data (from previous game)
+        // which could confuse clients or cause them to think the game is already over.
+        
         // Notify table to start game
         if (typeof this.table.startGame === 'function') {
             console.log(`[MatchPlayers] Calling table.startGame()...`);
@@ -1303,10 +1299,17 @@ class MatchPlayers {
                     message: 'Failed to start game',
                     error: error.message
                 });
+                // If start failed, revert status?
+                return;
             }
         } else {
             console.error('[MatchPlayers] Table does not implement startGame()');
         }
+
+        // Broadcast state update, ensure all clients (including lobby) know status is playing
+        // Now the board data will be fresh
+        console.log(`[MatchPlayers] Broadcasting room state...`);
+        this.table.broadcastRoomState();
     }
 
     /**
