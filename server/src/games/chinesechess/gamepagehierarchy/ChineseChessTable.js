@@ -271,11 +271,14 @@ class ChineseChessTable extends GameTable {
         const result = this.round.executeMove(fromX, fromY, toX, toY, validation.piece);
 
         // 广播移动 (无论是否胜利，都要先广播移动，让前端更新棋盘)
-        console.log(`[ChineseChessTable] Broadcasting move: captured=${result.captured ? result.captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${result.check}, win=${result.win}`);
+        // 确保 check 字段为布尔值，避免 undefined
+        const isCheck = result.check === true;
+        console.log(`[ChineseChessTable] Broadcasting move: captured=${result.captured ? result.captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${isCheck}, win=${result.win}`);
+        
         this.broadcast('move', {
             move,
             captured: result.captured ? result.captured : null,
-            check: result.check,
+            check: isCheck,
             turn: this.turn,
             board: this.board
         });
@@ -303,28 +306,15 @@ class ChineseChessTable extends GameTable {
         this.round.end({ winner: winnerSide });
 
         // 1. ELO 结算（将更新后的 rating 写入数据库）
-        // 修正：按 players 数组顺序调用，防止前端按位置映射导致显示错误 (playerA=p0, playerB=p1)
-        let eloResult;
-        const p0 = this.players[0];
-        const p1 = this.players[1];
-
-        if (p0 && p1) {
-            const resultForP0 = p0.userId === winnerId ? 1 : 0;
-            eloResult = await EloService.processMatchResult(
-                this.gameType,
-                p0.userId,
-                p1.userId,
-                resultForP0
-            );
-        } else {
-            // 降级处理：如果找不到两个玩家（异常情况），按原逻辑
-            eloResult = await EloService.processMatchResult(
-                this.gameType,
-                winnerId,
-                loserId,
-                1 // Winner gets 1 point
-            );
-        }
+        // 修正：直接将赢家作为 PlayerA，输家作为 PlayerB
+        // 这样返回结果中 playerA 永远是赢家（加分），playerB 永远是输家（减分）
+        // 避免了红黑方映射带来的混淆
+        const eloResult = await EloService.processMatchResult(
+            this.gameType,
+            winnerId,
+            loserId,
+            1 // PlayerA (Winner) wins
+        );
         console.log(`[ChineseChessTable] ELO updated:`, eloResult);
 
         // 2. 全局重新计算所有玩家的排名和称号

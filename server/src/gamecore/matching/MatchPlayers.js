@@ -278,12 +278,10 @@ class MatchRoomState {
 
         const newState = StateMappingRules.getStateAfterPlayerLeave(this.players.length, this.maxPlayers);
         if (newState) {
-            // If game ended but not all players left, keep status as PLAYING
-            if (this.gameEnded && this.players.length > 0) {
-                console.log(`[MatchPlayers] Game ended, keeping status as PLAYING until all players leave`);
-            } else {
-                this.transitionStatus(newState, { userId, reason: 'player_leave' });
-            }
+            // 🔧 Fix: If game ended and a player leaves, do NOT keep status as PLAYING.
+            // Transition to WAITING so the room becomes available for new players (or IDLE if empty).
+            // This prevents "ghost" playing rooms with 1 player.
+            this.transitionStatus(newState, { userId, reason: 'player_leave' });
         }
 
         if (this.players.length === 0) {
@@ -1303,9 +1301,10 @@ class MatchPlayers {
         this.matchState.rematchRequests.clear();
 
         // Broadcast game end and start rematch countdown
+        // 🔧 Fix: Send rematchTimeout as 0 to prevent frontend from starting a countdown/sound
         this.table.broadcast('game_ended', {
             result,
-            rematchTimeout: this.matchState.rematchTimeout
+            rematchTimeout: 0 // Disabled
         });
 
         // Immediately broadcast cancel ready status, ensure client receives
