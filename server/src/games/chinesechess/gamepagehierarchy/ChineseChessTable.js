@@ -380,12 +380,15 @@ class ChineseChessTable extends GameTable {
     onPlayerDisconnectDuringGame(userId) {
         console.log(`[ChineseChess] 玩家断线判负: ${userId}`);
 
-        const redPlayer = this.players[0];
-        const blackPlayer = this.players[1];
+        // 确定当前的红黑方 (必须考虑换边逻辑)
+        const isSwap = this.roundCount % 2 === 0;
+        const redPlayer = isSwap ? this.players[1] : this.players[0];
+        const blackPlayer = isSwap ? this.players[0] : this.players[1];
 
         if (!redPlayer || !blackPlayer) return;
 
         // 判对手获胜
+        // 如果断线的是红方，则黑方(b)获胜；否则红方(r)获胜
         const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
         this.handleWin(winnerSide);
     }
