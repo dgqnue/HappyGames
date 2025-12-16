@@ -175,7 +175,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       // 稍微延迟一点点，确保渲染完成
       const timer = setTimeout(() => {
         setIsLoading(false);
-      }, 100);
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [resourcesLoaded, boardData]);
@@ -310,7 +310,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               setGameEndStats(data); // 胜负弹窗关闭后，再显示结算信息
           }, 3000);
 
-        }, 300); // 延迟0.3秒
+        }, 100); // 延迟0.1秒
       };
 
       // 监听游戏开始事件以清除结果弹窗
@@ -661,11 +661,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {isLoading ? (
+      {isLoading && (
         <div 
           className="absolute inset-0 z-50 flex flex-col items-center justify-center"
           style={{
-            // backgroundColor: '#000', // Ensure opaque background
+            backgroundColor: '#000', // Ensure opaque background
             backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png?v=2")',
             backgroundSize: '100% auto',
             backgroundPosition: 'center',
@@ -682,7 +682,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             Loading... {loadingProgress}%
           </div>
         </div>
-      ) : (
+      )}
+      
+      {boardData && (
         <>
       {/* Background removed to match Game Center style */}
 
