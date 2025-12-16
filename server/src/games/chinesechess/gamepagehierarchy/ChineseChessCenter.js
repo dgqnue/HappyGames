@@ -36,7 +36,7 @@ class ChineseChessCenter extends GameCenter {
         });
 
         gameRoom.setAccessRule(minRating, maxRating);
-        gameRoom.initTables(1); // 调试模式：只创建1张桌子
+        gameRoom.initTables(3); // 创建3张桌子
 
         // 可以设置象棋特有的规则
         // gameRoom.setChessRules({

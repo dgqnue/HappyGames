@@ -308,6 +308,12 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               console.log('[ChineseChessDisplay] Clearing round result popup');
               setRoundResult(null);
               setGameEndStats(data); // 胜负弹窗关闭后，再显示结算信息
+
+              // 10秒后自动关闭结算信息
+              setTimeout(() => {
+                  console.log('[ChineseChessDisplay] Auto clearing game end stats after 10s');
+                  setGameEndStats(null);
+              }, 10000);
           }, 3000);
 
         }, 100); // 延迟0.1秒
@@ -663,8 +669,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     >
       {isLoading && (
         <div 
-          className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+          className="absolute inset-0 flex flex-col items-center justify-center"
           style={{
+            zIndex: 20000, // Ensure it covers everything including buttons (z-9999)
             backgroundColor: '#000', // Ensure opaque background
             backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png?v=2")',
             backgroundSize: '100% auto',
