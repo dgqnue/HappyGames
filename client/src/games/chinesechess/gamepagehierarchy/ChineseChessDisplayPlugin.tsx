@@ -100,7 +100,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [mySide, setMySide] = useState<'r' | 'b' | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
   const [players, setPlayers] = useState<any[]>([]);
-  const [gameResult, setGameResult] = useState<'win' | 'lose' | 'draw' | null>(null);
+  const [roundResult, setRoundResult] = useState<'win' | 'lose' | 'draw' | null>(null);
   const [isRoundEnded, setIsRoundEnded] = useState(false);
   const [gameEndStats, setGameEndStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -293,19 +293,19 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           if (winner === mySide) {
             console.log('[ChineseChessDisplay] Playing win sound and showing victory');
             playSound('win');
-            setGameResult('win');
+            setRoundResult('win');
           } else if (winner && winner !== mySide) {
             console.log('[ChineseChessDisplay] Playing lose sound and showing defeat');
             playSound('lose');
-            setGameResult('lose');
+            setRoundResult('lose');
           } else {
             console.warn('[ChineseChessDisplay] Winner condition not met or draw?', { winner, mySide });
           }
 
           // 3秒后自动关闭胜负弹窗
           setTimeout(() => {
-              console.log('[ChineseChessDisplay] Clearing game result popup');
-              setGameResult(null);
+              console.log('[ChineseChessDisplay] Clearing round result popup');
+              setRoundResult(null);
               setGameEndStats(data); // 胜负弹窗关闭后，再显示结算信息
           }, 3000);
 
@@ -316,7 +316,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       // 尝试多种方式监听游戏开始
       const onGameStartHandler = (data: any) => {
           console.log('[ChineseChessDisplay] Game started, clearing result');
-          setGameResult(null);
+          setRoundResult(null);
           setGameEndStats(null); // Clear stats on new game
           setIsRoundEnded(false); // 回合开始，隐藏开始按钮
       };
@@ -714,7 +714,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           />
 
           {/* 游戏结束结算弹窗 (移至棋盘容器内) */}
-          {gameResult && (
+          {roundResult && (
             <div 
               className="absolute inset-0 z-[10000] flex items-center justify-center pointer-events-none"
               style={{ 
@@ -726,8 +726,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             >
               <div className="relative flex flex-col items-center">
                 <img 
-                  src={gameResult === 'win' ? '/images/chinesechess/ui/victory.png' : '/images/chinesechess/ui/defeat.png'} 
-                  alt={gameResult === 'win' ? 'Victory' : 'Defeat'}
+                  src={roundResult === 'win' ? '/images/chinesechess/ui/victory.png' : '/images/chinesechess/ui/defeat.png'} 
+                  alt={roundResult === 'win' ? 'Victory' : 'Defeat'}
                   style={{ 
                     maxWidth: '80%', 
                     maxHeight: '60%', 
@@ -808,9 +808,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: (!isPlaying || gameResult || isRoundEnded) ? 1 : 0.5,
-            pointerEvents: (!isPlaying || gameResult || isRoundEnded) ? 'auto' : 'none',
-            filter: (!isPlaying || gameResult || isRoundEnded) ? 'none' : 'grayscale(100%)'
+            opacity: (!isPlaying || roundResult || isRoundEnded) ? 1 : 0.5,
+            pointerEvents: (!isPlaying || roundResult || isRoundEnded) ? 'auto' : 'none',
+            filter: (!isPlaying || roundResult || isRoundEnded) ? 'none' : 'grayscale(100%)'
           }}
         >
           <img
@@ -876,7 +876,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {/* 退出 */}
         <div 
           style={{
-            display: (isPlaying || gameResult) ? 'flex' : 'none',
+            display: (isPlaying || roundResult) ? 'flex' : 'none',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10001 // 确保在遮罩层之上
@@ -896,7 +896,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
 
 
       {/* 回合结算信息 (当胜负弹窗关闭后显示) */}
-      {isRoundEnded && gameEndStats && !gameResult && (
+      {isRoundEnded && gameEndStats && !roundResult && (
           <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-red-100/30 p-4 rounded-lg text-blue-200 text-center z-50 border border-red-200/30 shadow-lg backdrop-blur-md">
               <h3 className="text-lg mb-2 text-blue-100">本局结算</h3>
               {(() => {

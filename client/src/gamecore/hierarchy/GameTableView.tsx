@@ -93,8 +93,8 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogData, setDialogData] = useState<any>(null);
     
-    // 检查倒计时是否活动，或者游戏是否结束（再来一局）
-    // 这两种情况下都隐藏游戏桌上的离开和取消按钮
+    // 检查倒计时是否活动，或者游戏正在进行时隐藏按钮
+    // 游戏桌上的按钮在匹配成功后就一直隐藏，回合结束后的按钮在游戏界面上
     const shouldHideButtons = localState?.countdown?.type === 'start' || localState?.countdown?.type === 'rematch' || localState?.status === 'playing';
 
     // 玩家信息 - 支持多种数据结构
@@ -706,7 +706,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                             离开
                         </button>
 
-                        {/* 开始/取消按钮 - 倒计时和游戏结束后都隐藏 */}
+                        {/* 开始/取消按钮 - 倒计时时隐藏，回合结束时显示"再来一局" */}
                         <button
                             onClick={handleReady}
                             style={{ display: shouldHideButtons ? 'none' : 'block' }}
@@ -716,6 +716,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                                 }`}
                         >
                             {isReady ? '取消' : '开始'}
+                        </button>
                         </button>
                     </>
                 ) : (

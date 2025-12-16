@@ -1063,7 +1063,7 @@ class MatchPlayers {
 
     /**
      * Start ready check (30s countdown)
-     * 🔧 DISABLED: No longer starts the 30s countdown timer
+     * 倒计时会显示给玩家，但超时不会踢人
      */
     startReadyCheck() {
         // Clear previous timer (if exists)
@@ -1075,9 +1075,11 @@ class MatchPlayers {
         const result = this.matchState.startReadyCheck();
         if (!result) return;
 
-        // 🔧 DISABLED: No longer broadcast ready_check_start or start timer
-        // Players can take as long as they want to ready up
-        console.log(`[MatchPlayers] startReadyCheck called but timer DISABLED - players can ready at their own pace`);
+        // 广播30秒倒计时开始事件（UI显示用）
+        this.table.broadcast('ready_check_start', {
+            timeout: this.matchState.readyTimeout
+        });
+        console.log(`[MatchPlayers] startReadyCheck: broadcasting 30s countdown (timeout will not kick players)`);
 
         this.table.broadcastRoomState();
     }

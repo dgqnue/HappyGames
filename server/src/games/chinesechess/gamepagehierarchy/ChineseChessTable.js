@@ -158,7 +158,7 @@ class ChineseChessTable extends GameTable {
         
         socket.emit('table_update', {
             status: this.status,
-            isRoundEnded: this.matchPlayers.gameEnded, // 同步回合结束状态
+            isRoundEnded: this.matchPlayers.roundEnded, // 🔧 修复：使用 roundEnded 而不是 gameEnded
             board: this.board,
             turn: this.turn,
             mySide: isRed ? 'r' : (isBlack ? 'b' : null),
