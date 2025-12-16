@@ -113,7 +113,12 @@ export abstract class GameRoomClient {
         });
 
         // 在连接建立或重连时，确保如果当前已在某个房间，刷新该房间的游戏桌列表
+        // 🔧 关键修复：Socket 重连后需要重新发送 start_game 来让服务器重新注册事件监听器
         this.socket.on('connect', () => {
+            console.log(`[${this.gameType}RoomClient] Socket connected/reconnected, re-registering game center`);
+            // 重新发送 start_game 事件，让服务器为新的 socket 实例注册监听器
+            this.socket.emit('start_game', this.gameType);
+            
             if (this.state.currentRoom) {
                 console.log(`[${this.gameType}RoomClient] Socket connected - refreshing table list for room ${this.state.currentRoom.id}`);
                 this.getTableList(this.state.currentRoom.id);

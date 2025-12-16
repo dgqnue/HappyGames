@@ -119,6 +119,12 @@ export abstract class GameCenterClient {
             console.log(`[${this.gameType}CenterClient] Match failed:`, data);
             this.handleMatchFailed(data);
         });
+
+        // 🔧 关键修复：Socket 重连后需要重新发送 start_game 来让服务器重新注册事件监听器
+        this.socket.on('connect', () => {
+            console.log(`[${this.gameType}CenterClient] Socket connected/reconnected, re-joining game center`);
+            this.socket.emit('start_game', this.gameType);
+        });
     }
 
     /**
