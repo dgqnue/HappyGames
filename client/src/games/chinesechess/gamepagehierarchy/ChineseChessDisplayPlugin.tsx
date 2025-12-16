@@ -413,7 +413,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             loadBuffer('/audio/effects/CHESS_SELECT.mp3', 'select'),
             loadBuffer('/audio/effects/CHESS_EAT.mp3', 'eat'),
             loadBuffer('/audio/effects/CHESS_WIN.mp3', 'win'),
-            // loadBuffer('/audio/effects/嘟.mp3', 'lose'), // 失败音效暂时空缺
+            loadBuffer('/audio/effects/CHESS_DEFEAT.mp3', 'lose'),
             loadBuffer('/audio/effects/jiangjun.mp3', 'check'),
             loadBuffer('/audio/effects/MOVE.WAV', 'move')
           ]);
@@ -472,7 +472,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       } else if (type === 'win') {
         audioPath = '/audio/effects/CHESS_WIN.mp3'; 
       } else if (type === 'lose') {
-        audioPath = '/audio/effects/嘟.mp3'; // 使用 '嘟.mp3' 作为失败音效
+        audioPath = '/audio/effects/CHESS_DEFEAT.mp3';
       } else if (type === 'check') {
         audioPath = '/audio/effects/jiangjun.mp3';
       } else if (type === 'move') {
