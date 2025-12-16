@@ -310,7 +310,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               setGameEndStats(data); // 胜负弹窗关闭后，再显示结算信息
           }, 3000);
 
-        }, 1000); // 延迟1秒
+        }, 300); // 延迟0.3秒
       };
 
       // 监听游戏开始事件以清除结果弹窗
