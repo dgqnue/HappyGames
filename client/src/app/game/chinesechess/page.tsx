@@ -21,7 +21,14 @@ export default function ChineseChessPage() {
         }
 
         const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
-            auth: { token }
+            auth: { token },
+            // 🔧 增强重连配置
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            timeout: 20000,
+            transports: ['websocket', 'polling']  // 优先使用 WebSocket
         });
 
         const client = new ChineseChessCenterClient(newSocket);

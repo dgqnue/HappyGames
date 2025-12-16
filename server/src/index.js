@@ -4,6 +4,15 @@ const http = require('http');
 const connectDB = require('./config/db');
 const initCronJobs = require('./cron/eloCron');
 
+// 🔧 全局错误处理：防止未捕获异常导致服务器崩溃
+process.on('uncaughtException', (err) => {
+    console.error('[Server] ⚠️ 未捕获的异常 (进程继续运行):', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Server] ⚠️ 未处理的 Promise 拒绝:', reason);
+});
+
 // 引入新的核心模块
 const SocketServer = require('./core/network/SocketServer');
 const GameLoader = require('./core/game/GameLoader');

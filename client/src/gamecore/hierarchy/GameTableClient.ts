@@ -784,6 +784,8 @@ export abstract class GameTableClient {
 
     /**
      * 移除通用事件监听
+     * 注意：不移除 table_update 和 table_state，因为这些事件可能在 GameRoomClient.selectTable 中被监听
+     * 移除它们会导致后续加入桌子时收不到确认
      */
     protected removeCommonListeners(): void {
         this.socket.off('state');
@@ -791,8 +793,9 @@ export abstract class GameTableClient {
         this.socket.off('player_left');
         this.socket.off('player_ready_changed');
         this.socket.off('game_start');
-        this.socket.off('table_state');
-        this.socket.off('table_update');
+        // 🔧 修复：不再移除这些监听器，避免影响其他地方的监听
+        // this.socket.off('table_state');
+        // this.socket.off('table_update');
     }
 
     /**
