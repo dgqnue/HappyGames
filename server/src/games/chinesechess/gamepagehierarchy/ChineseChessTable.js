@@ -589,7 +589,7 @@ class ChineseChessTable extends GameTable {
             tableId: this.tableId,              // 确保 tableId 被设置
             roomId: this.tableId,               // 保留 roomId 作为备选
             status: currentStatus,              // 游戏桌状态（idle, waiting, matching, playing）
-            isRoundEnded: this.matchPlayers.gameEnded, // 同步回合结束状态
+            isRoundEnded: this.matchPlayers.roundEnded, // 🔧 修复：使用 roundEnded 而不是 gameEnded
             players: currentPlayers.map(p => {
                 // 优先使用从数据库获取的最新信息 (仅限动态数据如称号、积分)
                 const latestData = playerDataMap[p.userId] || {};

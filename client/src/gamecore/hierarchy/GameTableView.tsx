@@ -357,15 +357,19 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             if (hasLeft) return;
             if (tableClientRef.current && isMyTableLocalRef.current) {
                 const tableState = tableClientRef.current.getState?.();
-                // 游戏进行中不要调用deselectTable - 这会导致tableClient被销毁
-                // 只在idle或waiting状态时才允许完全离座
-                if (tableState?.status !== 'playing') {
+                // 🔧 关键修复：不仅检查 playing，还要检查 isRoundEnded
+                // 回合结束后状态是 matching，但 isRoundEnded 是 true，此时不应该离座
+                // 只在 idle 或 waiting 状态（且回合未结束）时才允许完全离座
+                const isPlaying = tableState?.status === 'playing';
+                const isRoundEnded = tableState?.isRoundEnded === true;
+                
+                if (!isPlaying && !isRoundEnded) {
                     console.log('[GameTableView] Auto leaving seat due to page/component unload');
                     tableClientRef.current.leaveTable();
                     roomClientRef.current.deselectTable();
                     hasLeft = true;
                 } else {
-                    console.log('[GameTableView] Game in progress, not calling deselectTable to avoid destroying tableClient');
+                    console.log('[GameTableView] Game in progress or round ended, not calling deselectTable to avoid destroying tableClient');
                     hasLeft = true; // 标记为已处理，但不销毁tableClient
                 }
             }
