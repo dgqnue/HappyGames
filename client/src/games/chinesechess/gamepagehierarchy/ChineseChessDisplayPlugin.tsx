@@ -111,9 +111,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   useEffect(() => {
     const preloadResources = async () => {
       const imagesToLoad = [
-        '/images/chinesechess/ui/loadPageBackground.png',
+        '/images/chinesechess/ui/loadPageBackground.png?v=2',
         '/images/chinesechess/ui/woodenPlankBackground.png',
-        '/images/chinesechess/ui/load.jpg',
         '/images/chinesechess/ui/victory.png',
         '/images/chinesechess/ui/defeat.png',
         '/images/chinesechess/buttoms/start.png?v=new',
@@ -667,7 +666,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           className="absolute inset-0 z-50 flex flex-col items-center justify-center"
           style={{
             // backgroundColor: '#000', // Ensure opaque background
-            backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png")',
+            backgroundImage: 'url("/images/chinesechess/ui/loadPageBackground.png?v=2")',
             backgroundSize: '100% auto',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
