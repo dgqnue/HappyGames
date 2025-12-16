@@ -1040,6 +1040,7 @@ class MatchPlayers {
 
     /**
      * Start ready check (30s countdown)
+     * 🔧 DISABLED: No longer starts the 30s countdown timer
      */
     startReadyCheck() {
         // Clear previous timer (if exists)
@@ -1051,80 +1052,11 @@ class MatchPlayers {
         const result = this.matchState.startReadyCheck();
         if (!result) return;
 
-        this.table.broadcast('ready_check_start', {
-            timeout: this.matchState.readyTimeout,
-            message: 'All players please click "Start" within 30 seconds'
-        });
-
-        this.matchState.readyTimer = setTimeout(() => {
-            this.onReadyTimeout();
-            // 🔧 Ensure timer reference is cleared after execution
-            if (this.matchState.readyTimer) {
-                this.matchState.readyTimer = null;
-            }
-        }, this.matchState.readyTimeout);
+        // 🔧 DISABLED: No longer broadcast ready_check_start or start timer
+        // Players can take as long as they want to ready up
+        console.log(`[MatchPlayers] startReadyCheck called but timer DISABLED - players can ready at their own pace`);
 
         this.table.broadcastRoomState();
-    }
-
-    /**
-     * Ready timeout handler (30s countdown)
-     * This method only handles ready timeout, should not be affected by game countdown
-     */
-    async onReadyTimeout() {
-        // Use enqueueAction to ensure atomicity and prevent race conditions
-        await this.enqueueAction(async () => {
-            console.log(`[DEBUG_TRACE] [MatchPlayers] onReadyTimeout called for room ${this.roomId}, readyCheckCancelled: ${this.readyCheckCancelled}`);
-            
-            // If ready countdown cancelled (i.e. game countdown started), return immediately
-            if (this.readyCheckCancelled) {
-                console.log(`[DEBUG_TRACE] [MatchPlayers] Ready check was already cancelled, skipping timeout processing`);
-                return;
-            }
-            
-            // If game already started, do nothing
-            if (this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
-                console.log(`[DEBUG_TRACE] [MatchPlayers] Game already playing, skipping ready timeout processing`);
-                return;
-            }
-
-            console.log(`[DEBUG_TRACE] [MatchPlayers] Ready timeout occurred - kicking out unready players`);
-
-            const unreadyPlayers = this.matchState.getUnreadyPlayers();
-            console.log(`[MatchPlayers] Unready players:`, unreadyPlayers.map(p => p.userId));
-
-            // Kick players first
-            for (const player of unreadyPlayers) {
-                const socket = this.io.sockets.sockets.get(player.socketId);
-                if (socket) {
-                    console.log(`[DEBUG_TRACE] [MatchPlayers] Kicking player ${player.userId} for ready timeout`);
-                    // 🔧 Disabled kicking for ready timeout as per user request
-                    /*
-                    socket.emit('kicked', {
-                        reason: 'Ready timeout',
-                        code: 'READY_TIMEOUT'
-                    });
-                    // Use _playerLeave directly since we are already in queue
-                    this._playerLeave(socket);
-                    */
-                } else {
-                    console.log(`[MatchPlayers] Removing player ${player.userId} from match state`);
-                    // 🔧 Disabled removing player for ready timeout
-                    // this.matchState.removePlayer(player.userId);
-                }
-            }
-
-            // Then cancel ready check (which updates status based on remaining players)
-            this.matchState.cancelReadyCheck();
-            this.matchState.resetReadyStatus();
-
-            this.table.broadcast('ready_check_cancelled', {
-                reason: 'Some players failed to ready up',
-                remainingPlayers: this.matchState.players.length
-            });
-
-            this.table.broadcastRoomState();
-        });
     }
 
     /**
@@ -1134,12 +1066,10 @@ class MatchPlayers {
         this.isLocked = true;
 
         // Cancel 30s ready countdown, as all players ready, game starting
-        // This is key: must explicitly mark 30s countdown as cancelled to prevent subsequent callbacks
         if (this.matchState.readyTimer) {
             clearTimeout(this.matchState.readyTimer);
             this.matchState.readyTimer = null;
         }
-        // Mark ready countdown as stopped, prevent onReadyTimeout execution
         this.readyCheckCancelled = true;
 
         this.table.broadcast('game_locked', {
