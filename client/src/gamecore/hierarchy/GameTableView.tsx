@@ -717,7 +717,6 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                         >
                             {isReady ? '取消' : '开始'}
                         </button>
-                        </button>
                     </>
                 ) : (
                     canJoin ? (
