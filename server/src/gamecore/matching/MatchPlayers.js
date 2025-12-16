@@ -743,8 +743,17 @@ class MatchPlayers {
             return false;
         }
 
-        // Join Socket.IO room
+        // Join Socket.IO room (for table-level updates)
         socket.join(this.roomId);
+        
+        // 🔧 修复：同时加入房间级别的广播室，确保能收到桌子列表更新
+        // 这样当其他玩家入座/离座时，本玩家也能收到桌子列表更新
+        const tier = this.table.tier;
+        if (tier) {
+            const broadcastRoom = `${this.gameType}_${tier}`;
+            socket.join(broadcastRoom);
+            console.log(`[MatchPlayers] Socket ${socket.id} also joined broadcast room: ${broadcastRoom}`);
+        }
 
         // Broadcast room state update (await ensures DB query completes)
         await this.table.broadcastRoomState();
