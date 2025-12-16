@@ -106,8 +106,15 @@ class ChineseChessTable extends GameTable {
      * 重写基类的方法
      */
     removePlayerEventListeners(socket) {
+        // 移除所有游戏相关的事件监听器
         socket.removeAllListeners(`${this.gameType}_move`);
         socket.removeAllListeners(`${this.gameType}_check_state_consistency`);
+        socket.removeAllListeners(`${this.gameType}_leave`);
+        socket.removeAllListeners('player_ready');
+        socket.removeAllListeners('player_unready');
+        socket.removeAllListeners('request_undo');
+        socket.removeAllListeners('request_draw');
+        console.log(`[ChineseChessTable] Removed all event listeners for socket ${socket.id}`);
     }
 
     /**
@@ -655,6 +662,9 @@ class ChineseChessTable extends GameTable {
      * 设置 Socket 监听器
      */
     setupSocketListeners(socket, isSpectator = false) {
+        // 🔧 关键修复：先移除已存在的监听器，防止重复注册
+        this.removePlayerEventListeners(socket);
+        
         if (!isSpectator) {
             // 玩家模式
             socket.on(`${this.gameType}_move`, (move) => {

@@ -725,8 +725,19 @@ class MatchPlayers {
         const result = this.matchState.addPlayer(playerData);
 
         if (!result.success) {
+            // 🔧 修复：如果是"Already in room"错误，说明可能是之前的离开没有正确处理
+            // 在这种情况下，我们应该检查玩家是否真的在房间中，如果是，则视为重新连接成功
+            if (result.error === 'Already in room') {
+                console.log(`[MatchPlayers] Player ${userId} already in room, treating as reconnect`);
+                // 确保 socket 加入了房间
+                socket.join(this.roomId);
+                // 广播房间状态
+                await this.table.broadcastRoomState();
+                return true; // 视为成功加入
+            }
+            
             socket.emit('join_failed', {
-                code: 'ROOM_FULL',
+                code: result.error === 'Room is full' ? 'ROOM_FULL' : 'JOIN_FAILED',
                 message: result.error
             });
             return false;
@@ -869,11 +880,23 @@ class MatchPlayers {
                 this.readyCheckCancelled = false;
                 this.isLocked = false;
                 
+                // 🔧 关键修复：重置 roundEnded 标志，确保新玩家可以正常加入
+                this.roundEnded = false;
+                if (this.matchState) {
+                    this.matchState.gameEnded = false;
+                }
+                console.log(`[MatchPlayers] Reset roundEnded to false after all players left`);
+                
                 // 🔧 Clear all active timers, ensure state restores immediately
                 if (this.countdownTimer) {
                     clearTimeout(this.countdownTimer);
                     this.countdownTimer = null;
                     console.log(`[MatchPlayers] Cleared countdown timer because all players left`);
+                }
+                
+                // 🔧 清除下一回合请求
+                if (this._nextRoundRequests) {
+                    this._nextRoundRequests.clear();
                 }
             } else {
                 // 🔧 关键修复：如果还有玩家，且游戏未开始，重置所有人的准备状态

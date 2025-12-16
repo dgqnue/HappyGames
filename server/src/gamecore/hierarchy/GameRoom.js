@@ -67,8 +67,23 @@ class GameRoom {
      * @param {String} gameType - 游戏类型
      */
     setupRoomListeners(socket, gameType) {
+        const eventName = `${gameType}_get_tables`;
+        
+        // 🔧 关键修复：先移除已存在的监听器，防止重复注册
+        // 注意：这会移除所有同名事件的监听器，但由于每个房间都注册了同一个事件名，
+        // 这里只移除一次，让 ChineseChessCenter 统一处理所有房间的请求更合适
+        // 但为了向后兼容，我们保持这个结构，只是确保不重复注册
+        
+        // 检查是否已经有这个房间的监听器（通过标记）
+        const listenerKey = `__has_${gameType}_${this.id}_listener`;
+        if (socket[listenerKey]) {
+            console.log(`[GameRoom] Listener already registered for ${this.id}, skipping`);
+            return;
+        }
+        socket[listenerKey] = true;
+        
         // 监听获取游戏桌列表请求
-        socket.on(`${gameType}_get_tables`, (data = {}) => {
+        socket.on(eventName, (data = {}) => {
             const { roomId } = data;
 
             // 验证是否是当前房间
