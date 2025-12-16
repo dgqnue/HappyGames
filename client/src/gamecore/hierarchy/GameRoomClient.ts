@@ -346,6 +346,12 @@ export abstract class GameRoomClient {
         // 监听加入成功后再更新 UI 状态
         let timeoutId: NodeJS.Timeout | null = null;
         
+        const cleanupListeners = () => {
+            this.socket.off('table_update', onJoined);
+            this.socket.off('table_state', onJoined);
+            this.socket.off('join_failed', onFailed);
+        };
+
         const onJoined = (data?: any) => {
             // 如果数据中包含 tableId，验证是否是目标桌子
             if (data && data.tableId && data.tableId !== tableId) {
@@ -355,20 +361,26 @@ export abstract class GameRoomClient {
             console.log(`[${this.gameType}RoomClient] Successfully joined table, updating selectedTableId`);
             if (timeoutId) clearTimeout(timeoutId);
             this.updateState({ selectedTableId: tableId });
-            // 清理监听器
-            this.socket.off('table_update', onJoined);
-            this.socket.off('table_state', onJoined);
+            cleanupListeners();
+        };
+
+        const onFailed = (data: any) => {
+            console.warn(`[${this.gameType}RoomClient] Join failed received in RoomClient:`, data);
+            if (timeoutId) clearTimeout(timeoutId);
+            cleanupListeners();
+            // GameTableClient handles the alert
         };
         
         // 监听游戏桌状态更新（这表示已成功加入）
         this.socket.on('table_update', onJoined);
         // 同时监听 table_state，这是发送给加入者的初始状态
         this.socket.on('table_state', onJoined);
+        // 监听加入失败
+        this.socket.on('join_failed', onFailed);
         
         // 设置超时：如果5秒内没有收到成功确认，则保持原样
         timeoutId = setTimeout(() => {
-            this.socket.off('table_update', onJoined);
-            this.socket.off('table_state', onJoined);
+            cleanupListeners();
             // 如果没有收到确认，保持原样不更新状态
             // 这样如果服务器拒绝了，UI就不会改变
             console.log(`[${this.gameType}RoomClient] No confirmation received for table join, keeping UI unchanged`);

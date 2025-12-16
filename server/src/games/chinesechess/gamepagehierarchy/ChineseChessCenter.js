@@ -101,6 +101,7 @@ class ChineseChessCenter extends GameCenter {
 
         // 2. 监听加入游戏桌请求 (手动加入)
         socket.on(`${this.gameType}_join`, async (data) => {
+            console.log(`[${this.gameType}] Received join request:`, data, 'User:', socket.user?.username);
             const { tier, roomType, roomId: tableId } = data;
             const type = roomType || tier;
 
