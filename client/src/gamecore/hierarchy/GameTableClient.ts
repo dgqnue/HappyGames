@@ -211,15 +211,17 @@ export abstract class GameTableClient {
             }
         });
 
-        // 回合结束（再来一局倒计时）
+        // 回合结束（等待开始下一回合）
         this.socket.on('round_ended', (data: any) => {
             console.log('[GameTableClient] round_ended event received:', data);
             console.log('[GameTableClient] handleRoundEnded exists?', typeof this.handleRoundEnded);
+            // 🔧 关键修复：回合结束后，状态保持 playing，玩家保持 ready
+            // 只标记 isRoundEnded = true，用于 UI 显示结果弹窗
             this.updateState({
-                // status: 'matching', // 保持 playing 状态，直到玩家点击退出
-                ready: false,  // 取消准备状态
-                isRoundEnded: true, // 标记回合结束，防止UI立即退出
-                countdown: { type: 'rematch', timeout: data.rematchTimeout, start: Date.now() }
+                // status 保持不变（playing）
+                // ready 保持不变（true）
+                isRoundEnded: true, // 标记回合结束，用于显示结果
+                countdown: null // 清除倒计时
             });
             
             // 调用子类的处理方法

@@ -356,41 +356,31 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         const leaveSeat = () => {
             if (hasLeft) return;
             if (tableClientRef.current && isMyTableLocalRef.current) {
-                const tableState = tableClientRef.current.getState?.();
-                // 🔧 关键修复：不仅检查 playing，还要检查 isRoundEnded
-                // 回合结束后状态是 matching，但 isRoundEnded 是 true，此时不应该离座
-                // 只在 idle 或 waiting 状态（且回合未结束）时才允许完全离座
-                const isPlaying = tableState?.status === 'playing';
-                const isRoundEnded = tableState?.isRoundEnded === true;
-                
-                if (!isPlaying && !isRoundEnded) {
-                    console.log('[GameTableView] Auto leaving seat due to page/component unload');
-                    tableClientRef.current.leaveTable();
-                    roomClientRef.current.deselectTable();
-                    hasLeft = true;
-                } else {
-                    console.log('[GameTableView] Game in progress or round ended, not calling deselectTable to avoid destroying tableClient');
-                    hasLeft = true; // 标记为已处理，但不销毁tableClient
-                }
+                // 🔧 关键修复：只有在页面卸载（beforeunload）时才自动离座
+                // 组件卸载（cleanup）时不自动离座，因为这可能是 React 重新渲染导致的
+                // 真正的离座应该由用户手动点击"离开"按钮触发
+                console.log('[GameTableView] Cleanup called but NOT auto-leaving (user must click leave button)');
+                hasLeft = true;
             }
         };
 
         // 页面卸载事件（刷新、关闭标签页、导航到其他网站）
         const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-            // 注意：在 beforeunload 事件中，不能进行异步操作，但 leaveTable 是同步函数（发送 socket 消息）
-            leaveSeat();
-            // 可选：显示确认离开对话框（但可能会干扰用户体验）
-            // event.preventDefault();
-            // event.returnValue = '';
+            // 只在真正关闭页面时才离座
+            if (tableClientRef.current && isMyTableLocalRef.current) {
+                console.log('[GameTableView] Page unloading, sending leave signal');
+                tableClientRef.current.leaveTable();
+                roomClientRef.current.deselectTable();
+            }
         };
 
         // 添加 beforeunload 事件监听
         window.addEventListener('beforeunload', handleBeforeUnload);
 
-        // 组件卸载时也执行离座（例如路由切换）
+        // 组件卸载时不再自动离座
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            leaveSeat();
+            // 不调用 leaveSeat()，避免 React 重新渲染时错误离座
         };
     }, []); // 空依赖数组：只在挂载/卸载时执行
 

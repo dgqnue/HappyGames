@@ -956,8 +956,32 @@ class MatchPlayers {
     _playerReady(socket) {
         const userId = socket.user._id.toString();
         
+        // 🔧 如果回合已结束（roundEnded=true），玩家点击"再来一局"应该开始下一回合
+        // 此时玩家状态仍是 ready，所以需要特殊处理
+        if (this.roundEnded && this.matchState.status === StateMappingRules.TABLE_STATUS.PLAYING) {
+            console.log(`[MatchPlayers] Player ${userId} requested next round (roundEnded=true)`);
+            // 记录这个玩家想要下一回合
+            if (!this._nextRoundRequests) {
+                this._nextRoundRequests = new Set();
+            }
+            this._nextRoundRequests.add(userId);
+            
+            // 检查是否所有玩家都请求了下一回合
+            const allPlayersRequested = this.matchState.players.every(p => 
+                this._nextRoundRequests.has(p.userId)
+            );
+            
+            console.log(`[MatchPlayers] Next round requests: ${this._nextRoundRequests.size}/${this.matchState.players.length}, allRequested: ${allPlayersRequested}`);
+            
+            if (allPlayersRequested) {
+                console.log(`[MatchPlayers] All players requested next round, starting...`);
+                this._nextRoundRequests.clear();
+                this.startRound();
+            }
+            return;
+        }
+        
         // 🔧 幂等性检查：如果玩家已经准备好了，直接忽略重复请求
-        // 这可以防止用户快速点击或网络延迟导致的 "Game starting" 错误
         const player = this.matchState.players.find(p => p.userId === userId);
         if (player && player.ready) {
             return;
@@ -969,11 +993,10 @@ class MatchPlayers {
         }
 
         // Allow ready if status is MATCHING or WAITING
-        // Also allow ready if status is PLAYING but gameEnded is true (rematch phase)
-        const canReady = this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING || this.roundEnded;
+        const canReady = this.matchState.status !== StateMappingRules.TABLE_STATUS.PLAYING;
 
         if (!canReady) {
-             console.warn(`[MatchPlayers] Player ${userId} tried to ready while playing (game not ended)`);
+             console.warn(`[MatchPlayers] Player ${userId} tried to ready while playing`);
              return;
         }
 
@@ -1187,14 +1210,19 @@ class MatchPlayers {
         console.log(`[DEBUG_TRACE] [MatchPlayers] startRound called for room ${this.roomId}`);
         console.log(`[DEBUG_TRACE] [MatchPlayers] startRound state before reset: gameEnded=${this.gameEnded}, roundEnded=${this.roundEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
         
-        // 🔧 Safety: Ensure gameEnded is false immediately
+        // 🔧 清除下一回合请求记录
+        if (this._nextRoundRequests) {
+            this._nextRoundRequests.clear();
+        }
+        
+        // 🔧 Safety: Ensure roundEnded is false immediately
         this.roundEnded = false; 
         this.matchState.gameEnded = false; 
 
         // 🔧 Safety: Mark ready check as cancelled to prevent any pending timeouts
         this.readyCheckCancelled = true;
 
-        console.log(`[MatchPlayers] startRound state after reset: gameEnded=${this.gameEnded}, status=${this.matchState.status}`);
+        console.log(`[MatchPlayers] startRound state after reset: roundEnded=${this.roundEnded}, status=${this.matchState.status}`);
 
         // Clear all timers, ensure no more state changes
         // Note: Do not set isLocked = false, as game is starting
@@ -1264,31 +1292,29 @@ class MatchPlayers {
         console.log(`[MatchPlayers] Round ended in room ${this.roomId}`);
         console.log(`[MatchPlayers] onRoundEnd state before update: roundEnded=${this.roundEnded}, status=${this.matchState.status}`);
 
-        // Release game lock (game ended, can match again)
+        // 🔧 关键修复：回合结束后，状态保持 PLAYING，玩家保持 ready
+        // 只有当玩家主动离开时，状态才会改变
+        
+        // Release game lock (允许玩家点击"再来一局")
         this.isLocked = false;
         
-        // Reset ready countdown cancelled flag, so next round can use 30s countdown
-        this.readyCheckCancelled = false;
-
-        // Mark game as ended but keep status as PLAYING until players leave
+        // Mark round as ended (用于判断是否可以开始下一回合)
         this.roundEnded = true;
         if (this.matchState) {
             this.matchState.gameEnded = true; // Sync to matchState for getRoomInfo
         }
 
-        // Reset ready status so players can click Start again
-        this.matchState.resetReadyStatus(); 
+        // 🔧 不要重置 ready 状态！玩家仍然是 ready 的
+        // this.matchState.resetReadyStatus(); // REMOVED
 
         // 🔧 CRITICAL FIX: Reset roundStartTime to prevent stale timestamp in grace period check
-        // Without this, when checking "player left within 3s", it compares against the OLD round start time
         if (this.table && this.table.roundStartTime !== undefined) {
             this.table.roundStartTime = null;
             console.log(`[MatchPlayers] Reset table.roundStartTime to null after round end`);
         }
 
-        // 🔧 Update: Set status to MATCHING (as requested)
-        // This allows players to see "Start" button again
-        this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING;
+        // 🔧 不要改变状态！保持 PLAYING
+        // this.matchState.status = StateMappingRules.TABLE_STATUS.MATCHING; // REMOVED
 
         // Broadcast round end
         console.log(`[MatchPlayers] Broadcasting round_ended event with result:`, result);
