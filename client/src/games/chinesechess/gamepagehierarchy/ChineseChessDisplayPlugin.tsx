@@ -78,19 +78,21 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         />
       )}
 
-      {/* 2. 遮光层 - 完全不透明，遮住流光 */}
+      {/* 2. 遮光层 - 使用游戏背景图，完全不透明，遮住流光 */}
       <div 
-        className="absolute z-[1] rounded-xl"
+        className="absolute z-[1] rounded-xl overflow-hidden"
         style={{
           top: '2px',
           right: '2px',
           bottom: '2px',
           left: '2px',
-          backgroundColor: '#d4a574', // 棋盘木纹色
+          backgroundImage: 'url("/images/chinesechess/ui/woodenPlankBackground.png?v=2")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       ></div>
 
-      {/* 3. 毛玻璃效果层 */}
+      {/* 3. 毛玻璃效果层 - 与结算框一致 */}
       <div 
         className="absolute z-[2] bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-xl"
         style={{
