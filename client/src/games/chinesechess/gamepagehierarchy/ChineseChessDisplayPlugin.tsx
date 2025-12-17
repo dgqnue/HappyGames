@@ -41,7 +41,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
 
   return (
     <div 
-      className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out overflow-hidden`}
+      className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
       style={{ 
         padding: '0.5rem', 
       }}
@@ -50,23 +50,34 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 1. 流光边框层 (Flowing Light Border) - 仅行棋方显示 */}
+      {/* 全局样式 - @property 定义 CSS 变量 */}
+      <style jsx global>{`
+        @property --border-gradient-angle {
+          syntax: "<angle>";
+          inherits: true;
+          initial-value: 0turn;
+        }
+        
+        @keyframes borderSpin {
+          0% {
+            --border-gradient-angle: 0turn;
+          }
+          100% {
+            --border-gradient-angle: 1turn;
+          }
+        }
+      `}</style>
+
+      {/* 1. 流光边框容器 - 仅行棋方显示 */}
       {isTurn && (
-        <div className="absolute inset-0 z-0 rounded-lg overflow-hidden">
-          <div 
-            className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2"
-            style={{
-              background: `conic-gradient(from 0deg, transparent 0%, transparent 40%, ${titleColor} 50%, transparent 60%, transparent 100%)`,
-              animation: 'spin 4s linear infinite'
-            }}
-          />
-          <style jsx>{`
-            @keyframes spin {
-              from { transform: translate(-50%, -50%) rotate(0deg); }
-              to { transform: translate(-50%, -50%) rotate(360deg); }
-            }
-          `}</style>
-        </div>
+        <div 
+          className="absolute inset-0 z-0 rounded-lg"
+          style={{
+            backgroundImage: `conic-gradient(from var(--border-gradient-angle) at 50% 50%, transparent, ${titleColor} 14%, transparent 17%)`,
+            backgroundSize: 'contain',
+            animation: 'borderSpin 4s linear infinite',
+          }}
+        />
       )}
 
       {/* 2. 主背景层 - 与结算信息框一致的毛玻璃效果 (双方都一致) */}
