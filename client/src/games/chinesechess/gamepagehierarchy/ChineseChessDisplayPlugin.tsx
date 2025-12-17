@@ -50,21 +50,25 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 1. 流光背景层 (Flowing Light Background) */}
-      <div className="absolute inset-0 z-0 bg-white/30 backdrop-blur-md">
-         <div 
-            className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2"
-            style={{
-                background: `conic-gradient(from 0deg, transparent 0%, transparent 40%, ${titleColor} 50%, transparent 60%, transparent 100%)`,
-                animation: 'spin 4s linear infinite'
-            }}
-         />
-         <style jsx>{`
-            @keyframes spin {
-                from { transform: translate(-50%, -50%) rotate(0deg); }
-                to { transform: translate(-50%, -50%) rotate(360deg); }
-            }
-         `}</style>
+      {/* 1. 背景层 (Background Layer) - 流光或白边 */}
+      <div className={`absolute inset-0 z-0 ${isTurn ? 'bg-white/30 backdrop-blur-md' : 'bg-white/70 backdrop-blur-md'}`}>
+         {isTurn && (
+             <>
+                <div 
+                    className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                        background: `conic-gradient(from 0deg, transparent 0%, transparent 40%, ${titleColor} 50%, transparent 60%, transparent 100%)`,
+                        animation: 'spin 4s linear infinite'
+                    }}
+                />
+                <style jsx>{`
+                    @keyframes spin {
+                        from { transform: translate(-50%, -50%) rotate(0deg); }
+                        to { transform: translate(-50%, -50%) rotate(360deg); }
+                    }
+                `}</style>
+             </>
+         )}
       </div>
 
       {/* 2. 遮罩背景层 (Mask Background) - 模拟边框内部 */}
