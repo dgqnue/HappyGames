@@ -81,14 +81,18 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       )}
 
       {/* 2. 主背景层 - 与结算信息框一致的毛玻璃效果 (双方都一致) */}
+      {/* 使用两层: 底层不透明遮住流光，上层毛玻璃效果 */}
       <div 
-        className="absolute z-[1] bg-red-100/30 backdrop-blur-md border border-red-200/30"
+        className="absolute z-[1]"
         style={{
           top: isTurn ? '2px' : '0',
           right: isTurn ? '2px' : '0',
           bottom: isTurn ? '2px' : '0',
           left: isTurn ? '2px' : '0',
           borderRadius: isTurn ? '6px' : '8px',
+          background: 'rgba(255, 235, 230, 0.85)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(254, 202, 202, 0.5)',
         }}
       ></div>
 
