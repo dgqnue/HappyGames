@@ -37,56 +37,73 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
   
   // 头像 URL 处理
   const avatarUrl = player.avatar || '/images/default-avatar.png?v=new';
+  const titleColor = player.titleColor || '#d97706';
 
   return (
     <div 
-      className={`flex items-center h-16 px-2 py-2 rounded-xl bg-gray-200 shadow-lg border border-white/40 cursor-pointer transition-all duration-700 ease-in-out`}
+      className={`relative flex items-center h-16 rounded-xl shadow-lg cursor-pointer transition-all duration-700 ease-in-out overflow-hidden`}
       style={{ 
-        flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右
+        padding: '0.5rem', 
       }}
       onClick={(e) => {
         e.stopPropagation();
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 头像容器 */}
-      <div className="relative flex-shrink-0">
-        <div 
-          className={`w-12 h-12 overflow-hidden rounded-full ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
-          style={{
-            transition: 'all 0.7s ease-in-out',
-          }}
-        >
-          <img 
-            src={avatarUrl} 
-            alt={player.nickname || 'Player'} 
-            className="w-full h-full object-cover"
-          />
-        </div>
+      {/* 1. 流光背景层 (Flowing Light Background) */}
+      <div className="absolute inset-0 z-0">
+         <div 
+            className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2 animate-[spin_4s_linear_infinite]"
+            style={{
+                background: `conic-gradient(from 0deg, transparent 0%, transparent 40%, ${titleColor} 50%, transparent 60%, transparent 100%)`
+            }}
+         />
       </div>
-      
-      {/* 玩家名字 - 只在展开时显示 */}
-      <div 
-        className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} transition-all duration-700 ease-in-out overflow-hidden`}
-        style={{
-            maxWidth: isExpanded ? '200px' : '0px',
-            opacity: isExpanded ? 1 : 0,
-            // 使用 margin 代替 gap 以实现平滑过渡
-            marginLeft: isTop ? (isExpanded ? '0.75rem' : '0px') : '0px',
-            marginRight: !isTop ? (isExpanded ? '0.75rem' : '0px') : '0px',
-        }}
-      >
-        <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} px-2`}>
-            <span className="text-black text-sm tracking-wide whitespace-nowrap">
-            {player.nickname || '等待加入...'}
-            </span>
-            {/* 称号 (可选) */}
-            {player.title && (
-            <span className="text-xs mt-0.5 whitespace-nowrap" style={{ color: player.titleColor || '#d97706' }}>
-                {player.title}
-            </span>
-            )}
-        </div>
+
+      {/* 2. 遮罩背景层 (Mask Background) - 模拟边框内部 */}
+      <div className="absolute inset-[2px] bg-gray-200 rounded-[10px] z-0 border border-white/40"></div>
+
+      {/* 3. 内容层 (Content) */}
+      <div className="relative z-10 flex items-center" style={{ flexDirection: isTop ? 'row' : 'row-reverse' }}>
+          {/* 头像容器 */}
+          <div className="relative flex-shrink-0">
+            <div 
+              className={`w-12 h-12 overflow-hidden rounded-full ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
+              style={{
+                transition: 'all 0.7s ease-in-out',
+              }}
+            >
+              <img 
+                src={avatarUrl} 
+                alt={player.nickname || 'Player'} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          
+          {/* 玩家名字 - 只在展开时显示 */}
+          <div 
+            className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} transition-all duration-700 ease-in-out overflow-hidden`}
+            style={{
+                maxWidth: isExpanded ? '200px' : '0px',
+                opacity: isExpanded ? 1 : 0,
+                // 使用 margin 代替 gap 以实现平滑过渡
+                marginLeft: isTop ? (isExpanded ? '0.75rem' : '0px') : '0px',
+                marginRight: !isTop ? (isExpanded ? '0.75rem' : '0px') : '0px',
+            }}
+          >
+            <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} px-2`}>
+                <span className="text-black text-sm tracking-wide whitespace-nowrap">
+                {player.nickname || '等待加入...'}
+                </span>
+                {/* 称号 (可选) */}
+                {player.title && (
+                <span className="text-xs mt-0.5 whitespace-nowrap" style={{ color: titleColor }}>
+                    {player.title}
+                </span>
+                )}
+            </div>
+          </div>
       </div>
     </div>
   );
