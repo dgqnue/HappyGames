@@ -417,6 +417,11 @@ class ChineseChessCenter extends GameCenter {
 
         // 将玩家加入桌子
         for (const p of players) {
+            // 🔧 关键：先让玩家加入房间级别的广播室，确保能收到状态更新
+            const broadcastRoom = `${this.gameType}_${roomId}`;
+            p.socket.join(broadcastRoom);
+            console.log(`[${this.gameType}] 玩家 ${p.userId} 加入广播室: ${broadcastRoom}`);
+            
             // 通知前端匹配成功
             p.socket.emit('match_found', {
                 roomId: table.tableId,
