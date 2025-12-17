@@ -39,10 +39,9 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       {/* 头像容器 */}
       <div className="relative flex-shrink-0">
         <div 
-          className={`w-12 h-12 overflow-hidden ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
+          className={`w-12 h-12 overflow-hidden rounded-full ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
           style={{
             transition: 'all 0.7s ease-in-out',
-            borderRadius: isExpanded ? '9999px' : '12px' // Expanded: circle, Collapsed: rounded square
           }}
         >
           <img 
