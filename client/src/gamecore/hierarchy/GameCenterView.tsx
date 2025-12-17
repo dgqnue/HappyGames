@@ -9,24 +9,8 @@ interface GameCenterViewProps {
     onBack: () => void;
 }
 
-interface MatchSettings {
-    baseBet: number;
-    betRange: [number, number];
-    winRateRange: [number, number];
-    maxDisconnectRate: number;
-}
-
-const DEFAULT_SETTINGS: MatchSettings = {
-    baseBet: 1000,
-    betRange: [500, 5000],
-    winRateRange: [0, 100],
-    maxDisconnectRate: 20
-};
-
 export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
     const [centerState, setCenterState] = useState(centerClient.getState());
-    const [showSettings, setShowSettings] = useState(false);
-    const [settings, setSettings] = useState<MatchSettings>(DEFAULT_SETTINGS);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -67,38 +51,23 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
         );
     }
 
-    const handleAutoMatch = () => {
-        setShowSettings(false);
-        centerClient.quickStart(settings);
-    };
-
     return (
         <main className="min-h-screen bg-amber-50 p-2 md:p-4">
             <div className="w-full">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={onBack}
-                                className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
-                            >
-                                <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                            </button>
-                            <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
-                                <span className="text-4xl">🏮</span> {centerState.gameType || '游戏'} 游戏中心
-                            </h1>
-                        </div>
-
-                        {/* Auto Match Button */}
+                    <div className="flex items-center gap-4">
                         <button
-                            onClick={() => setShowSettings(true)}
-                            className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center gap-2"
+                            onClick={onBack}
+                            className="p-2 bg-white rounded-full shadow-md hover:bg-amber-100 transition-colors"
                         >
-                            <span className="text-xl">⚡</span> 自动匹配
+                            <svg className="w-6 h-6 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
                         </button>
+                        <h1 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
+                            <span className="text-4xl">🏮</span> {centerState.gameType || '游戏'} 游戏中心
+                        </h1>
                     </div>
 
                     {/* User Stats */}
@@ -181,113 +150,6 @@ export function GameCenterView({ centerClient, onBack }: GameCenterViewProps) {
                     )}
                 </div>
             </div>
-
-            {/* Match Settings Modal */}
-            {showSettings && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">匹配设置</h2>
-
-                        <div className="space-y-6">
-                            {/* Base Bet */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    游戏底豆: {settings.baseBet}
-                                </label>
-                                <input
-                                    type="range"
-                                    min="100"
-                                    max="100000"
-                                    step="100"
-                                    value={settings.baseBet}
-                                    onChange={(e) => setSettings({ ...settings, baseBet: parseInt(e.target.value) })}
-                                    className="w-full"
-                                />
-                            </div>
-
-                            {/* Bet Range */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    可接受底豆范围: {settings.betRange[0]} - {settings.betRange[1]}
-                                </label>
-                                <div className="flex gap-4">
-                                    <input
-                                        type="number"
-                                        min="100"
-                                        max="100000"
-                                        value={settings.betRange[0]}
-                                        onChange={(e) => setSettings({ ...settings, betRange: [parseInt(e.target.value), settings.betRange[1]] })}
-                                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg"
-                                    />
-                                    <input
-                                        type="number"
-                                        min="100"
-                                        max="100000"
-                                        value={settings.betRange[1]}
-                                        onChange={(e) => setSettings({ ...settings, betRange: [settings.betRange[0], parseInt(e.target.value)] })}
-                                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Win Rate Range */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    对手胜率范围: {settings.winRateRange[0]}% - {settings.winRateRange[1]}%
-                                </label>
-                                <div className="flex gap-4">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={settings.winRateRange[0]}
-                                        onChange={(e) => setSettings({ ...settings, winRateRange: [parseInt(e.target.value), settings.winRateRange[1]] })}
-                                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg"
-                                    />
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={settings.winRateRange[1]}
-                                        onChange={(e) => setSettings({ ...settings, winRateRange: [settings.winRateRange[0], parseInt(e.target.value)] })}
-                                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Max Disconnect Rate */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    最大掉线率: {settings.maxDisconnectRate}%
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={settings.maxDisconnectRate}
-                                    onChange={(e) => setSettings({ ...settings, maxDisconnectRate: parseInt(e.target.value) })}
-                                    className="w-full"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 mt-8">
-                            <button
-                                onClick={() => setShowSettings(false)}
-                                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors"
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleAutoMatch}
-                                className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
-                            >
-                                开始匹配
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </main>
     );
 }

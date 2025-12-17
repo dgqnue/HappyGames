@@ -21,6 +21,9 @@ class GameLoader {
         // 全局匹配器（所有游戏共享）
         // 注意：MatchMaker 现在是 MatchPlayers 的静态属性，不是 MatchingRules 的
         this.matchMaker = new MatchPlayers.MatchMaker();
+        
+        // 房间级别匹配器（用于房间内快速匹配）
+        this.roomLevelMatchMaker = new MatchPlayers.RoomLevelMatchMaker();
     }
 
     /**
@@ -112,8 +115,8 @@ class GameLoader {
             return;
         }
 
-        // 实例化游戏中心
-        const gameCenter = new CenterClass(io, this.matchMaker);
+        // 实例化游戏中心（传入房间级别匹配器）
+        const gameCenter = new CenterClass(io, this.matchMaker, this.roomLevelMatchMaker);
         this.gameCenters.set(gameType, gameCenter);
 
         console.log(`[GameLoader] ✓ 已加载游戏: ${gameType} (${path.basename(foundPath)})`);
@@ -158,6 +161,9 @@ class GameLoader {
     cleanup() {
         if (this.matchMaker) {
             this.matchMaker.stop();
+        }
+        if (this.roomLevelMatchMaker) {
+            this.roomLevelMatchMaker.stop();
         }
     }
 }

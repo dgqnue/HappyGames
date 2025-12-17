@@ -466,6 +466,23 @@ export abstract class GameRoomClient {
     }
 
     /**
+     * 请求快速匹配
+     * @param roomId - 房间ID（如：free, beginner, intermediate, advanced）
+     */
+    public requestQuickMatch(roomId: string): void {
+        console.log(`[${this.gameType}RoomClient] Requesting quick match for room: ${roomId}`);
+        this.socket.emit(`${this.gameType}_room_quick_match`, { roomId });
+    }
+
+    /**
+     * 取消快速匹配
+     */
+    public cancelQuickMatch(): void {
+        console.log(`[${this.gameType}RoomClient] Cancelling quick match`);
+        this.socket.emit(`${this.gameType}_cancel_room_quick_match`);
+    }
+
+    /**
      * 改进3: 客户端状态同步处理
      * 监听服务器的强制同步事件并处理
      */

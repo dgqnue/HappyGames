@@ -155,6 +155,229 @@ class MatchMaker {
 
 /**
  * ============================================================================
+ * PART 2.5: RoomLevelMatchMaker (Room-Level Quick Match System)
+ * ============================================================================
+ */
+
+/**
+ * RoomLevelMatchMaker
+ * 房间级别的快速匹配系统
+ * 每个房间（免豆室、初级室、中级室、高级室）有独立的匹配队列
+ */
+class RoomLevelMatchMaker {
+    constructor() {
+        // key: `${gameType}_${roomId}`, value: player array
+        this.roomQueues = new Map();
+        this.checkInterval = null;
+        this.handlers = new Map();
+        this.start();
+    }
+
+    start() {
+        if (this.checkInterval) return;
+        // 每2秒检查一次匹配队列
+        this.checkInterval = setInterval(() => {
+            this.processAllQueues();
+        }, 2000);
+        console.log('[RoomLevelMatchMaker] Room-level match service started');
+    }
+
+    stop() {
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+        }
+    }
+
+    /**
+     * 注册匹配成功处理器
+     * @param {string} gameType - 游戏类型
+     * @param {Function} handler - 处理函数 (players, roomId) => void
+     */
+    registerHandler(gameType, handler) {
+        this.handlers.set(gameType, handler);
+    }
+
+    /**
+     * 获取队列key
+     */
+    getQueueKey(gameType, roomId) {
+        return `${gameType}_${roomId}`;
+    }
+
+    /**
+     * 玩家加入房间匹配队列
+     * @param {string} gameType - 游戏类型
+     * @param {string} roomId - 房间ID (free, beginner, intermediate, advanced)
+     * @param {Object} player - 玩家信息
+     */
+    joinRoomQueue(gameType, roomId, player) {
+        const queueKey = this.getQueueKey(gameType, roomId);
+        
+        if (!this.roomQueues.has(queueKey)) {
+            this.roomQueues.set(queueKey, []);
+        }
+
+        const queue = this.roomQueues.get(queueKey);
+
+        // 检查是否已在队列中
+        if (queue.find(p => p.userId === player.userId)) {
+            return { success: false, error: '已在匹配队列中' };
+        }
+
+        // 从其他房间队列中移除（一个玩家只能在一个队列中）
+        this.removeFromAllQueues(gameType, player.userId);
+
+        player.joinTime = Date.now();
+        player.roomId = roomId;
+        queue.push(player);
+
+        console.log(`[RoomLevelMatchMaker] Player ${player.userId} joined ${roomId} queue (${queueKey}), queue size: ${queue.length}`);
+
+        // 立即尝试匹配
+        this.matchRoom(gameType, roomId);
+
+        return { success: true };
+    }
+
+    /**
+     * 玩家离开房间匹配队列
+     */
+    leaveRoomQueue(gameType, roomId, userId) {
+        const queueKey = this.getQueueKey(gameType, roomId);
+        const queue = this.roomQueues.get(queueKey);
+        if (!queue) return false;
+
+        const index = queue.findIndex(p => p.userId === userId);
+        if (index !== -1) {
+            queue.splice(index, 1);
+            console.log(`[RoomLevelMatchMaker] Player ${userId} left ${roomId} queue`);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 从所有队列中移除玩家
+     */
+    removeFromAllQueues(gameType, userId) {
+        for (const [queueKey, queue] of this.roomQueues.entries()) {
+            if (queueKey.startsWith(gameType + '_')) {
+                const index = queue.findIndex(p => p.userId === userId);
+                if (index !== -1) {
+                    queue.splice(index, 1);
+                    console.log(`[RoomLevelMatchMaker] Player ${userId} removed from ${queueKey}`);
+                }
+            }
+        }
+    }
+
+    /**
+     * 处理所有队列
+     */
+    processAllQueues() {
+        for (const queueKey of this.roomQueues.keys()) {
+            const [gameType, roomId] = queueKey.split('_');
+            this.matchRoom(gameType, roomId);
+        }
+    }
+
+    /**
+     * 在指定房间内进行匹配
+     */
+    matchRoom(gameType, roomId) {
+        const queueKey = this.getQueueKey(gameType, roomId);
+        const queue = this.roomQueues.get(queueKey);
+        if (!queue || queue.length < 2) return;
+
+        // 按等待时间排序，先进先出
+        queue.sort((a, b) => a.joinTime - b.joinTime);
+
+        const matchedIndices = new Set();
+        const handler = this.handlers.get(gameType);
+
+        if (!handler) {
+            console.warn(`[RoomLevelMatchMaker] No handler registered for ${gameType}`);
+            return;
+        }
+
+        // 简单的配对匹配逻辑
+        for (let i = 0; i < queue.length; i++) {
+            if (matchedIndices.has(i)) continue;
+
+            for (let j = i + 1; j < queue.length; j++) {
+                if (matchedIndices.has(j)) continue;
+
+                const p1 = queue[i];
+                const p2 = queue[j];
+
+                if (this.isMatchCompatible(p1, p2, roomId)) {
+                    matchedIndices.add(i);
+                    matchedIndices.add(j);
+
+                    console.log(`[RoomLevelMatchMaker] Match found in ${roomId}: ${p1.userId} vs ${p2.userId}`);
+                    handler([p1, p2], roomId);
+                    break;
+                }
+            }
+        }
+
+        // 移除已匹配的玩家
+        if (matchedIndices.size > 0) {
+            const indices = Array.from(matchedIndices).sort((a, b) => b - a);
+            for (const idx of indices) {
+                queue.splice(idx, 1);
+            }
+        }
+    }
+
+    /**
+     * 检查两个玩家是否可以匹配
+     */
+    isMatchCompatible(p1, p2, roomId) {
+        if (p1.userId === p2.userId) return false;
+
+        // 同一房间内的玩家默认可以匹配
+        // 可以根据需要添加额外的匹配条件（如等级分差距）
+        const rating1 = p1.stats?.rating || 1200;
+        const rating2 = p2.stats?.rating || 1200;
+        const ratingDiff = Math.abs(rating1 - rating2);
+
+        // 根据房间类型调整匹配条件
+        // 免豆室：无限制
+        // 其他房间：等级分差距不超过500，或等待时间超过20秒
+        if (roomId === 'free') {
+            return true;
+        }
+
+        if (ratingDiff <= 500) {
+            return true;
+        }
+
+        // 如果等待时间较长，放宽条件
+        const waitTime = Math.max(Date.now() - p1.joinTime, Date.now() - p2.joinTime);
+        if (waitTime > 20000) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 获取房间队列状态
+     */
+    getRoomQueueStatus(gameType, roomId) {
+        const queueKey = this.getQueueKey(gameType, roomId);
+        const queue = this.roomQueues.get(queueKey) || [];
+        return {
+            count: queue.length,
+            roomId: roomId
+        };
+    }
+}
+
+/**
+ * ============================================================================
  * PART 3: MatchRoomState (Room State Management)
  * ============================================================================
  */
@@ -1513,5 +1736,6 @@ class MatchPlayers {
 // Mount helper classes to MatchPlayers
 MatchPlayers.StateMappingRules = StateMappingRules;
 MatchPlayers.MatchMaker = MatchMaker;
+MatchPlayers.RoomLevelMatchMaker = RoomLevelMatchMaker;
 
 module.exports = MatchPlayers;

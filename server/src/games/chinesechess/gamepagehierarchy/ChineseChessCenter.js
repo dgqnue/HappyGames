@@ -15,11 +15,23 @@ class ChineseChessCenter extends GameCenter {
     /**
      * @param {Object} io - Socket.IO 实例
      * @param {Object} matchMaker - 匹配器实例
+     * @param {Object} roomLevelMatchMaker - 房间级别匹配器实例
      */
-    constructor(io, matchMaker) {
+    constructor(io, matchMaker, roomLevelMatchMaker = null) {
         // 调用父类构造函数
         // 参数：io, 游戏类型标识, 游戏桌类, 匹配器
         super(io, 'chinesechess', ChineseChessTable, matchMaker);
+        
+        // 房间级别匹配器
+        this.roomLevelMatchMaker = roomLevelMatchMaker;
+        
+        // 注册房间级别匹配处理器
+        if (this.roomLevelMatchMaker) {
+            this.roomLevelMatchMaker.registerHandler(this.gameType, (players, roomId) => {
+                this.handleRoomMatchFound(players, roomId);
+            });
+        }
+        
         console.log('[ChineseChessCenter] 中国象棋游戏中心已初始化');
     }
 
@@ -133,23 +145,25 @@ class ChineseChessCenter extends GameCenter {
             }
         });
 
-        // 3. 监听自动匹配请求
+        // 3. 监听自动匹配请求（全局匹配 - 保留但可能不再使用）
         socket.on('auto_match', (settings) => {
             this.handleAutoMatch(socket, settings);
         });
 
-        // 4. 监听取消匹配
+        // 4. 监听取消匹配（全局匹配）
         socket.on('cancel_match', () => {
             this.handleCancelMatch(socket);
         });
 
-        // 5. 添加中国象棋特有的事件监听
-        // 注意：悔棋和求和现在由 GameTable 处理，这里只需要保留未进入桌子时的监听（如果有的话）
-        // 或者如果客户端在进入桌子前就发送这些事件（不太可能），则需要保留。
-        // 但通常这些是在游戏进行中发送的，所以应该由 GameTable 处理。
-        // 为了兼容性，如果 GameTable 还没有接管，这里可以保留，但我们已经移到了 GameTable。
-        // 所以这里可以移除，或者保留作为 fallback (但不建议)。
-        // 我们移除它们，因为 GameTable 已经处理了。
+        // 5. 房间级别快速匹配
+        socket.on(`${this.gameType}_room_quick_match`, async (data) => {
+            await this.handleRoomQuickMatch(socket, data);
+        });
+
+        // 6. 取消房间级别匹配
+        socket.on(`${this.gameType}_cancel_room_quick_match`, () => {
+            this.handleCancelRoomQuickMatch(socket);
+        });
     }
 
     /**
@@ -274,8 +288,126 @@ class ChineseChessCenter extends GameCenter {
         if (this.matchMaker) {
             this.matchMaker.leaveQueue(this.gameType, socket.user._id.toString());
         }
+        
+        // 从房间级别匹配队列移除
+        if (this.roomLevelMatchMaker) {
+            this.roomLevelMatchMaker.removeFromAllQueues(this.gameType, socket.user._id.toString());
+        }
 
         // 注意：游戏中的断线现在由 GameTable 自己处理
+    }
+
+    /**
+     * 处理房间级别快速匹配请求
+     * @param {Object} socket - Socket 实例
+     * @param {Object} data - 包含 roomId 的数据
+     */
+    async handleRoomQuickMatch(socket, data) {
+        const { roomId } = data;
+        
+        if (!this.roomLevelMatchMaker) {
+            socket.emit('match_failed', { message: '匹配服务未启用' });
+            return;
+        }
+
+        if (!roomId) {
+            socket.emit('match_failed', { message: '未指定房间' });
+            return;
+        }
+
+        // 检查房间是否存在
+        const gameRoom = this.gameRooms.get(roomId);
+        if (!gameRoom) {
+            socket.emit('match_failed', { message: '游戏房间不存在' });
+            return;
+        }
+
+        // 获取玩家统计数据
+        const stats = await this.getUserStats(socket.user._id);
+        
+        // 检查玩家是否满足房间要求
+        if (!gameRoom.canAccess(stats.rating)) {
+            socket.emit('match_failed', { 
+                message: `您的等级分 ${stats.rating} 不符合 ${gameRoom.name} 的要求` 
+            });
+            return;
+        }
+
+        // 加入房间匹配队列
+        const result = this.roomLevelMatchMaker.joinRoomQueue(this.gameType, roomId, {
+            userId: socket.user._id.toString(),
+            socket,
+            stats
+        });
+
+        if (result.success) {
+            socket.emit('room_match_queue_joined', { 
+                message: `已加入 ${gameRoom.name} 匹配队列`,
+                roomId: roomId
+            });
+        } else {
+            socket.emit('match_failed', { message: result.error });
+        }
+    }
+
+    /**
+     * 处理取消房间级别匹配
+     * @param {Object} socket - Socket 实例
+     */
+    handleCancelRoomQuickMatch(socket) {
+        if (!this.roomLevelMatchMaker) return;
+        
+        this.roomLevelMatchMaker.removeFromAllQueues(this.gameType, socket.user._id.toString());
+        socket.emit('room_match_cancelled', { message: '已取消匹配' });
+    }
+
+    /**
+     * 处理房间级别匹配成功
+     * @param {Array} players - 匹配成功的玩家列表
+     * @param {string} roomId - 房间ID
+     */
+    async handleRoomMatchFound(players, roomId) {
+        console.log(`[${this.gameType}] 房间匹配成功 (${roomId}): ${players.map(p => p.userId).join(' vs ')}`);
+
+        const gameRoom = this.gameRooms.get(roomId);
+        if (!gameRoom) {
+            console.error(`[ChineseChessCenter] 找不到房间: ${roomId}`);
+            players.forEach(p => {
+                p.socket.emit('match_failed', { message: '游戏房间不存在' });
+            });
+            return;
+        }
+
+        // 找一个空桌子或创建新桌子
+        let table = gameRoom.findAvailableTable();
+        if (!table) {
+            table = gameRoom.addTable();
+        }
+
+        console.log(`[${this.gameType}] 分配桌子: ${table.tableId}`);
+
+        // 将玩家加入桌子
+        for (const p of players) {
+            // 通知前端匹配成功
+            p.socket.emit('match_found', {
+                roomId: table.tableId,
+                tableId: table.tableId,
+                roomType: roomId,
+                message: '匹配成功！正在进入游戏...'
+            });
+
+            // 执行加入逻辑
+            await table.joinAsPlayer(p.socket);
+
+            p.socket.currentRoomId = table.tableId;
+            p.socket.currentGameId = this.gameType;
+
+            // 自动准备
+            table.playerReady(p.socket);
+        }
+
+        // 广播房间列表更新
+        this.broadcastRoomList(roomId);
     }
 }
 
