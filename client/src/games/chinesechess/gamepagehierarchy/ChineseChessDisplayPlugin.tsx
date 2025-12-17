@@ -65,7 +65,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         }
       `}</style>
 
-      {/* 流光边框层 - 仅行棋方显示 */}
+      {/* 1. 流光边框层 - 仅行棋方显示 */}
       {isTurn && (
         <div 
           className="absolute inset-0 z-0 rounded-lg"
@@ -77,9 +77,21 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         />
       )}
 
-      {/* 主背景层 - 毛玻璃效果 */}
+      {/* 2. 遮光层 - 完全不透明，遮住流光 */}
       <div 
-        className="absolute z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-lg"
+        className="absolute z-[1] rounded-md"
+        style={{
+          top: isTurn ? '2px' : '0',
+          right: isTurn ? '2px' : '0',
+          bottom: isTurn ? '2px' : '0',
+          left: isTurn ? '2px' : '0',
+          backgroundColor: '#d4a574', // 棋盘木纹色
+        }}
+      ></div>
+
+      {/* 3. 毛玻璃效果层 */}
+      <div 
+        className="absolute z-[2] bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-md"
         style={{
           top: isTurn ? '2px' : '0',
           right: isTurn ? '2px' : '0',
