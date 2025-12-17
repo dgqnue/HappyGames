@@ -238,8 +238,12 @@ class RoomLevelMatchMaker {
         console.log(`[RoomLevelMatchMaker] Player ${player.userId} joined ${roomId} queue (${queueKey}), queue size: ${queue.length}, all queues:`, 
             Array.from(this.roomQueues.entries()).map(([k, v]) => `${k}: ${v.length}`).join(', '));
 
-        // 立即尝试匹配
-        this.matchRoom(gameType, roomId);
+        // 立即尝试匹配（使用 try-catch 防止匹配错误影响加入队列）
+        try {
+            this.matchRoom(gameType, roomId);
+        } catch (err) {
+            console.error(`[RoomLevelMatchMaker] Error in matchRoom:`, err);
+        }
 
         return { success: true };
     }

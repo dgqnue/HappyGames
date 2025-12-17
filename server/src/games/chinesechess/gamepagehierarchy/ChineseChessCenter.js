@@ -27,8 +27,15 @@ class ChineseChessCenter extends GameCenter {
         
         // 注册房间级别匹配处理器
         if (this.roomLevelMatchMaker) {
-            this.roomLevelMatchMaker.registerHandler(this.gameType, (players, roomId) => {
-                this.handleRoomMatchFound(players, roomId);
+            this.roomLevelMatchMaker.registerHandler(this.gameType, async (players, roomId) => {
+                try {
+                    await this.handleRoomMatchFound(players, roomId);
+                } catch (err) {
+                    console.error(`[${this.gameType}] handleRoomMatchFound error:`, err);
+                    players.forEach(p => {
+                        p.socket?.emit('match_failed', { message: '匹配处理失败: ' + err.message });
+                    });
+                }
             });
         }
         
