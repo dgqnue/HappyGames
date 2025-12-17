@@ -50,30 +50,41 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 全局样式 - 流光动画 */}
+      {/* 全局样式 - 流光边框动画 */}
       <style jsx global>{`
-        @keyframes glowPulse {
-          0%, 100% {
-            box-shadow: 0 0 5px 2px var(--glow-color), 
-                        0 0 10px 4px var(--glow-color),
-                        inset 0 0 3px 1px var(--glow-color);
+        @keyframes borderFlow {
+          0% {
+            background-position: 0% 50%;
           }
           50% {
-            box-shadow: 0 0 10px 4px var(--glow-color), 
-                        0 0 20px 8px var(--glow-color),
-                        inset 0 0 5px 2px var(--glow-color);
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
           }
         }
       `}</style>
 
+      {/* 流光边框层 - 仅行棋方显示 */}
+      {isTurn && (
+        <div 
+          className="absolute inset-0 z-0 rounded-lg"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${titleColor}, transparent, ${titleColor}, transparent)`,
+            backgroundSize: '200% 100%',
+            animation: 'borderFlow 3s linear infinite',
+          }}
+        />
+      )}
+
       {/* 主背景层 - 毛玻璃效果 */}
       <div 
-        className="absolute inset-0 z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-lg"
+        className="absolute z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-lg"
         style={{
-          ...(isTurn ? {
-            '--glow-color': titleColor,
-            animation: 'glowPulse 2s ease-in-out infinite',
-          } as React.CSSProperties : {}),
+          top: isTurn ? '2px' : '0',
+          right: isTurn ? '2px' : '0',
+          bottom: isTurn ? '2px' : '0',
+          left: isTurn ? '2px' : '0',
         }}
       ></div>
 
