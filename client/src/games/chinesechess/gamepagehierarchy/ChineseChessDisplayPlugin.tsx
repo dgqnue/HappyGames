@@ -43,7 +43,12 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
     <div 
       className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
       style={{ 
-        padding: '0.5rem', 
+        padding: isTurn ? 'calc(0.5rem + 2px)' : '0.5rem',
+        ...(isTurn ? {
+          backgroundImage: `conic-gradient(from var(--border-gradient-angle) at 50% 50%, transparent, ${titleColor} 14%, transparent 17%)`,
+          backgroundSize: 'contain',
+          animation: 'borderSpin 4s linear infinite',
+        } : {}),
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -68,35 +73,15 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         }
       `}</style>
 
-      {/* 1. 流光边框容器 - 仅行棋方显示 */}
-      {isTurn && (
-        <div 
-          className="absolute inset-0 z-0 rounded-lg"
-          style={{
-            backgroundImage: `conic-gradient(from var(--border-gradient-angle) at 50% 50%, transparent, ${titleColor} 14%, transparent 17%)`,
-            backgroundSize: 'contain',
-            animation: 'borderSpin 4s linear infinite',
-          }}
-        />
-      )}
-
-      {/* 2. 主背景层 - 与结算信息框一致的毛玻璃效果 (双方都一致) */}
-      {/* 使用两层: 底层不透明遮住流光，上层毛玻璃效果 */}
+      {/* 主背景层 - 毛玻璃效果 */}
       <div 
-        className="absolute z-[1]"
+        className="absolute inset-0 z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30"
         style={{
-          top: isTurn ? '2px' : '0',
-          right: isTurn ? '2px' : '0',
-          bottom: isTurn ? '2px' : '0',
-          left: isTurn ? '2px' : '0',
-          borderRadius: isTurn ? '6px' : '8px',
-          background: 'rgba(255, 235, 230, 0.85)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(254, 202, 202, 0.5)',
+          borderRadius: '6px',
         }}
       ></div>
 
-      {/* 3. 内容层 (Content) */}
+      {/* 内容层 (Content) */}
       <div className="relative z-10 flex items-center" style={{ flexDirection: isTop ? 'row' : 'row-reverse' }}>
           {/* 头像容器 */}
           <div className="relative flex-shrink-0">
