@@ -33,14 +33,15 @@ export default function ChineseChessPage() {
 
         const client = new ChineseChessCenterClient(newSocket);
         
-        // 设置匹配成功的回调，自动跳转到游戏
-        client.setOnMatchFoundCallback((data: any) => {
-            console.log('[ChineseChessPage] Match found, navigating to game room...', data);
-            // 跳转到游戏房间
-            if (data.roomId) {
-                router.push(`/game/chinesechess/room/${data.roomId}`);
-            }
-        });
+        // 注意：房间级别的快速匹配不需要这个回调，因为用户已经在 GameRoomView 中
+        // 这个回调只用于从 GameCenterView 发起的全局匹配（如果仍然支持的话）
+        // 由于全局匹配已经被移除，这个回调现在不再需要
+        // client.setOnMatchFoundCallback((data: any) => {
+        //     console.log('[ChineseChessPage] Match found, navigating to game room...', data);
+        //     if (data.roomId) {
+        //         router.push(`/game/chinesechess/room/${data.roomId}`);
+        //     }
+        // });
 
         setSocket(newSocket);
         setCenterClient(client);
