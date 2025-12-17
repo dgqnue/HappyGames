@@ -157,11 +157,13 @@ class ChineseChessCenter extends GameCenter {
 
         // 5. 房间级别快速匹配
         socket.on(`${this.gameType}_room_quick_match`, async (data) => {
+            console.log(`[${this.gameType}] 收到房间快速匹配请求:`, data, 'from user:', socket.user?.username);
             await this.handleRoomQuickMatch(socket, data);
         });
 
         // 6. 取消房间级别匹配
         socket.on(`${this.gameType}_cancel_room_quick_match`, () => {
+            console.log(`[${this.gameType}] 收到取消房间匹配请求 from user:`, socket.user?.username);
             this.handleCancelRoomQuickMatch(socket);
         });
     }
@@ -304,19 +306,23 @@ class ChineseChessCenter extends GameCenter {
      */
     async handleRoomQuickMatch(socket, data) {
         const { roomId } = data;
+        console.log(`[${this.gameType}] handleRoomQuickMatch - roomId: ${roomId}, roomLevelMatchMaker exists: ${!!this.roomLevelMatchMaker}`);
         
         if (!this.roomLevelMatchMaker) {
+            console.log(`[${this.gameType}] 匹配服务未启用`);
             socket.emit('match_failed', { message: '匹配服务未启用' });
             return;
         }
 
         if (!roomId) {
+            console.log(`[${this.gameType}] 未指定房间`);
             socket.emit('match_failed', { message: '未指定房间' });
             return;
         }
 
         // 检查房间是否存在
         const gameRoom = this.gameRooms.get(roomId);
+        console.log(`[${this.gameType}] 查找房间 ${roomId}, 找到: ${!!gameRoom}, 所有房间: ${Array.from(this.gameRooms.keys()).join(', ')}`);
         if (!gameRoom) {
             socket.emit('match_failed', { message: '游戏房间不存在' });
             return;
@@ -324,6 +330,7 @@ class ChineseChessCenter extends GameCenter {
 
         // 获取玩家统计数据
         const stats = await this.getUserStats(socket.user._id);
+        console.log(`[${this.gameType}] 玩家统计: rating=${stats.rating}`);
         
         // 检查玩家是否满足房间要求
         if (!gameRoom.canAccess(stats.rating)) {
@@ -339,6 +346,7 @@ class ChineseChessCenter extends GameCenter {
             socket,
             stats
         });
+        console.log(`[${this.gameType}] joinRoomQueue 结果:`, result);
 
         if (result.success) {
             socket.emit('room_match_queue_joined', { 

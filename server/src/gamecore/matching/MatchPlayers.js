@@ -213,15 +213,18 @@ class RoomLevelMatchMaker {
      */
     joinRoomQueue(gameType, roomId, player) {
         const queueKey = this.getQueueKey(gameType, roomId);
+        console.log(`[RoomLevelMatchMaker] joinRoomQueue - gameType: ${gameType}, roomId: ${roomId}, queueKey: ${queueKey}, userId: ${player.userId}`);
         
         if (!this.roomQueues.has(queueKey)) {
             this.roomQueues.set(queueKey, []);
+            console.log(`[RoomLevelMatchMaker] Created new queue for ${queueKey}`);
         }
 
         const queue = this.roomQueues.get(queueKey);
 
         // 检查是否已在队列中
         if (queue.find(p => p.userId === player.userId)) {
+            console.log(`[RoomLevelMatchMaker] Player ${player.userId} already in queue`);
             return { success: false, error: '已在匹配队列中' };
         }
 
@@ -232,7 +235,8 @@ class RoomLevelMatchMaker {
         player.roomId = roomId;
         queue.push(player);
 
-        console.log(`[RoomLevelMatchMaker] Player ${player.userId} joined ${roomId} queue (${queueKey}), queue size: ${queue.length}`);
+        console.log(`[RoomLevelMatchMaker] Player ${player.userId} joined ${roomId} queue (${queueKey}), queue size: ${queue.length}, all queues:`, 
+            Array.from(this.roomQueues.entries()).map(([k, v]) => `${k}: ${v.length}`).join(', '));
 
         // 立即尝试匹配
         this.matchRoom(gameType, roomId);
@@ -277,7 +281,10 @@ class RoomLevelMatchMaker {
      */
     processAllQueues() {
         for (const queueKey of this.roomQueues.keys()) {
-            const [gameType, roomId] = queueKey.split('_');
+            const parts = queueKey.split('_');
+            const roomId = parts.pop(); // 最后一个是 roomId
+            const gameType = parts.join('_'); // 其余的是 gameType
+            console.log(`[RoomLevelMatchMaker] Processing queue: ${queueKey} (gameType: ${gameType}, roomId: ${roomId})`);
             this.matchRoom(gameType, roomId);
         }
     }
@@ -288,6 +295,7 @@ class RoomLevelMatchMaker {
     matchRoom(gameType, roomId) {
         const queueKey = this.getQueueKey(gameType, roomId);
         const queue = this.roomQueues.get(queueKey);
+        console.log(`[RoomLevelMatchMaker] matchRoom called - queueKey: ${queueKey}, queue size: ${queue?.length || 0}`);
         if (!queue || queue.length < 2) return;
 
         // 按等待时间排序，先进先出
