@@ -51,7 +51,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       }}
     >
       {/* 1. 背景层 (Background Layer) - 流光或白边 */}
-      <div className={`absolute inset-0 z-0 ${isTurn ? 'bg-white/30 backdrop-blur-md' : 'bg-white/70 backdrop-blur-md'}`}>
+      <div className={`absolute inset-0 z-0 ${isTurn ? 'bg-white/30 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md'}`}>
          {isTurn && (
              <>
                 <div 
@@ -79,7 +79,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
           {/* 头像容器 */}
           <div className="relative flex-shrink-0">
             <div 
-              className={`w-12 h-12 overflow-hidden rounded-full ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
+              className={`w-12 h-12 overflow-hidden rounded-full border-2 border-gray-100 shadow-sm`}
               style={{
                 transition: 'all 0.7s ease-in-out',
               }}
