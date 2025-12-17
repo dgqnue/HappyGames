@@ -51,7 +51,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       }}
     >
       {/* 1. 流光背景层 (Flowing Light Background) */}
-      <div className="absolute inset-0 z-0 bg-gray-200">
+      <div className="absolute inset-0 z-0 bg-white/30 backdrop-blur-md">
          <div 
             className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2"
             style={{
@@ -68,7 +68,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       </div>
 
       {/* 2. 遮罩背景层 (Mask Background) - 模拟边框内部 */}
-      <div className="absolute inset-[2px] bg-gray-200 rounded-[10px] z-0 border border-white/40"></div>
+      <div className="absolute inset-[2px] bg-white/30 backdrop-blur-md rounded-[10px] z-0 border border-white/40"></div>
 
       {/* 3. 内容层 (Content) */}
       <div className="relative z-10 flex items-center" style={{ flexDirection: isTop ? 'row' : 'row-reverse' }}>
