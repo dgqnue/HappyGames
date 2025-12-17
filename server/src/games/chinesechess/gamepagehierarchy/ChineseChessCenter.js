@@ -285,8 +285,8 @@ class ChineseChessCenter extends GameCenter {
                 message: '匹配成功！正在进入游戏...'
             });
 
-            // 执行加入逻辑 - 使用 joinAsPlayer 并自动设置监听器
-            await table.joinAsPlayer(p.socket);
+            // 执行加入逻辑 - 使用 joinTable 方法，canPlay = true
+            await table.joinTable(p.socket, true);
 
             p.socket.currentRoomId = table.tableId;
             p.socket.currentGameId = this.gameType;
@@ -418,8 +418,8 @@ class ChineseChessCenter extends GameCenter {
                 message: '匹配成功！正在进入游戏...'
             });
 
-            // 执行加入逻辑
-            await table.joinAsPlayer(p.socket);
+            // 执行加入逻辑 - 使用 joinTable 方法，canPlay = true
+            await table.joinTable(p.socket, true);
 
             p.socket.currentRoomId = table.tableId;
             p.socket.currentGameId = this.gameType;
