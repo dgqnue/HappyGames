@@ -541,6 +541,16 @@ export abstract class GameTableClient {
     }
 
     /**
+     * 设置当前游戏桌（匹配成功后调用，不发送加入请求）
+     * @param tier - 房间等级
+     * @param tableId - 游戏桌ID
+     */
+    public setCurrentTable(tier: string, tableId: string): void {
+        console.log(`[${this.gameType}TableClient] Setting current table (after match):`, { tier, tableId });
+        this.updateState({ tableId });
+    }
+
+    /**
      * 离开游戏桌
      */
     public leaveTable(): void {

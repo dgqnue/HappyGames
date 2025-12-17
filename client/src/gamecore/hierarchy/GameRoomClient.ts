@@ -475,6 +475,46 @@ export abstract class GameRoomClient {
     }
 
     /**
+     * 匹配成功后初始化游戏桌客户端
+     * 不会再发送加入请求，因为服务端已经让玩家入座
+     * @param tableId - 游戏桌ID
+     */
+    public initTableAfterMatch(tableId: string): void {
+        console.log(`[${this.gameType}RoomClient] Initializing table after match:`, tableId);
+
+        if (!this.state.currentRoom) {
+            console.error(`[${this.gameType}RoomClient] No room selected`);
+            return;
+        }
+
+        // 创建游戏桌客户端（如果不存在）
+        if (!this.tableClient) {
+            this.tableClient = new this.TableClientClass(this.socket);
+            this.tableClient.init((tableState) => {
+                // 将游戏桌状态合并到房间状态
+                this.updateState({ ...tableState });
+            });
+
+            // 监听被踢出事件
+            this.tableClient.setOnKickedCallback((data: any) => {
+                console.log(`[${this.gameType}RoomClient] Player kicked from table, clearing selection`);
+                this.updateState({ selectedTableId: null });
+                if (this.state.currentRoom) {
+                    this.getTableList(this.state.currentRoom.id);
+                }
+            });
+        }
+
+        // 直接更新选中的游戏桌ID（服务端已经让我们入座了）
+        this.updateState({ selectedTableId: tableId });
+        
+        // 通知 tableClient 当前所在的桌子
+        if (this.tableClient) {
+            this.tableClient.setCurrentTable(this.state.currentRoom.id, tableId);
+        }
+    }
+
+    /**
      * 取消快速匹配
      */
     public cancelQuickMatch(): void {

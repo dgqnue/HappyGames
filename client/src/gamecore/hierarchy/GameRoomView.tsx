@@ -51,6 +51,13 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
         const handleMatchFound = (data: any) => {
             console.log('[GameRoomView] Match found:', data);
             setIsMatching(false);
+            
+            // 匹配成功后，初始化游戏桌客户端
+            // 服务端已经让玩家入座，这里只是初始化前端状态
+            if (data.tableId) {
+                console.log('[GameRoomView] Initializing table after match:', data.tableId);
+                roomClient.initTableAfterMatch(data.tableId);
+            }
         };
         
         const handleMatchCancelled = () => {
