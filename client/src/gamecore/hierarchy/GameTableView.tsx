@@ -6,143 +6,6 @@ import { getGameDisplayPluginForClient } from './GameDisplayPlugin';
 import Image from 'next/image';
 import SystemDialog from '@/components/SystemDialog';
 
-// 公共默认头像路径（前端本地文件）
-const DEFAULT_AVATAR = '/images/default-avatar.png?v=new';
-
-interface PlayerProfileCardProps {
-    player: any;
-    position: 'left' | 'right';
-    interactive?: boolean;
-}
-
-const PlayerProfileCard = ({ player, position, interactive = false }: PlayerProfileCardProps) => {
-    const [isExpanded, setIsExpanded] = useState(true);
-
-    if (!player) {
-        // 无玩家时的占位符
-        return (
-            <div className="flex flex-col items-center justify-center">
-                <div className="flex flex-col items-center justify-center h-[32px] mb-2">
-                    <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-transparent">
-                            {' '}
-                        </span>
-                        <span className="text-xs whitespace-nowrap leading-tight text-transparent">
-                            {' '}
-                        </span>
-                    </div>
-                </div>
-                <div className="relative w-16 h-16">
-                    <div className="w-full h-full rounded-full border-2 border-amber-200 opacity-0"></div>
-                </div>
-            </div>
-        );
-    }
-
-    // 从不同层级获取玩家信息
-    const userObj = player.user || {};
-    const displayName = player.nickname || userObj.nickname || player.username || userObj.username || player.piUsername || userObj.piUsername || '玩家';
-    const displayTitle = player.title || '初出茅庐';
-    // 头像优先级：player.avatar > userObj.avatar > 默认头像
-    let avatarUrl = player.avatar || userObj.avatar || DEFAULT_AVATAR;
-    
-    // 智能修正：如果是浏览器环境，且当前访问的不是 localhost
-    if (typeof window !== 'undefined' && 
-        window.location.hostname !== 'localhost' && 
-        window.location.hostname !== '127.0.0.1') {
-        
-        // 情况1: 如果是完整 URL 但包含 localhost/127.0.0.1，替换为当前 hostname
-        if (avatarUrl && (avatarUrl.includes('localhost') || avatarUrl.includes('127.0.0.1'))) {
-                avatarUrl = avatarUrl.replace('localhost', window.location.hostname);
-                avatarUrl = avatarUrl.replace('127.0.0.1', window.location.hostname);
-        }
-    }
-
-    // 情况2: 补全相对路径
-    if (avatarUrl && avatarUrl.startsWith('/')) {
-            let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            
-            if (typeof window !== 'undefined' && 
-                window.location.hostname !== 'localhost' && 
-                window.location.hostname !== '127.0.0.1' &&
-                (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1'))) {
-                baseUrl = baseUrl.replace('localhost', window.location.hostname);
-                baseUrl = baseUrl.replace('127.0.0.1', window.location.hostname);
-            }
-
-            if (!avatarUrl.startsWith('http')) {
-                avatarUrl = `${baseUrl}${avatarUrl}`;
-            }
-    }
-
-    const titleColor = player.titleColor || '#666';
-    const playerReady = !!player.ready;
-
-    // 如果不可交互，强制展开
-    const expanded = interactive ? isExpanded : true;
-
-    return (
-        <div 
-            className={`flex flex-col items-center justify-center transition-all duration-300 ${interactive ? 'cursor-pointer' : ''}`}
-            onClick={(e) => {
-                if (interactive) {
-                    e.stopPropagation();
-                    setIsExpanded(!isExpanded);
-                }
-            }}
-            title={interactive && !expanded ? `${displayName} (${displayTitle})` : ''}
-        >
-            {/* 称号 + 昵称 */}
-            <div className={`flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ${expanded ? 'h-[32px] mb-2 opacity-100' : 'h-0 mb-0 opacity-0'}`}>
-                <div className="flex flex-col items-center gap-0.5">
-                    <span
-                        className="text-xs whitespace-nowrap leading-tight"
-                        style={{ color: titleColor }}
-                    >
-                        {displayTitle}
-                    </span>
-                    <span className="text-base truncate max-w-[100px] text-center leading-tight text-black">
-                        {displayName}
-                    </span>
-                </div>
-            </div>
-
-            {/* 头像 */}
-            <div className={`relative transition-all duration-300 ${expanded ? 'w-16 h-16' : 'w-12 h-12'}`}>
-                <img
-                    src={avatarUrl}
-                    alt={displayName}
-                    className={`w-full h-full object-cover border-2 border-amber-200 transition-all duration-300 ${expanded ? 'rounded-full' : 'rounded-xl'}`}
-                    onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (target.src.indexOf('default-avatar.png') === -1) {
-                            if (target.src.startsWith('http')) {
-                                try {
-                                    const url = new URL(target.src);
-                                    if (url.origin === window.location.origin) {
-                                        target.src = '/images/default-avatar.png';
-                                    } else {
-                                        target.src = url.pathname;
-                                    }
-                                } catch (err) {
-                                    target.src = '/images/default-avatar.png';
-                                }
-                            } else {
-                                target.src = '/images/default-avatar.png';
-                            }
-                        }
-                    }}
-                />
-                {playerReady && (
-                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0'}`}>
-                        <span className="text-white text-xs">✓</span>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
 interface GameTableViewProps {
     table: any;
     roomClient: GameRoomClient;
@@ -330,6 +193,9 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
     // 保留这两个变量用于渲染，但不再使用leftPlayer/rightPlayer命名
     const seat0Player = seats[0] || null;
     const seat1Player = seats[1] || null;
+
+    // 公共默认头像路径（前端本地文件）
+    const DEFAULT_AVATAR = '/images/default-avatar.png?v=new';
 
     // 监听roomClient状态变化，确保isMyTable正确更新
     useEffect(() => {
@@ -556,6 +422,143 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
         setDialogOpen(false);
     };
 
+    // 渲染玩家信息
+    const renderPlayer = (player: any, position: 'left' | 'right') => {
+        if (!player) {
+            // 无玩家时的占位符
+            return (
+                <div className="flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center h-[32px] mb-2">
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-base truncate max-w-[100px] text-center leading-tight text-transparent">
+                                {' '}
+                            </span>
+                            <span className="text-xs whitespace-nowrap leading-tight text-transparent">
+                                {' '}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="relative w-16 h-16">
+                        <div className="w-full h-full rounded-full border-2 border-amber-200 opacity-0"></div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 从不同层级获取玩家信息
+        const userObj = player.user || {};
+        const displayName = player.nickname || userObj.nickname || player.username || userObj.username || player.piUsername || userObj.piUsername || '玩家';
+        const displayTitle = player.title || '初出茅庐';
+        // 头像优先级：player.avatar > userObj.avatar > 默认头像
+        // player.avatar 来自 broadcastRoomState，已经是完整 URL 并优先级最高
+        let avatarUrl = player.avatar || userObj.avatar || DEFAULT_AVATAR;
+        
+        // 智能修正：如果是浏览器环境，且当前访问的不是 localhost
+        if (typeof window !== 'undefined' && 
+            window.location.hostname !== 'localhost' && 
+            window.location.hostname !== '127.0.0.1') {
+            
+            // 情况1: 如果是完整 URL 但包含 localhost/127.0.0.1，替换为当前 hostname
+            if (avatarUrl && (avatarUrl.includes('localhost') || avatarUrl.includes('127.0.0.1'))) {
+                 avatarUrl = avatarUrl.replace('localhost', window.location.hostname);
+                 avatarUrl = avatarUrl.replace('127.0.0.1', window.location.hostname);
+                 console.log('[GameTableView] Auto-corrected full URL for LAN:', avatarUrl);
+            }
+        }
+
+        // 情况2: 补全相对路径 (如果服务器返回了相对路径，前端进行补全)
+        if (avatarUrl && avatarUrl.startsWith('/')) {
+             // 优先使用环境变量，否则回退到 localhost:5000
+             let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+             
+             // 智能修正：如果是浏览器环境，且当前访问的不是 localhost，但 baseUrl 是 localhost
+             if (typeof window !== 'undefined' && 
+                 window.location.hostname !== 'localhost' && 
+                 window.location.hostname !== '127.0.0.1' &&
+                 (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1'))) {
+                 baseUrl = baseUrl.replace('localhost', window.location.hostname);
+                 baseUrl = baseUrl.replace('127.0.0.1', window.location.hostname);
+                 console.log('[GameTableView] Auto-corrected API URL for LAN:', baseUrl);
+             }
+
+             // 避免重复拼接
+             if (!avatarUrl.startsWith('http')) {
+                 avatarUrl = `${baseUrl}${avatarUrl}`;
+             }
+        }
+
+        const titleColor = player.titleColor || '#666';
+
+        // 直接使用player.ready字段（统一命名）
+        const playerReady = !!player.ready; // 强制转换为布尔值
+
+        return (
+            <div className="flex flex-col items-center justify-center">
+                {/* 就绪状态 - 占位显示以防止跳动 */}
+                <div className={`h-6 flex items-center justify-center ${playerReady ? 'opacity-100' : 'opacity-0'}`}>
+                    <span className="text-sm text-green-500 tracking-widest">就绪</span>
+                </div>
+
+                {/* 称号 + 昵称（分行显示在头像上方，互换顺序） */}
+                <div className="flex flex-col items-center justify-center h-[32px] mb-2">
+                    <div className="flex flex-col items-center gap-0.5">
+                        <span
+                            className="text-xs whitespace-nowrap leading-tight"
+                            style={{ color: titleColor }}
+                        >
+                            {displayTitle}
+                        </span>
+                        <span className="text-base truncate max-w-[100px] text-center leading-tight text-black">
+                            {displayName}
+                        </span>
+                    </div>
+                </div>
+
+                {/* 头像 */}
+                <div className="relative w-16 h-16">
+                    {/* 使用标准 img 标签代替 next/image，以避免局域网 IP 不在 remotePatterns 中的问题 */}
+                    <img
+                        src={avatarUrl || '/images/default-avatar.png'}
+                        alt={displayName}
+                        className="w-full h-full rounded-full object-cover border-2 border-amber-200"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            console.error(`[GameTableView] Failed to load avatar: ${target.src}`);
+                            // 防止无限循环
+                            if (target.src.indexOf('default-avatar.png') === -1) {
+                                // 尝试使用相对路径（如果之前是绝对路径失败了）
+                                if (target.src.startsWith('http')) {
+                                    try {
+                                        const url = new URL(target.src);
+                                        // 如果是同一域名下的资源，尝试直接使用路径
+                                        if (url.origin === window.location.origin) {
+                                            // 已经是同源失败，直接回退
+                                            target.src = '/images/default-avatar.png';
+                                        } else {
+                                            // 跨域失败，可能是 Render 临时域名问题，尝试只取路径部分
+                                            // 注意：这假设图片在当前服务器上也有
+                                            console.log(`[GameTableView] Retrying with relative path: ${url.pathname}`);
+                                            target.src = url.pathname;
+                                        }
+                                    } catch (err) {
+                                        target.src = '/images/default-avatar.png';
+                                    }
+                                } else {
+                                    target.src = '/images/default-avatar.png';
+                                }
+                            }
+                        }}
+                    />
+                    {playerReady && (
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                            <span className="text-white text-xs">✓</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     const borderColor = isMyTableLocal ? '#60a5fa' : '#f59e0b'; // blue-400 (淡蓝), amber-500 (金色)
     const borderWidth = '1px';
     const componentHeight = '280px'; // 再降低一点高度
@@ -654,7 +657,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             {/* 中间：玩家区域 */}
             <div className="flex-1 flex items-center justify-between mb-6 px-4">
                 {/* 左侧玩家（座位0） */}
-                <PlayerProfileCard player={seat0Player} position="left" interactive={isMyTableLocal} />
+                {renderPlayer(seat0Player, 'left')}
 
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
@@ -681,7 +684,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 </div>
 
                 {/* 右侧玩家（座位1） */}
-                <PlayerProfileCard player={seat1Player} position="right" interactive={isMyTableLocal} />
+                {renderPlayer(seat1Player, 'right')}
             </div>
 
             {/* 左下角玩家计数 */}

@@ -12,6 +12,73 @@ import { GameDisplayPlugin } from '@/gamecore/hierarchy/GameDisplayPlugin';
 import { ChessBoardKit } from '@/games/chinesechess/gamepagehierarchy/ChessBoardKit';
 import { useSystemDialog } from '@/lib/SystemDialogContext';
 
+// 玩家信息卡片组件 - 支持折叠
+interface PlayerInfoCardProps {
+  player: any;
+  isTop: boolean;
+  isTurn: boolean;
+}
+
+const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  
+  // 头像 URL 处理
+  const avatarUrl = player.avatar || '/images/default-avatar.png?v=new';
+
+  return (
+    <div 
+      className={`flex items-center gap-3 px-2 py-2 rounded-xl bg-gray-200 shadow-lg border border-white/40 cursor-pointer transition-all duration-300`}
+      style={{ 
+        flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
+      }}
+    >
+      {/* 头像容器 */}
+      <div className="relative">
+        <div 
+          className={`w-12 h-12 overflow-hidden ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
+          style={{
+            transition: 'all 0.3s ease-in-out',
+            borderRadius: isExpanded ? '9999px' : '12px' // Expanded: circle, Collapsed: rounded square
+          }}
+        >
+          <img 
+            src={avatarUrl} 
+            alt={player.nickname || 'Player'} 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
+      
+      {/* 玩家名字 - 只在展开时显示 */}
+      <div 
+        className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} transition-all duration-300 overflow-hidden`}
+        style={{
+            maxWidth: isExpanded ? '200px' : '0px',
+            opacity: isExpanded ? 1 : 0,
+            width: isExpanded ? 'auto' : '0px',
+            margin: 0 // Remove margin to ensure smooth collapse
+        }}
+      >
+        <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} px-2`}>
+            <span className="text-black text-sm tracking-wide whitespace-nowrap">
+            {player.nickname || '等待加入...'}
+            </span>
+            {/* 称号 (可选) */}
+            {player.title && (
+            <span className="text-xs mt-0.5 whitespace-nowrap" style={{ color: player.titleColor || '#d97706' }}>
+                {player.title}
+            </span>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 棋子类型定义
 interface ChessPiece {
   type: 'rook' | 'knight' | 'bishop' | 'guard' | 'king' | 'cannon' | 'pawn';
@@ -584,62 +651,17 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const renderPlayerInfo = (player: any, isTop: boolean) => {
     if (!player) return <div className="w-16 h-16" />; // 占位符
 
-    // 确定玩家阵营
-    // 在 ChineseChessTable.js 中，players[0] 是红方，players[1] 是黑方
-    // 但这里我们可能需要根据 userId 或其他逻辑来确定
-    // 简单起见，假设 players[0] 是红方，players[1] 是黑方
-    // 如果 mySide 是 'b' (黑方)，则视角翻转，红方在上方，黑方在下方
-    // 如果 mySide 是 'r' (红方)，则红方在下方，黑方在上方
-    
-    // 实际上，我们应该根据 isTop 和 mySide 来决定显示哪个玩家
-    // 但这里传入的 player 已经是确定的对象
-    
     // 确定是否轮到该玩家
-    // 假设 player 对象中有 userId，我们需要知道该玩家是红方还是黑方
-    // 我们可以通过 players 数组的索引来判断：index 0 是红方，index 1 是黑方
     const playerIndex = players.findIndex(p => p.userId === player.userId);
     const playerSide = playerIndex === 0 ? 'r' : 'b';
     const isTurn = currentTurn === playerSide;
     
-    // 头像 URL 处理
-    const avatarUrl = player.avatar || '/images/default-avatar.png?v=new';
-    
     return (
-      <div 
-        className="flex flex-row items-center gap-3 px-4 py-2 rounded-xl bg-gray-200 shadow-lg border border-white/40" 
-        style={{ 
-          flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右
-        }}
-      >
-        {/* 头像容器 */}
-        <div className="relative">
-          <div 
-            className={`w-12 h-12 rounded-full overflow-hidden ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
-            style={{
-              transition: 'all 0.3s ease-in-out'
-            }}
-          >
-            <img 
-              src={avatarUrl} 
-              alt={player.nickname || 'Player'} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-        
-        {/* 玩家名字 */}
-        <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'}`}>
-          <span className="text-black text-sm tracking-wide">
-            {player.nickname || '等待加入...'}
-          </span>
-          {/* 称号 (可选) */}
-          {player.title && (
-            <span className="text-xs mt-0.5" style={{ color: player.titleColor || '#d97706' }}>
-              {player.title}
-            </span>
-          )}
-        </div>
-      </div>
+        <PlayerInfoCard 
+            player={player} 
+            isTop={isTop} 
+            isTurn={isTurn} 
+        />
     );
   };
 
