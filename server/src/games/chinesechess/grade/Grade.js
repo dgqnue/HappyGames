@@ -7,11 +7,11 @@ const TITLES = [
     { rank: 3, name: '渐入佳境', percent: 16, minPercentile: 0.43, color: '#00FF00' },
     { rank: 4, name: '锋芒毕露', percent: 13, minPercentile: 0.30, color: '#0000FF' },
     { rank: 5, name: '出类拔萃', percent: 10, minPercentile: 0.20, color: '#FF0000' },
-    { rank: 6, name: '炉火纯青', percent: 8, minPercentile: 0.12, color: '#00FFFF' },
-    { rank: 7, name: '名满江湖', percent: 6, minPercentile: 0.06, color: '#ffee32' },
-    { rank: 8, name: '傲视群雄', percent: 4, minPercentile: 0.02, color: '#800080' },
-    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#FF6200' },
-    { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#ffba08' } // top 1
+    { rank: 6, name: '炉火纯青', percent: 8, minPercentile: 0.12, color: '#06bee1' },
+    { rank: 7, name: '名满江湖', percent: 6, minPercentile: 0.06, color: '#ffba08' },
+    { rank: 8, name: '傲视群雄', percent: 4, minPercentile: 0.02, color: '#7b2cbf' },
+    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#800080' },
+    { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#FF6200' } // top 1
 ];
 
 class Grade {
