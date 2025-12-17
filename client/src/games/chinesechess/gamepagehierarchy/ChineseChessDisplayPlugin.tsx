@@ -41,7 +41,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
 
   return (
     <div 
-      className={`relative flex items-center h-16 rounded-xl shadow-lg cursor-pointer transition-all duration-700 ease-in-out overflow-hidden`}
+      className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out overflow-hidden`}
       style={{ 
         padding: '0.5rem', 
       }}
@@ -50,29 +50,27 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 1. 背景层 (Background Layer) - 流光或白边 */}
-      <div className={`absolute inset-0 z-0 ${isTurn ? 'bg-white/30 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md'}`}>
-         {isTurn && (
-             <>
-                <div 
-                    className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                        background: `conic-gradient(from 0deg, transparent 0%, transparent 40%, ${titleColor} 50%, transparent 60%, transparent 100%)`,
-                        animation: 'spin 4s linear infinite'
-                    }}
-                />
-                <style jsx>{`
-                    @keyframes spin {
-                        from { transform: translate(-50%, -50%) rotate(0deg); }
-                        to { transform: translate(-50%, -50%) rotate(360deg); }
-                    }
-                `}</style>
-             </>
-         )}
-      </div>
+      {/* 1. 流光背景层 (Flowing Light Background) - 仅行棋方显示 */}
+      {isTurn && (
+        <div className="absolute inset-0 z-0">
+          <div 
+            className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2"
+            style={{
+              background: `conic-gradient(from 0deg, transparent 0%, transparent 40%, ${titleColor} 50%, transparent 60%, transparent 100%)`,
+              animation: 'spin 4s linear infinite'
+            }}
+          />
+          <style jsx>{`
+            @keyframes spin {
+              from { transform: translate(-50%, -50%) rotate(0deg); }
+              to { transform: translate(-50%, -50%) rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
 
-      {/* 2. 遮罩背景层 (Mask Background) - 模拟边框内部 */}
-      <div className="absolute inset-[2px] bg-white/30 backdrop-blur-md rounded-[10px] z-0 border border-white/40"></div>
+      {/* 2. 主背景层 - 与结算信息框一致的毛玻璃效果 */}
+      <div className={`absolute ${isTurn ? 'inset-[2px] rounded-[6px]' : 'inset-0 rounded-lg'} z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30`}></div>
 
       {/* 3. 内容层 (Content) */}
       <div className="relative z-10 flex items-center" style={{ flexDirection: isTop ? 'row' : 'row-reverse' }}>
