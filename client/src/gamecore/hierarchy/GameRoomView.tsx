@@ -43,8 +43,8 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
     useEffect(() => {
         const socket = roomClient.getSocket();
         
-        const handleMatchQueueJoined = () => {
-            console.log('[GameRoomView] Joined match queue');
+        const handleMatchQueueJoined = (data: any) => {
+            console.log('[GameRoomView] Joined match queue:', data);
             setIsMatching(true);
         };
         
@@ -61,6 +61,10 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
         const handleMatchFailed = (data: any) => {
             console.log('[GameRoomView] Match failed:', data);
             setIsMatching(false);
+            // 显示错误消息
+            if (data?.message) {
+                alert('匹配失败: ' + data.message);
+            }
         };
         
         socket.on('room_match_queue_joined', handleMatchQueueJoined);

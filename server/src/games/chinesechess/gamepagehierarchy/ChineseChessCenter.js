@@ -92,7 +92,7 @@ class ChineseChessCenter extends GameCenter {
      * 玩家进入中国象棋游戏中心
      */
     playerJoinGameCenter(socket) {
-        console.log(`[${this.gameType}] 玩家进入游戏中心: ${socket.user.username}`);
+        console.log(`[${this.gameType}] 玩家进入游戏中心: ${socket.user.username}, socketId: ${socket.id}`);
 
         // 🔧 关键修复：检查是否已经注册过监听器，防止重复注册
         const listenerKey = `__has_${this.gameType}_center_listeners`;
@@ -101,6 +101,7 @@ class ChineseChessCenter extends GameCenter {
             return;
         }
         socket[listenerKey] = true;
+        console.log(`[${this.gameType}] 正在为 socket ${socket.id} 注册事件监听器...`);
 
         // ========== GameRoom 层事件监听 ==========
         // 为所有房间设置监听器
@@ -163,16 +164,22 @@ class ChineseChessCenter extends GameCenter {
         });
 
         // 5. 房间级别快速匹配
-        socket.on(`${this.gameType}_room_quick_match`, async (data) => {
+        const quickMatchEvent = `${this.gameType}_room_quick_match`;
+        console.log(`[${this.gameType}] 注册事件监听器: ${quickMatchEvent}`);
+        socket.on(quickMatchEvent, async (data) => {
             console.log(`[${this.gameType}] 收到房间快速匹配请求:`, data, 'from user:', socket.user?.username);
             await this.handleRoomQuickMatch(socket, data);
         });
 
         // 6. 取消房间级别匹配
-        socket.on(`${this.gameType}_cancel_room_quick_match`, () => {
+        const cancelMatchEvent = `${this.gameType}_cancel_room_quick_match`;
+        console.log(`[${this.gameType}] 注册事件监听器: ${cancelMatchEvent}`);
+        socket.on(cancelMatchEvent, () => {
             console.log(`[${this.gameType}] 收到取消房间匹配请求 from user:`, socket.user?.username);
             this.handleCancelRoomQuickMatch(socket);
         });
+        
+        console.log(`[${this.gameType}] 事件监听器注册完成 for socket ${socket.id}`);
     }
 
     /**
