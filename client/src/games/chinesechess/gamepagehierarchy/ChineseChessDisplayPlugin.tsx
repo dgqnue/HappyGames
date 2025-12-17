@@ -41,7 +41,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
 
   return (
     <div 
-      className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
+      className={`relative flex items-center h-16 rounded-xl shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
       style={{ 
         padding: '0.5rem',
       }}
@@ -50,53 +50,54 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 全局样式 - 流光边框动画 */}
+      {/* 全局样式 - 流光边框动画 (顺时针) */}
       <style jsx global>{`
-        @keyframes borderFlow {
+        @keyframes borderFlowClockwise {
           0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
+            background-position: 200% 0%, 100% 200%, 0% 100%, 0% 0%;
           }
           100% {
-            background-position: 0% 50%;
+            background-position: 0% 0%, 100% 0%, 0% 100%, 200% 100%;
           }
         }
       `}</style>
 
-      {/* 1. 流光边框层 - 仅行棋方显示 */}
+      {/* 1. 流光边框层 - 仅行棋方显示 (顺时针流动) */}
       {isTurn && (
         <div 
-          className="absolute inset-0 z-0 rounded-lg"
+          className="absolute inset-0 z-0 rounded-xl"
           style={{
-            background: `linear-gradient(90deg, transparent, ${titleColor}, transparent, ${titleColor}, transparent)`,
-            backgroundSize: '200% 100%',
-            animation: 'borderFlow 3s linear infinite',
+            background: `
+              linear-gradient(90deg, transparent, ${titleColor}, transparent) top / 200% 2px no-repeat,
+              linear-gradient(180deg, transparent, ${titleColor}, transparent) right / 2px 200% no-repeat,
+              linear-gradient(270deg, transparent, ${titleColor}, transparent) bottom / 200% 2px no-repeat,
+              linear-gradient(0deg, transparent, ${titleColor}, transparent) left / 2px 200% no-repeat
+            `,
+            animation: 'borderFlowClockwise 3s linear infinite',
           }}
         />
       )}
 
       {/* 2. 遮光层 - 完全不透明，遮住流光 */}
       <div 
-        className="absolute z-[1] rounded-md"
+        className="absolute z-[1] rounded-xl"
         style={{
-          top: isTurn ? '2px' : '0',
-          right: isTurn ? '2px' : '0',
-          bottom: isTurn ? '2px' : '0',
-          left: isTurn ? '2px' : '0',
+          top: '2px',
+          right: '2px',
+          bottom: '2px',
+          left: '2px',
           backgroundColor: '#d4a574', // 棋盘木纹色
         }}
       ></div>
 
       {/* 3. 毛玻璃效果层 */}
       <div 
-        className="absolute z-[2] bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-md"
+        className="absolute z-[2] bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-xl"
         style={{
-          top: isTurn ? '2px' : '0',
-          right: isTurn ? '2px' : '0',
-          bottom: isTurn ? '2px' : '0',
-          left: isTurn ? '2px' : '0',
+          top: '2px',
+          right: '2px',
+          bottom: '2px',
+          left: '2px',
         }}
       ></div>
 
