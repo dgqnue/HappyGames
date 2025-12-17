@@ -43,41 +43,37 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
     <div 
       className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
       style={{ 
-        padding: isTurn ? 'calc(0.5rem + 2px)' : '0.5rem',
-        ...(isTurn ? {
-          backgroundImage: `conic-gradient(from var(--border-gradient-angle) at 50% 50%, transparent, ${titleColor} 14%, transparent 17%)`,
-          backgroundSize: 'contain',
-          animation: 'borderSpin 4s linear infinite',
-        } : {}),
+        padding: '0.5rem',
       }}
       onClick={(e) => {
         e.stopPropagation();
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 全局样式 - @property 定义 CSS 变量 */}
+      {/* 全局样式 - 流光动画 */}
       <style jsx global>{`
-        @property --border-gradient-angle {
-          syntax: "<angle>";
-          inherits: true;
-          initial-value: 0turn;
-        }
-        
-        @keyframes borderSpin {
-          0% {
-            --border-gradient-angle: 0turn;
+        @keyframes glowPulse {
+          0%, 100% {
+            box-shadow: 0 0 5px 2px var(--glow-color), 
+                        0 0 10px 4px var(--glow-color),
+                        inset 0 0 3px 1px var(--glow-color);
           }
-          100% {
-            --border-gradient-angle: 1turn;
+          50% {
+            box-shadow: 0 0 10px 4px var(--glow-color), 
+                        0 0 20px 8px var(--glow-color),
+                        inset 0 0 5px 2px var(--glow-color);
           }
         }
       `}</style>
 
       {/* 主背景层 - 毛玻璃效果 */}
       <div 
-        className="absolute inset-0 z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30"
+        className="absolute inset-0 z-0 bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-lg"
         style={{
-          borderRadius: '6px',
+          ...(isTurn ? {
+            '--glow-color': titleColor,
+            animation: 'glowPulse 2s ease-in-out infinite',
+          } as React.CSSProperties : {}),
         }}
       ></div>
 
