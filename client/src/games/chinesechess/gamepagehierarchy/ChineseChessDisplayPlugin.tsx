@@ -27,7 +27,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
 
   return (
     <div 
-      className={`flex items-center gap-3 px-2 py-2 rounded-xl bg-gray-200 shadow-lg border border-white/40 cursor-pointer transition-all duration-300`}
+      className={`flex items-center h-16 px-2 py-2 rounded-xl bg-gray-200 shadow-lg border border-white/40 cursor-pointer transition-all duration-700 ease-in-out`}
       style={{ 
         flexDirection: isTop ? 'row' : 'row-reverse', // 上方玩家头像在左，下方玩家头像在右
       }}
@@ -37,11 +37,11 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       }}
     >
       {/* 头像容器 */}
-      <div className="relative">
+      <div className="relative flex-shrink-0">
         <div 
           className={`w-12 h-12 overflow-hidden ${isTurn ? 'shadow-[0_0_15px_3px_rgba(220,38,38,0.8)] ring-2 ring-red-500 animate-pulse' : 'border-2 border-gray-100 shadow-sm'}`}
           style={{
-            transition: 'all 0.3s ease-in-out',
+            transition: 'all 0.7s ease-in-out',
             borderRadius: isExpanded ? '9999px' : '12px' // Expanded: circle, Collapsed: rounded square
           }}
         >
@@ -55,12 +55,13 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       
       {/* 玩家名字 - 只在展开时显示 */}
       <div 
-        className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} transition-all duration-300 overflow-hidden`}
+        className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} transition-all duration-700 ease-in-out overflow-hidden`}
         style={{
             maxWidth: isExpanded ? '200px' : '0px',
             opacity: isExpanded ? 1 : 0,
-            width: isExpanded ? 'auto' : '0px',
-            margin: 0 // Remove margin to ensure smooth collapse
+            // 使用 margin 代替 gap 以实现平滑过渡
+            marginLeft: isTop ? (isExpanded ? '0.75rem' : '0px') : '0px',
+            marginRight: !isTop ? (isExpanded ? '0.75rem' : '0px') : '0px',
         }}
       >
         <div className={`flex flex-col ${isTop ? 'items-start' : 'items-end'} px-2`}>
