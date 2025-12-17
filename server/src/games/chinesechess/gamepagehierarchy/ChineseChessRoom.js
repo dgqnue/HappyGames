@@ -1,6 +1,6 @@
 const GameRoom = require('../../../gamecore/hierarchy/GameRoom');
 const MatchPlayers = require('../../../gamecore/matching/MatchPlayers');
-const MatchingRules = MatchPlayers.MatchingRules;
+const StateMappingRules = MatchPlayers.StateMappingRules;
 const UserGameStats = require('../../../models/UserGameStats');
 
 /**
@@ -149,7 +149,7 @@ class ChineseChessRoom extends GameRoom {
      * @returns {Object|undefined} 可用的桌子或undefined
      */
     findAvailableTable() {
-        return this.tables.find(t => MatchingRules.isTableAvailable(t));
+        return this.tables.find(t => StateMappingRules.isTableAvailable(t));
     }
 
     /**
