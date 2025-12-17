@@ -167,16 +167,22 @@ export function GameRoomView({ roomClient, onBack }: GameRoomViewProps) {
 
     // 快速匹配处理函数
     const handleQuickMatch = () => {
+        console.log('[GameRoomView] handleQuickMatch called, isMatching:', isMatching, 'roomState.currentRoom:', roomState.currentRoom);
         if (isMatching) {
             // 取消匹配
+            console.log('[GameRoomView] Cancelling quick match');
             roomClient.cancelQuickMatch();
             setIsMatching(false);
         } else {
             // 开始匹配
             const roomId = roomState.currentRoom?.id;
+            console.log('[GameRoomView] Starting quick match, roomId:', roomId);
             if (roomId) {
                 roomClient.requestQuickMatch(roomId);
                 setIsMatching(true);
+            } else {
+                console.error('[GameRoomView] No roomId available for quick match!');
+                alert('无法开始匹配：房间信息未加载');
             }
         }
     };

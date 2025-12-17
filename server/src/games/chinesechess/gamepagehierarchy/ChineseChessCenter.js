@@ -103,6 +103,13 @@ class ChineseChessCenter extends GameCenter {
         socket[listenerKey] = true;
         console.log(`[${this.gameType}] 正在为 socket ${socket.id} 注册事件监听器...`);
 
+        // 调试：监听所有事件
+        socket.onAny((eventName, ...args) => {
+            if (eventName.includes('quick_match') || eventName.includes('room_quick')) {
+                console.log(`[${this.gameType}] 收到事件 (onAny): ${eventName}`, args);
+            }
+        });
+
         // ========== GameRoom 层事件监听 ==========
         // 为所有房间设置监听器
         for (const room of this.gameRooms.values()) {

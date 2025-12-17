@@ -470,8 +470,10 @@ export abstract class GameRoomClient {
      * @param roomId - 房间ID（如：free, beginner, intermediate, advanced）
      */
     public requestQuickMatch(roomId: string): void {
-        console.log(`[${this.gameType}RoomClient] Requesting quick match for room: ${roomId}`);
-        this.socket.emit(`${this.gameType}_room_quick_match`, { roomId });
+        const eventName = `${this.gameType}_room_quick_match`;
+        console.log(`[${this.gameType}RoomClient] Requesting quick match - event: ${eventName}, roomId: ${roomId}, socket connected: ${this.socket.connected}, socket id: ${this.socket.id}`);
+        this.socket.emit(eventName, { roomId });
+        console.log(`[${this.gameType}RoomClient] Quick match request sent`);
     }
 
     /**
