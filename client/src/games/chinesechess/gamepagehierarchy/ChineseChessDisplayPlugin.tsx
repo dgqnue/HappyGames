@@ -70,7 +70,16 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
       )}
 
       {/* 2. 主背景层 - 与结算信息框一致的毛玻璃效果 (双方都一致) */}
-      <div className={`absolute ${isTurn ? 'inset-[2px] rounded-[6px]' : 'inset-0 rounded-lg'} z-[1] bg-red-100/30 backdrop-blur-md border border-red-200/30`}></div>
+      <div 
+        className="absolute z-[1] bg-red-100/30 backdrop-blur-md border border-red-200/30"
+        style={{
+          top: isTurn ? '2px' : '0',
+          right: isTurn ? '2px' : '0',
+          bottom: isTurn ? '2px' : '0',
+          left: isTurn ? '2px' : '0',
+          borderRadius: isTurn ? '6px' : '8px',
+        }}
+      ></div>
 
       {/* 3. 内容层 (Content) */}
       <div className="relative z-10 flex items-center" style={{ flexDirection: isTop ? 'row' : 'row-reverse' }}>
