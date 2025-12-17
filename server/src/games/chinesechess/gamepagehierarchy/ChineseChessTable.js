@@ -635,6 +635,16 @@ class ChineseChessTable extends GameTable {
         const room = this.io.sockets.adapter.rooms.get(this.tableId);
         console.log(`[ChineseChessTable] Sockets in room ${this.tableId}:`, room ? room.size : 0, 'ids:', room ? Array.from(room) : []);
         
+        // 🔧 关键修复：确保所有玩家的 socket 都在广播室中
+        // 这可以处理 socket 重连后没有重新加入广播室的情况
+        for (const player of currentPlayers) {
+            const playerSocket = this.io.sockets.sockets.get(player.socketId);
+            if (playerSocket && !playerSocket.rooms.has(this.tableId)) {
+                console.log(`[ChineseChessTable] 🔧 Re-joining player ${player.userId} (socket ${player.socketId}) to room ${this.tableId}`);
+                playerSocket.join(this.tableId);
+            }
+        }
+        
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
 
