@@ -631,6 +631,10 @@ class ChineseChessTable extends GameTable {
 
         console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${currentStatus}, players=${currentPlayers.length}`);
         
+        // 检查当前在这个房间的 socket 数量
+        const room = this.io.sockets.adapter.rooms.get(this.tableId);
+        console.log(`[ChineseChessTable] Sockets in room ${this.tableId}:`, room ? room.size : 0, 'ids:', room ? Array.from(room) : []);
+        
         // 广播给房间内所有人
         this.io.to(this.tableId).emit('table_update', state);
 
