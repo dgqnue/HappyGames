@@ -1,6 +1,7 @@
 // 文件：server/src/games/chinesechess/grade/Grade.js
 const UserGameStats = require('../../../models/UserGameStats');
 
+// 9个常规等级（不含特殊的"举世无双"）
 const TITLES = [
     { rank: 1, name: '初出茅庐', percent: 22, minPercentile: 0.78, color: '#000000' },
     { rank: 2, name: '小试牛刀', percent: 19, minPercentile: 0.59, color: '#8f2d56' },
@@ -10,9 +11,11 @@ const TITLES = [
     { rank: 6, name: '炉火纯青', percent: 8, minPercentile: 0.12, color: '#06bee1' },
     { rank: 7, name: '名满江湖', percent: 6, minPercentile: 0.06, color: '#ffba08' },
     { rank: 8, name: '傲视群雄', percent: 4, minPercentile: 0.02, color: '#7b2cbf' },
-    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#800080' },
-    { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#FF6200' } // top 1
+    { rank: 9, name: '登峰造极', percent: 2, minPercentile: 0.01, color: '#800080' }
 ];
+
+// 特殊的第1名称号（不参与其他玩家的计算）
+const SUPREME_TITLE = { rank: 10, name: '举世无双', percent: 0, minPercentile: 0.00, color: '#FF6200' };
 
 class Grade {
     /**
@@ -48,7 +51,7 @@ class Grade {
         // 第1名玩家：直接返回 "举世无双"
         if (rank === 1) {
             console.log(`  ✓ matched 举世无双 (rank 1)`);
-            return TITLES[9];
+            return SUPREME_TITLE;
         }
         
         // 剩余玩家的相对排名（在剩余 N-1 个玩家中的排名）
