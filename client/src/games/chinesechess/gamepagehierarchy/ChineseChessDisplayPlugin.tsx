@@ -41,7 +41,7 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
 
   return (
     <div 
-      className={`relative flex items-center h-16 rounded-xl shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
+      className={`relative flex items-center h-16 rounded-lg shadow-lg cursor-pointer transition-all duration-700 ease-in-out`}
       style={{ 
         padding: '0.5rem',
       }}
@@ -50,42 +50,48 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
         setIsExpanded(!isExpanded);
       }}
     >
-      {/* 全局样式 - 流光边框动画 (顺时针) */}
+      {/* 全局样式 - 使用 @property 定义 CSS 变量实现 conic-gradient 顺时针旋转 */}
       <style jsx global>{`
-        @keyframes borderFlowClockwise {
+        @property --border-angle {
+          syntax: "<angle>";
+          inherits: true;
+          initial-value: 0turn;
+        }
+        
+        @keyframes borderRotate {
           0% {
-            background-position: 200% 0%, 100% 200%, 0% 100%, 0% 0%;
+            --border-angle: 0turn;
           }
           100% {
-            background-position: 0% 0%, 100% 0%, 0% 100%, 200% 100%;
+            --border-angle: 1turn;
           }
+        }
+        
+        .flowing-border {
+          background-image: conic-gradient(from var(--border-angle) at 50% 50%, transparent, var(--glow-color) 14%, transparent 17%);
+          animation: borderRotate 3s linear infinite;
         }
       `}</style>
 
-      {/* 1. 流光边框层 - 仅行棋方显示 (顺时针流动) */}
+      {/* 1. 流光边框层 - 仅行棋方显示 (conic-gradient 顺时针旋转) */}
       {isTurn && (
         <div 
-          className="absolute inset-0 z-0 rounded-xl"
+          className="absolute inset-0 z-0 rounded-lg flowing-border"
           style={{
-            background: `
-              linear-gradient(90deg, transparent, ${titleColor}, transparent) top / 200% 2px no-repeat,
-              linear-gradient(180deg, transparent, ${titleColor}, transparent) right / 2px 200% no-repeat,
-              linear-gradient(270deg, transparent, ${titleColor}, transparent) bottom / 200% 2px no-repeat,
-              linear-gradient(0deg, transparent, ${titleColor}, transparent) left / 2px 200% no-repeat
-            `,
-            animation: 'borderFlowClockwise 3s linear infinite',
-          }}
+            '--glow-color': titleColor,
+          } as React.CSSProperties}
         />
       )}
 
       {/* 2. 遮光层 - 使用游戏背景图，完全不透明，遮住流光 */}
       <div 
-        className="absolute z-[1] rounded-xl overflow-hidden"
+        className="absolute z-[1] overflow-hidden"
         style={{
           top: '2px',
           right: '2px',
           bottom: '2px',
           left: '2px',
+          borderRadius: '6px',
           backgroundImage: 'url("/images/chinesechess/ui/woodenPlankBackground.png?v=2")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -94,12 +100,13 @@ const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
 
       {/* 3. 毛玻璃效果层 - 与结算框一致 */}
       <div 
-        className="absolute z-[2] bg-red-100/30 backdrop-blur-md border border-red-200/30 rounded-xl"
+        className="absolute z-[2] bg-red-100/30 backdrop-blur-md border border-red-200/30"
         style={{
           top: '2px',
           right: '2px',
           bottom: '2px',
           left: '2px',
+          borderRadius: '6px',
         }}
       ></div>
 
