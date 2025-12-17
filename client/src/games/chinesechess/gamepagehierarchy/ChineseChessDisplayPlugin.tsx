@@ -22,6 +22,19 @@ interface PlayerInfoCardProps {
 const PlayerInfoCard = ({ player, isTop, isTurn }: PlayerInfoCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
+  // 自动折叠逻辑：展开后15秒无操作自动折叠
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isExpanded) {
+      timer = setTimeout(() => {
+        setIsExpanded(false);
+      }, 15000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isExpanded]);
+  
   // 头像 URL 处理
   const avatarUrl = player.avatar || '/images/default-avatar.png?v=new';
 
