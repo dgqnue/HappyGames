@@ -12,9 +12,10 @@ const DEFAULT_AVATAR = '/images/default-avatar.png?v=new';
 interface PlayerProfileCardProps {
     player: any;
     position: 'left' | 'right';
+    interactive?: boolean;
 }
 
-const PlayerProfileCard = ({ player, position }: PlayerProfileCardProps) => {
+const PlayerProfileCard = ({ player, position, interactive = false }: PlayerProfileCardProps) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
     if (!player) {
@@ -77,17 +78,22 @@ const PlayerProfileCard = ({ player, position }: PlayerProfileCardProps) => {
     const titleColor = player.titleColor || '#666';
     const playerReady = !!player.ready;
 
+    // 如果不可交互，强制展开
+    const expanded = interactive ? isExpanded : true;
+
     return (
         <div 
-            className="flex flex-col items-center justify-center cursor-pointer transition-all duration-300"
+            className={`flex flex-col items-center justify-center transition-all duration-300 ${interactive ? 'cursor-pointer' : ''}`}
             onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(!isExpanded);
+                if (interactive) {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                }
             }}
-            title={!isExpanded ? `${displayName} (${displayTitle})` : ''}
+            title={interactive && !expanded ? `${displayName} (${displayTitle})` : ''}
         >
             {/* 称号 + 昵称 */}
-            <div className={`flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ${isExpanded ? 'h-[32px] mb-2 opacity-100' : 'h-0 mb-0 opacity-0'}`}>
+            <div className={`flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ${expanded ? 'h-[32px] mb-2 opacity-100' : 'h-0 mb-0 opacity-0'}`}>
                 <div className="flex flex-col items-center gap-0.5">
                     <span
                         className="text-xs whitespace-nowrap leading-tight"
@@ -102,11 +108,11 @@ const PlayerProfileCard = ({ player, position }: PlayerProfileCardProps) => {
             </div>
 
             {/* 头像 */}
-            <div className={`relative transition-all duration-300 ${isExpanded ? 'w-16 h-16' : 'w-12 h-12'}`}>
+            <div className={`relative transition-all duration-300 ${expanded ? 'w-16 h-16' : 'w-12 h-12'}`}>
                 <img
                     src={avatarUrl}
                     alt={displayName}
-                    className={`w-full h-full object-cover border-2 border-amber-200 transition-all duration-300 ${isExpanded ? 'rounded-full' : 'rounded-xl'}`}
+                    className={`w-full h-full object-cover border-2 border-amber-200 transition-all duration-300 ${expanded ? 'rounded-full' : 'rounded-xl'}`}
                     onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         if (target.src.indexOf('default-avatar.png') === -1) {
@@ -128,7 +134,7 @@ const PlayerProfileCard = ({ player, position }: PlayerProfileCardProps) => {
                     }}
                 />
                 {playerReady && (
-                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0'}`}>
                         <span className="text-white text-xs">✓</span>
                     </div>
                 )}
@@ -648,7 +654,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
             {/* 中间：玩家区域 */}
             <div className="flex-1 flex items-center justify-between mb-6 px-4">
                 {/* 左侧玩家（座位0） */}
-                <PlayerProfileCard player={seat0Player} position="left" />
+                <PlayerProfileCard player={seat0Player} position="left" interactive={isMyTableLocal} />
 
                 {/* 中间：VS 或倒计时 */}
                 <div className="flex flex-col items-center justify-center mx-4 h-16">
@@ -675,7 +681,7 @@ export function GameTableView({ table, roomClient, isMyTable }: GameTableViewPro
                 </div>
 
                 {/* 右侧玩家（座位1） */}
-                <PlayerProfileCard player={seat1Player} position="right" />
+                <PlayerProfileCard player={seat1Player} position="right" interactive={isMyTableLocal} />
             </div>
 
             {/* 左下角玩家计数 */}
