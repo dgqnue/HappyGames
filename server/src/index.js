@@ -97,12 +97,24 @@ try {
 }
 
 // ============================================
-// 连接数据库
+// 连接数据库并初始化 AI 系统
 // ============================================
 console.log('[Server] 连接数据库...');
-connectDB().catch(err => {
-    console.error('[Server] 数据库连接失败:', err);
-});
+const { AIPlayerManager } = require('./ai');
+
+(async () => {
+    try {
+        await connectDB();
+        console.log('[Server] 数据库连接成功');
+        
+        // 初始化 AI 玩家管理器
+        console.log('[Server] 初始化 AI 玩家管理器...');
+        await AIPlayerManager.initialize();
+        console.log('[Server] AI 玩家管理器初始化完成');
+    } catch (err) {
+        console.error('[Server] 数据库连接或 AI 初始化失败:', err);
+    }
+})();
 
 // ============================================
 // 静态文件服务

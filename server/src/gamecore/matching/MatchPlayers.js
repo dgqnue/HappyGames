@@ -4,6 +4,10 @@ const { fetchLatestAvatarUrl } = require('../../utils/avatarUtils');
 
 const StateMappingRules = require('./StateMappingRules');
 
+// AI 模块
+const AIPlayerManager = require('../../ai/AIPlayerManager');
+const AIGameController = require('../../ai/AIGameController');
+
 /**
  * ============================================================================
  * PART 2: MatchMaker (Core Matching System)
@@ -870,6 +874,58 @@ class MatchPlayers {
         this.matchState.status = value;
     }
 
+    // ========== AI 匹配相关方法 ==========
+    
+    /**
+     * 启动 AI 匹配计时器（8-15秒后 AI 入场）
+     * @param {number} playerRating - 人类玩家的等级分
+     */
+    startAIMatchTimer(playerRating) {
+        // 如果已有计时器，先取消
+        this.cancelAIMatchTimer();
+        
+        console.log(`[MatchPlayers] Starting AI match timer for table ${this.roomId}, playerRating: ${playerRating}`);
+        
+        AIPlayerManager.startMatchTimer(this.roomId, playerRating, (aiPlayer) => {
+            this.onAIMatchTimeout(aiPlayer);
+        });
+    }
+    
+    /**
+     * 取消 AI 匹配计时器（真人加入时调用）
+     */
+    cancelAIMatchTimer() {
+        AIPlayerManager.cancelMatchTimer(this.roomId);
+    }
+    
+    /**
+     * AI 匹配超时回调 - AI 入场
+     * @param {Object} aiPlayer - AI 玩家信息
+     */
+    async onAIMatchTimeout(aiPlayer) {
+        // 检查房间是否仍需要 AI（可能真人已经加入了）
+        if (this.matchState.players.length >= this.maxPlayers) {
+            console.log(`[MatchPlayers] AI match timeout but room already full, ignoring`);
+            return;
+        }
+        
+        if (this.matchState.players.length === 0) {
+            console.log(`[MatchPlayers] AI match timeout but room is empty, ignoring`);
+            return;
+        }
+        
+        console.log(`[MatchPlayers] AI ${aiPlayer.nickname} joining table ${this.roomId}`);
+        
+        // 让 AI 入座
+        await AIGameController.joinTable(this.table, aiPlayer);
+        
+        // 确定 AI 的颜色（第二个加入的是黑方）
+        const aiSide = this.matchState.players.length === 2 ? 'b' : 'r';
+        
+        // 创建 AI 游戏会话
+        AIGameController.createSession(this.table, aiPlayer, aiSide);
+    }
+
     /**
      * Player join attempt - Internal implementation
      */
@@ -996,7 +1052,15 @@ class MatchPlayers {
 
         // If full, auto start ready check
         if (this.matchState.players.length === this.maxPlayers) {
+            // 真人满员，取消 AI 匹配计时器
+            this.cancelAIMatchTimer();
             this.startReadyCheck();
+        } else if (this.matchState.players.length === 1) {
+            // 只有一个玩家时，启动 AI 匹配计时器（8-15秒后 AI 入场）
+            this.startAIMatchTimer(stats?.rating || 1200);
+        } else if (this.matchState.players.length > 1) {
+            // 第二个真人加入，取消 AI 匹配计时器
+            this.cancelAIMatchTimer();
         }
 
         return true;

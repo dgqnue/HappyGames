@@ -1,0 +1,295 @@
+/**
+ * AI 玩家管理器
+ * 
+ * 负责：
+ * 1. 管理 AI 玩家池（可用/忙碌状态）
+ * 2. 按分数匹配合适的 AI 对手
+ * 3. 控制 AI 玩家的游戏行为
+ * 4. 自动检测并生成 AI 玩家
+ * 
+ * 文件位置: server/src/ai/AIPlayerManager.js
+ */
+
+const User = require('../models/User');
+const UserGameStats = require('../models/UserGameStats');
+const ChessAIEngine = require('./ChessAIEngine');
+const { ensureAIPlayers } = require('./generateAIPlayers');
+
+// 目标 AI 玩家数量
+const TARGET_AI_PLAYER_COUNT = 200;
+
+class AIPlayerManager {
+    constructor() {
+        // AI 玩家池（按分数段分类）
+        this.aiPlayerPool = {
+            beginner: [],   // 800-1000
+            easy: [],       // 1000-1200
+            medium: [],     // 1200-1400
+            hard: [],       // 1400-1600
+            expert: [],     // 1600-1800
+            master: []      // 1800+
+        };
+        
+        // 当前正在游戏中的 AI（userId -> gameInfo）
+        this.busyAIPlayers = new Map();
+        
+        // AI 匹配等待计时器（tableId -> timerId）
+        this.matchTimers = new Map();
+        
+        // 是否已初始化
+        this.initialized = false;
+    }
+    
+    /**
+     * 初始化 AI 玩家池（服务器启动时调用）
+     */
+    async initialize() {
+        if (this.initialized) return;
+        
+        console.log('[AIPlayerManager] Initializing AI player pool...');
+        
+        try {
+            // 检查并自动生成 AI 玩家（如果数量不足）
+            const existingCount = await User.countDocuments({ isAI: true });
+            if (existingCount < TARGET_AI_PLAYER_COUNT) {
+                console.log(`[AIPlayerManager] AI players insufficient (${existingCount}/${TARGET_AI_PLAYER_COUNT}), auto-generating...`);
+                await ensureAIPlayers(TARGET_AI_PLAYER_COUNT, false);
+            }
+            
+            // 从数据库加载所有 AI 玩家
+            const aiUsers = await User.find({ isAI: true, accountStatus: 'active' }).lean();
+            
+            if (aiUsers.length === 0) {
+                console.error('[AIPlayerManager] Failed to load AI players after generation!');
+                return;
+            }
+            
+            // 获取所有 AI 玩家的游戏统计
+            const aiUserIds = aiUsers.map(u => u.userId);
+            const statsMap = new Map();
+            
+            const allStats = await UserGameStats.find({ 
+                userId: { $in: aiUserIds },
+                gameType: 'chinesechess'
+            }).lean();
+            
+            allStats.forEach(s => statsMap.set(s.userId, s));
+            
+            // 按分数段分类
+            for (const user of aiUsers) {
+                const stats = statsMap.get(user.userId);
+                const rating = stats?.rating || 1200;
+                const strengthLevel = user.aiConfig?.strengthLevel || this.getStrengthByRating(rating);
+                
+                const aiPlayer = {
+                    id: user._id,
+                    odid: user.userId,
+                    nickname: user.nickname,
+                    avatar: user.avatar,
+                    rating: rating,
+                    title: stats?.title || '无',
+                    titleColor: stats?.titleColor || '#666666',
+                    strengthLevel: strengthLevel
+                };
+                
+                if (this.aiPlayerPool[strengthLevel]) {
+                    this.aiPlayerPool[strengthLevel].push(aiPlayer);
+                }
+            }
+            
+            // 打印统计
+            const totalCount = Object.values(this.aiPlayerPool).reduce((sum, arr) => sum + arr.length, 0);
+            console.log(`[AIPlayerManager] Loaded ${totalCount} AI players:`);
+            for (const [level, players] of Object.entries(this.aiPlayerPool)) {
+                console.log(`  - ${level}: ${players.length} players`);
+            }
+            
+            this.initialized = true;
+            
+        } catch (err) {
+            console.error('[AIPlayerManager] Failed to initialize:', err);
+        }
+    }
+    
+    /**
+     * 根据 rating 获取强度等级
+     */
+    getStrengthByRating(rating) {
+        if (rating < 1000) return 'beginner';
+        if (rating < 1200) return 'easy';
+        if (rating < 1400) return 'medium';
+        if (rating < 1600) return 'hard';
+        if (rating < 1800) return 'expert';
+        return 'master';
+    }
+    
+    /**
+     * 获取一个合适的 AI 对手
+     * @param {number} playerRating - 人类玩家的等级分
+     * @param {number} ratingTolerance - 分数容差（默认 200）
+     * @returns {Object|null} AI 玩家信息
+     */
+    getAvailableAI(playerRating, ratingTolerance = 200) {
+        if (!this.initialized) {
+            console.warn('[AIPlayerManager] Not initialized yet!');
+            return null;
+        }
+        
+        // 确定搜索的分数段
+        const targetStrength = this.getStrengthByRating(playerRating);
+        const searchOrder = this.getSearchOrder(targetStrength);
+        
+        // 按优先级搜索各分数段
+        for (const strength of searchOrder) {
+            const pool = this.aiPlayerPool[strength];
+            if (!pool || pool.length === 0) continue;
+            
+            // 过滤掉正在忙碌的 AI
+            const availablePlayers = pool.filter(ai => !this.busyAIPlayers.has(ai.odid));
+            
+            if (availablePlayers.length === 0) continue;
+            
+            // 在可用玩家中找分数最接近的
+            const suitable = availablePlayers.filter(ai => 
+                Math.abs(ai.rating - playerRating) <= ratingTolerance
+            );
+            
+            if (suitable.length > 0) {
+                // 随机选一个（避免总是匹配同一个 AI）
+                const selected = suitable[Math.floor(Math.random() * suitable.length)];
+                console.log(`[AIPlayerManager] Selected AI: ${selected.nickname} (rating: ${selected.rating})`);
+                return selected;
+            }
+            
+            // 如果没有在容差范围内的，扩大搜索
+            if (availablePlayers.length > 0) {
+                const selected = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+                console.log(`[AIPlayerManager] Selected AI (fallback): ${selected.nickname} (rating: ${selected.rating})`);
+                return selected;
+            }
+        }
+        
+        console.warn('[AIPlayerManager] No available AI player found!');
+        return null;
+    }
+    
+    /**
+     * 获取分数段搜索顺序（优先匹配接近的段位）
+     */
+    getSearchOrder(targetStrength) {
+        const allLevels = ['beginner', 'easy', 'medium', 'hard', 'expert', 'master'];
+        const targetIndex = allLevels.indexOf(targetStrength);
+        
+        // 从目标段位开始，交替向上下搜索
+        const order = [targetStrength];
+        for (let i = 1; i < allLevels.length; i++) {
+            if (targetIndex - i >= 0) order.push(allLevels[targetIndex - i]);
+            if (targetIndex + i < allLevels.length) order.push(allLevels[targetIndex + i]);
+        }
+        return order;
+    }
+    
+    /**
+     * 标记 AI 玩家为忙碌状态
+     */
+    markAsBusy(aiUserId, tableId) {
+        this.busyAIPlayers.set(aiUserId, {
+            tableId,
+            startTime: Date.now()
+        });
+        console.log(`[AIPlayerManager] AI ${aiUserId} marked as busy (table: ${tableId})`);
+    }
+    
+    /**
+     * 释放 AI 玩家
+     */
+    releaseAI(aiUserId) {
+        if (this.busyAIPlayers.has(aiUserId)) {
+            this.busyAIPlayers.delete(aiUserId);
+            console.log(`[AIPlayerManager] AI ${aiUserId} released`);
+        }
+    }
+    
+    /**
+     * 开始 AI 匹配计时器（8-15秒后触发）
+     * @param {string} tableId - 游戏桌 ID
+     * @param {number} playerRating - 人类玩家等级分
+     * @param {Function} onTimeout - 超时回调（传入选中的 AI 玩家）
+     */
+    startMatchTimer(tableId, playerRating, onTimeout) {
+        // 如果已有计时器，先清除
+        this.cancelMatchTimer(tableId);
+        
+        // 8-15 秒随机延迟
+        const delay = Math.floor(Math.random() * 7000) + 8000;
+        
+        console.log(`[AIPlayerManager] Starting match timer for table ${tableId}, delay: ${delay}ms`);
+        
+        const timerId = setTimeout(() => {
+            console.log(`[AIPlayerManager] Match timer triggered for table ${tableId}`);
+            this.matchTimers.delete(tableId);
+            
+            // 获取合适的 AI
+            const aiPlayer = this.getAvailableAI(playerRating);
+            if (aiPlayer) {
+                onTimeout(aiPlayer);
+            } else {
+                console.warn(`[AIPlayerManager] No AI available for table ${tableId}`);
+            }
+        }, delay);
+        
+        this.matchTimers.set(tableId, timerId);
+    }
+    
+    /**
+     * 取消匹配计时器（真人加入时调用）
+     */
+    cancelMatchTimer(tableId) {
+        if (this.matchTimers.has(tableId)) {
+            clearTimeout(this.matchTimers.get(tableId));
+            this.matchTimers.delete(tableId);
+            console.log(`[AIPlayerManager] Match timer cancelled for table ${tableId}`);
+        }
+    }
+    
+    /**
+     * 计算 AI 的下一步棋
+     * @param {Array} board - 当前棋盘
+     * @param {string} aiColor - AI 执的颜色
+     * @param {string} aiUserId - AI 玩家 ID
+     * @returns {Promise<Object>} { move, thinkTime }
+     */
+    async calculateMove(board, aiColor, aiUserId) {
+        // 获取 AI 的 rating
+        const stats = await UserGameStats.findOne({
+            userId: aiUserId,
+            gameType: 'chinesechess'
+        }).lean();
+        
+        const rating = stats?.rating || 1200;
+        
+        // 调用 AI 引擎计算
+        return ChessAIEngine.calculateBestMove(board, aiColor, rating);
+    }
+    
+    /**
+     * 获取统计信息
+     */
+    getStats() {
+        const poolStats = {};
+        for (const [level, players] of Object.entries(this.aiPlayerPool)) {
+            poolStats[level] = players.length;
+        }
+        
+        return {
+            initialized: this.initialized,
+            totalAI: Object.values(this.aiPlayerPool).reduce((sum, arr) => sum + arr.length, 0),
+            busyAI: this.busyAIPlayers.size,
+            pendingMatches: this.matchTimers.size,
+            poolStats
+        };
+    }
+}
+
+// 单例模式
+module.exports = new AIPlayerManager();

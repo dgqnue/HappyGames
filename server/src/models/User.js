@@ -164,6 +164,21 @@ const UserSchema = new mongoose.Schema({
         default: false // 默认值为 false
     },
 
+    // ========== AI 标识 ==========
+    isAI: {
+        type: Boolean, // 是否为 AI 玩家
+        default: false, // 默认值为 false
+        index: true // 创建索引，方便查询和批量删除
+    },
+
+    aiConfig: {
+        type: {
+            strengthLevel: String, // AI 强度等级: beginner/easy/medium/hard/expert/master
+            personality: String    // AI 个性: aggressive/defensive/balanced
+        },
+        default: null // 真人玩家为 null
+    },
+
     // ========== 账户状态 ==========
     accountStatus: {
         type: String, // 账户状态

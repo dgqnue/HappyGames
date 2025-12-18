@@ -305,6 +305,13 @@ class ChineseChessTable extends GameTable {
         });
 
         console.log(`[ChineseChess] 游戏开始: ${this.tableId}`);
+
+        // 通知 AI 控制器游戏开始（如果有 AI 在游戏中且是红方先走）
+        const AIGameController = require('../../../ai/AIGameController');
+        if (AIGameController.hasActiveSession(this.tableId)) {
+            // 红方先走，通知 AI
+            AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
+        }
     }
 
     /**
@@ -372,6 +379,12 @@ class ChineseChessTable extends GameTable {
             turn: this.turn,
             board: this.board
         });
+
+        // 通知 AI 控制器回合变化（如果有 AI 在游戏中）
+        const AIGameController = require('../../../ai/AIGameController');
+        if (AIGameController.hasActiveSession(this.tableId)) {
+            AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
+        }
 
         // 检查胜利条件
         if (result.win) {
@@ -514,6 +527,10 @@ class ChineseChessTable extends GameTable {
      */
     endRound(result) {
         console.log(`[ChineseChess] 回合结束: ${this.tableId}, 结果:`, result);
+
+        // 通知 AI 控制器游戏结束
+        const AIGameController = require('../../../ai/AIGameController');
+        AIGameController.onGameEnd(this.tableId, result);
 
         // 委托给 MatchPlayers 处理回合结束流程 (包含再来一局逻辑)
         this.matchPlayers.onRoundEnd(result);
