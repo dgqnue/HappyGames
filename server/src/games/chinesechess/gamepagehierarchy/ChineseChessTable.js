@@ -96,8 +96,15 @@ class ChineseChessTable extends GameTable {
             
             // 判对方获胜
             const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
-            this.handleWin(winnerSide);
+            console.log(`[ChineseChessTable] Forfeiting game. Leaver: ${userId} (${userId === redPlayer.userId ? 'Red' : 'Black'}), WinnerSide: ${winnerSide}`);
+            
+            // 异步调用 handleWin，并捕获错误
+            this.handleWin(winnerSide).catch(err => {
+                console.error(`[ChineseChessTable] handleWin failed in onPlayerLeaveDuringRound:`, err);
+            });
             // handleWin 会调用 endRound -> onRoundEnd，该方法会将状态设为 MATCHING 并广播
+        } else {
+            console.warn(`[ChineseChessTable] onPlayerLeaveDuringRound: Player ${userId} not found in players list.`);
         }
     }
 
@@ -349,105 +356,120 @@ class ChineseChessTable extends GameTable {
     async handleWin(winnerSide) {
         console.log(`[ChineseChessTable] handleWin called, winnerSide: ${winnerSide}`);
         
-        // 确定当前的红黑方
-        const isSwap = this.roundCount % 2 === 0;
-        const redPlayer = isSwap ? this.players[1] : this.players[0];
-        const blackPlayer = isSwap ? this.players[0] : this.players[1];
-
-        const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
-        const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
-        
-        console.log(`[ChineseChessTable] Winner: ${winnerId}, Loser: ${loserId}`);
-
-        // 结束回合
-        this.round.end({ winner: winnerSide });
-
-        // 1. ELO 结算（将更新后的 rating 写入数据库）
-        // 修正：恢复使用 players[0] 和 players[1] 的顺序，但正确计算 resultForP0
-        // 这样前端如果按位置映射 (p0 -> playerA, p1 -> playerB) 就能正确显示
-        let eloResult;
-        const p0 = this.players[0];
-        const p1 = this.players[1];
-
-        if (p0 && p1) {
-            // 如果 p0 是赢家，resultForP0 = 1；否则 = 0
-            const resultForP0 = p0.userId === winnerId ? 1 : 0;
-            eloResult = await EloService.processMatchResult(
-                this.gameType,
-                p0.userId,
-                p1.userId,
-                resultForP0
-            );
-        } else {
-            // 降级处理：如果找不到两个玩家（异常情况），按原逻辑
-            eloResult = await EloService.processMatchResult(
-                this.gameType,
-                winnerId,
-                loserId,
-                1 // Winner gets 1 point
-            );
-        }
-        console.log(`[ChineseChessTable] ELO updated:`, eloResult);
-
-        // 2. 全局重新计算所有玩家的排名和称号
-        //    因为这两个玩家的 rating 改变，可能影响所有玩家的排名
-        console.log(`[ChineseChessTable] Recalculating all player titles...`);
-        let titleResult = {};
         try {
-            titleResult = await Grade.updateAllPlayerTitles(this.gameType);
-            console.log(`[ChineseChessTable] All player titles updated:`, titleResult);
-        } catch (err) {
-            console.error(`[ChineseChessTable] Error updating all titles:`, err);
-        }
+            // 确定当前的红黑方
+            const isSwap = this.roundCount % 2 === 0;
+            const redPlayer = isSwap ? this.players[1] : this.players[0];
+            const blackPlayer = isSwap ? this.players[0] : this.players[1];
 
-        // Broadcast Win to Lobby
-        try {
-            const winnerName = this.players.find(p => p.userId === winnerId)?.nickname || 'Unknown Player';
-            const winnerTitle = titleResult[winnerId]?.title || '无';
-            const winnerTitleColor = titleResult[winnerId]?.titleColor || '#000000';
-            
-            const winItem = new LobbyFeed({
-                type: 'game_win',
-                user: winnerName,
-                game: '中国象棋',
-                title: winnerTitle,
-                titleColor: winnerTitleColor,
-                timestamp: new Date()
-            });
-            await winItem.save();
-
-            this.io.to('lobby').emit('lobby_feed', winItem);
-
-            // Cleanup old feeds (keep latest 200)
-            const count = await LobbyFeed.countDocuments();
-            if (count > 200) {
-                const latest = await LobbyFeed.find().sort({ timestamp: -1 }).limit(200).select('_id');
-                if (latest.length === 200) {
-                    const latestIds = latest.map(doc => doc._id);
-                    await LobbyFeed.deleteMany({ _id: { $nin: latestIds } });
-                }
+            if (!redPlayer || !blackPlayer) {
+                console.error(`[ChineseChessTable] handleWin: Missing players! red=${redPlayer?.userId}, black=${blackPlayer?.userId}`);
             }
-        } catch (err) {
-            console.error(`[ChineseChessTable] Error broadcasting win to lobby:`, err);
-        }
 
-        // 3. 游戏豆结算 (非免费室)
-        if (this.tier !== 'free') {
-            const betAmount = this.getBetAmount();
-            await this.settle({
-                winner: winnerId,
-                loser: loserId,
-                amount: betAmount
+            const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
+            const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
+            
+            console.log(`[ChineseChessTable] Winner: ${winnerId}, Loser: ${loserId}`);
+
+            // 结束回合
+            this.round.end({ winner: winnerSide });
+
+            // 1. ELO 结算（将更新后的 rating 写入数据库）
+            // 修正：恢复使用 players[0] 和 players[1] 的顺序，但正确计算 resultForP0
+            // 这样前端如果按位置映射 (p0 -> playerA, p1 -> playerB) 就能正确显示
+            let eloResult;
+            const p0 = this.players[0];
+            const p1 = this.players[1];
+
+            if (p0 && p1) {
+                // 如果 p0 是赢家，resultForP0 = 1；否则 = 0
+                const resultForP0 = p0.userId === winnerId ? 1 : 0;
+                console.log(`[ChineseChessTable] Processing ELO for p0=${p0.userId}, p1=${p1.userId}, resultForP0=${resultForP0}`);
+                eloResult = await EloService.processMatchResult(
+                    this.gameType,
+                    p0.userId,
+                    p1.userId,
+                    resultForP0
+                );
+            } else {
+                console.warn(`[ChineseChessTable] handleWin: One or both players missing from table. p0=${p0?.userId}, p1=${p1?.userId}. Using fallback ELO calculation.`);
+                // 降级处理：如果找不到两个玩家（异常情况），按原逻辑
+                eloResult = await EloService.processMatchResult(
+                    this.gameType,
+                    winnerId,
+                    loserId,
+                    1 // Winner gets 1 point
+                );
+            }
+            console.log(`[ChineseChessTable] ELO updated:`, eloResult);
+
+            // 2. 全局重新计算所有玩家的排名和称号
+            //    因为这两个玩家的 rating 改变，可能影响所有玩家的排名
+            console.log(`[ChineseChessTable] Recalculating all player titles...`);
+            let titleResult = {};
+            try {
+                titleResult = await Grade.updateAllPlayerTitles(this.gameType);
+                console.log(`[ChineseChessTable] All player titles updated:`, titleResult);
+            } catch (err) {
+                console.error(`[ChineseChessTable] Error updating all titles:`, err);
+            }
+
+            // Broadcast Win to Lobby
+            try {
+                const winnerName = this.players.find(p => p.userId === winnerId)?.nickname || 'Unknown Player';
+                const winnerTitle = titleResult[winnerId]?.title || '无';
+                const winnerTitleColor = titleResult[winnerId]?.titleColor || '#000000';
+                
+                const winItem = new LobbyFeed({
+                    type: 'game_win',
+                    user: winnerName,
+                    game: '中国象棋',
+                    title: winnerTitle,
+                    titleColor: winnerTitleColor,
+                    timestamp: new Date()
+                });
+                await winItem.save();
+
+                this.io.to('lobby').emit('lobby_feed', winItem);
+
+                // Cleanup old feeds (keep latest 200)
+                const count = await LobbyFeed.countDocuments();
+                if (count > 200) {
+                    const latest = await LobbyFeed.find().sort({ timestamp: -1 }).limit(200).select('_id');
+                    if (latest.length === 200) {
+                        const latestIds = latest.map(doc => doc._id);
+                        await LobbyFeed.deleteMany({ _id: { $nin: latestIds } });
+                    }
+                }
+            } catch (err) {
+                console.error(`[ChineseChessTable] Error broadcasting win to lobby:`, err);
+            }
+
+            // 3. 游戏豆结算 (非免费室)
+            if (this.tier !== 'free') {
+                const betAmount = this.getBetAmount();
+                await this.settle({
+                    winner: winnerId,
+                    loser: loserId,
+                    amount: betAmount
+                });
+            }
+
+            // 4. 结束回合，广播包含称号信息的结果
+            this.endRound({
+                winner: winnerSide, // 'r' or 'b'
+                winnerId: winnerId,
+                elo: eloResult,
+                title: titleResult  // 包含更新后的称号信息
+            });
+        } catch (err) {
+            console.error(`[ChineseChessTable] handleWin encountered critical error:`, err);
+            // 即使出错，也要尝试结束回合，避免卡死
+            this.endRound({
+                winner: winnerSide,
+                error: 'Settlement failed'
             });
         }
-
-        // 4. 结束回合，广播包含称号信息的结果
-        this.endRound({
-            winner: winnerSide, // 'r' or 'b'
-            winnerId: winnerId,
-            elo: eloResult,
-            title: titleResult  // 包含更新后的称号信息
-        });
     }
 
     /**
