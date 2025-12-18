@@ -54,6 +54,8 @@ class EloService {
      * @param {number} resultA 1 (Win), 0.5 (Draw), 0 (Loss)
      */
     async processMatchResult(gameType, playerAId, playerBId, resultA) {
+        console.log(`[EloService] processMatchResult called: gameType=${gameType}, A=${playerAId}, B=${playerBId}, resultA=${resultA}`);
+        
         // Get Stats
         const statsA = await this.getOrCreateStats(playerAId, gameType);
         const statsB = await this.getOrCreateStats(playerBId, gameType);

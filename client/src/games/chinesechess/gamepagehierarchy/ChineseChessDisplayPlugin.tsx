@@ -1047,46 +1047,52 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               <h3 className="text-lg mb-2 text-blue-100">本局结算</h3>
               {(() => {
                   // 解析 ELO 数据
-                  const winnerId = gameEndStats.result?.winnerId;
+                  const tableState = tableClient?.getState?.();
+                  const sideMap = tableState?.playerSides;
+                  const myUserIdFromSide = mySide && sideMap ? sideMap[mySide] : undefined;
                   const eloData = gameEndStats.result?.elo;
-                  
-                  // 找到当前玩家的数据
-                  // 如果我是赢家，我是 playerA；如果我是输家，我是 playerB
-                  // 注意：这里假设 playerA 总是 winnerId (根据 EloService.processMatchResult 调用顺序)
-                  
-                  // 查找当前用户的 ID
-                  // 我们需要知道当前用户的 ID，但这里只有 mySide ('r' or 'b')
-                  // 我们可以通过 players 数组找到自己的 ID
-                  const myPlayer = players.find((p, idx) => {
-                      const side = idx === 0 ? 'r' : 'b';
-                      return side === mySide;
-                  });
-                  
-                  if (!myPlayer || !eloData) return null;
-                  
-                  const isWinner = myPlayer.userId === winnerId;
-                  const myStats = isWinner ? eloData.playerA : eloData.playerB;
-                  
+
+                  if (!eloData) return null;
+
+                  // 优先使用 playerSides 映射确定当前玩家，避免对手退场后 players 顺序缺失
+                  const myPlayer = (myUserIdFromSide && players.find(p => p.userId === myUserIdFromSide))
+                    || (mySide ? players.find((p, idx) => (idx === 0 ? 'r' : 'b') === mySide) : undefined)
+                    || players[0];
+
+                  const myUserId = myUserIdFromSide || myPlayer?.userId;
+                  const eloEntries = [eloData.playerA, eloData.playerB].filter(Boolean);
+                  const myStats = eloEntries.find((entry: any) => entry?.userId === myUserId)
+                    || (eloEntries.length === 1 ? eloEntries[0] : undefined)
+                    || (gameEndStats.result?.winner && mySide
+                      ? (gameEndStats.result.winner === mySide ? eloData.playerA : eloData.playerB)
+                      : undefined);
+
                   if (!myStats) return null;
 
+                  const winnerId = gameEndStats.result?.winnerId;
+                  const isWinner = winnerId
+                    ? myUserId === winnerId
+                    : (gameEndStats.result?.winner ? gameEndStats.result.winner === mySide : false);
                   const delta = myStats.delta;
                   const newRating = myStats.newRating;
+                  const titleMap = gameEndStats.result?.title;
+                  const myTitle = titleMap && myUserId ? titleMap[myUserId] : (titleMap && myPlayer?.userId ? titleMap[myPlayer.userId] : null);
                   
                   return (
-                      <div className="flex flex-col gap-1">
-                          <div className="text-base text-blue-100">
-                              等级分: <span className="text-blue-50">{newRating}</span>
-                              <span className={delta >= 0 ? "text-green-500 ml-2" : "text-red-500 ml-2"}>
-                                  {delta >= 0 ? `+${delta}` : delta}
-                              </span>
-                          </div>
-                          {/* 如果有称号变化，也可以显示 */}
-                          {gameEndStats.result?.title && gameEndStats.result.title[myPlayer.userId] && (
-                              <div className="text-sm mt-1 text-blue-200">
-                                  当前称号: <span style={{ color: gameEndStats.result.title[myPlayer.userId].color || '#fbbf24' }}>{gameEndStats.result.title[myPlayer.userId].title}</span>
-                              </div>
-                          )}
+                    <div className="flex flex-col gap-1">
+                      <div className="text-base text-blue-100">
+                        等级分: <span className="text-blue-50">{newRating}</span>
+                        <span className={delta >= 0 ? "text-green-500 ml-2" : "text-red-500 ml-2"}>
+                          {delta >= 0 ? `+${delta}` : delta}
+                        </span>
                       </div>
+                      {/* 如果有称号变化，也可以显示 */}
+                      {myTitle && (
+                        <div className="text-sm mt-1 text-blue-200">
+                          当前称号: <span style={{ color: myTitle.color || '#fbbf24' }}>{myTitle.title}</span>
+                        </div>
+                      )}
+                    </div>
                   );
               })()}
               <div className="mt-3 text-xs text-blue-200/80 animate-pulse">
