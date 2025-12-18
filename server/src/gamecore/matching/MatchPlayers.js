@@ -968,16 +968,22 @@ class MatchPlayers {
      * AI 准备处理
      */
     handleAIReady(aiUserId) {
+        // 使用 setPlayerReady 来正确处理状态转换（包括检查是否所有人都准备好了）
+        const result = this.matchState.setPlayerReady(aiUserId, true);
+        
         const player = this.matchState.players.find(p => p.odid === aiUserId);
         if (player) {
-            player.ready = true;
-            console.log(`[MatchPlayers] AI ${player.nickname} is ready on table ${this.roomId}`);
+            console.log(`[MatchPlayers] AI ${player.nickname} is ready on table ${this.roomId}, result: ${result}`);
             
             // 广播状态更新
             this.table.broadcastRoomState();
             
             // 检查是否可以开始游戏
-            if (this.matchState.players.length === this.maxPlayers) {
+            if (result === 'all_ready') {
+                console.log(`[MatchPlayers] All players ready (including AI), starting round countdown`);
+                this.startRoundCountdown();
+            } else if (this.matchState.players.length === this.maxPlayers) {
+                // 如果房间满了但还没全准备好（例如真人取消了准备），开始30秒倒计时
                 this.startReadyCheck();
             }
         }
