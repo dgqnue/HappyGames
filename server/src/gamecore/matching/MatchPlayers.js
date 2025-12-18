@@ -1315,46 +1315,24 @@ class MatchPlayers {
                 }
                 
                 if (allAI) {
-                    console.log(`[MatchPlayers] Only AI players remaining (${remainingPlayers.length}), forcing immediate cleanup...`);
+                    console.log(`[MatchPlayers] Only AI players remaining (${remainingPlayers.length}), waiting for AI to leave naturally...`);
                     
-                    // 直接清理，不再延迟
-                    // 首先通知 AI 控制器清理所有会话
-                    try {
-                        const AIGameController = require('../../ai/AIGameController');
-                        const session = AIGameController.getSession(this.roomId);
-                        if (session) {
-                            console.log(`[MatchPlayers] Triggering AI controller cleanup for table ${this.roomId}`);
-                            AIGameController.leaveTable(session);
-                        }
-                    } catch (e) {
-                        console.error(`[MatchPlayers] Error triggering AI controller cleanup:`, e);
-                    }
-                    
-                    // 然后强制清理残留在 matchState 中的 AI 玩家
-                    const aiPlayersToRemove = [...this.matchState.players].filter(isAIPlayer);
-                    for (const aiPlayer of aiPlayersToRemove) {
-                        console.log(`[MatchPlayers] Force removing AI from matchState: ${aiPlayer.nickname}`);
-                        this.matchState.removePlayer(aiPlayer.userId);
+                    // 给 AI 控制器 6 秒时间自行处理（AI 延迟 2-5 秒离开）
+                    // 只有超时后才强制清理
+                    setTimeout(() => {
+                        const currentPlayers = this.matchState.players;
+                        const stillHasAI = currentPlayers.length > 0 && currentPlayers.some(isAIPlayer);
                         
-                        // 释放 AI 资源
-                        try {
-                            const AIPlayerManager = require('../../ai/AIPlayerManager');
-                            AIPlayerManager.releaseAI(aiPlayer.userId);
-                        } catch (e) {
-                            console.error(`[MatchPlayers] Failed to release AI:`, e);
+                        if (!stillHasAI) {
+                            console.log(`[MatchPlayers] AI already left naturally, no cleanup needed`);
+                            return;
                         }
-                    }
-                    
-                    // 重置房间状态
-                    if (this.matchState.players.length === 0) {
-                        console.log(`[MatchPlayers] All players removed, resetting table to IDLE`);
-                        this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.IDLE, { reason: 'ai_cleanup' });
-                        this.roundEnded = false;
-                        this.isLocked = false;
-                    }
-                    
-                    // 广播更新后的状态
-                    this.table.broadcastRoomState();
+                        
+                        console.log(`[MatchPlayers] AI still present after timeout, forcing cleanup...`);
+                        
+                        // 强制清理残留的 AI
+                        this._forceCleanupAI();
+                    }, 6000);
                 }
             }
             
@@ -1388,6 +1366,51 @@ class MatchPlayers {
      */
     async playerLeave(socket) {
         return this.enqueueAction(() => this._playerLeave(socket));
+    }
+    
+    /**
+     * 强制清理残留的 AI 玩家（僵尸清理）
+     */
+    _forceCleanupAI() {
+        const isAIPlayer = (p) => p.isAI === true || (p.socketId && typeof p.socketId === 'string' && p.socketId.startsWith('ai_socket_'));
+        
+        // 首先通知 AI 控制器清理所有会话
+        try {
+            const AIGameController = require('../../ai/AIGameController');
+            const session = AIGameController.getSession(this.roomId);
+            if (session) {
+                console.log(`[MatchPlayers] Triggering AI controller cleanup for table ${this.roomId}`);
+                AIGameController.leaveTable(session);
+            }
+        } catch (e) {
+            console.error(`[MatchPlayers] Error triggering AI controller cleanup:`, e);
+        }
+        
+        // 然后强制清理残留在 matchState 中的 AI 玩家
+        const aiPlayersToRemove = [...this.matchState.players].filter(isAIPlayer);
+        for (const aiPlayer of aiPlayersToRemove) {
+            console.log(`[MatchPlayers] Force removing AI from matchState: ${aiPlayer.nickname}`);
+            this.matchState.removePlayer(aiPlayer.userId);
+            
+            // 释放 AI 资源
+            try {
+                const AIPlayerManager = require('../../ai/AIPlayerManager');
+                AIPlayerManager.releaseAI(aiPlayer.userId);
+            } catch (e) {
+                console.error(`[MatchPlayers] Failed to release AI:`, e);
+            }
+        }
+        
+        // 重置房间状态
+        if (this.matchState.players.length === 0) {
+            console.log(`[MatchPlayers] All players removed, resetting table to IDLE`);
+            this.matchState.transitionStatus(StateMappingRules.TABLE_STATUS.IDLE, { reason: 'ai_cleanup' });
+            this.roundEnded = false;
+            this.isLocked = false;
+        }
+        
+        // 广播更新后的状态
+        this.table.broadcastRoomState();
     }
 
     /**

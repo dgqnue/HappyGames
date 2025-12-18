@@ -312,10 +312,20 @@ class AIGameController {
             return;
         }
         
-        // 如果真人离开，AI 立即离开（不再延迟，避免状态不一致）
+        // 如果真人离开，AI 延迟 2-5 秒后离开（模拟真人反应时间）
         if (userId !== session.aiPlayer.odid) {
-            console.log(`[AIGameController] Human player left, AI leaving table ${tableId} immediately`);
-            this.leaveTable(session);
+            const delay = 2000 + Math.floor(Math.random() * 3000); // 2-5秒随机延迟
+            console.log(`[AIGameController] Human player left, AI leaving table ${tableId} in ${delay}ms`);
+            
+            // 标记为即将离开，防止重复触发
+            session.pendingLeave = true;
+            
+            setTimeout(() => {
+                // 再次检查会话是否还存在（可能已被清理）
+                if (this.activeSessions.has(tableId) && !session.isLeaving) {
+                    this.leaveTable(session);
+                }
+            }, delay);
         } else {
             console.log(`[AIGameController] AI itself left (or was removed), cleaning up session`);
             // AI 自己被移除时，也需要清理会话
