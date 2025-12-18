@@ -164,6 +164,20 @@ interface ChessPiece {
   col: number;
 }
 
+// 称号颜色映射，保持与 server/src/games/chinesechess/grade/Grade.js 一致
+const TITLE_COLOR_MAP: Record<string, string> = {
+  '初出茅庐': '#000000',
+  '小试牛刀': '#8f2d56',
+  '渐入佳境': '#00FF00',
+  '锋芒毕露': '#0000FF',
+  '出类拔萃': '#FF0000',
+  '炉火纯青': '#06bee1',
+  '名满江湖': '#ffba08',
+  '傲视群雄': '#7b2cbf',
+  '登峰造极': '#800080',
+  '举世无双': '#FF6200'
+};
+
 // 字符到棋子类型的映射
 const CHAR_TO_PIECE: Record<string, { type: ChessPiece['type'], color: ChessPiece['color'] }> = {
   'R': { type: 'rook', color: 'red' },
@@ -1055,9 +1069,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                   if (!eloData) return null;
 
                   // 优先使用 playerSides 映射确定当前玩家，避免对手退场后 players 顺序缺失
-                  const myPlayer = (myUserIdFromSide && players.find(p => p.userId === myUserIdFromSide))
-                    || (mySide ? players.find((p, idx) => (idx === 0 ? 'r' : 'b') === mySide) : undefined)
-                    || players[0];
+                      const myPlayer = (myUserIdFromSide && players.find(p => p.userId === myUserIdFromSide))
+                        || (mySide ? players.find((p, idx) => (idx === 0 ? 'r' : 'b') === mySide) : undefined)
+                        || players[0];
 
                   const myUserId = myUserIdFromSide || myPlayer?.userId;
                   const eloEntries = [eloData.playerA, eloData.playerB].filter(Boolean);
@@ -1076,7 +1090,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                   const delta = myStats.delta;
                   const newRating = myStats.newRating;
                   const titleMap = gameEndStats.result?.title;
-                  const myTitle = titleMap && myUserId ? titleMap[myUserId] : (titleMap && myPlayer?.userId ? titleMap[myPlayer.userId] : null);
+                    const myTitle = titleMap && myUserId ? titleMap[myUserId] : (titleMap && myPlayer?.userId ? titleMap[myPlayer.userId] : null);
+                    const resolvedTitle = myTitle || (myPlayer?.title ? { title: myPlayer.title, color: myPlayer.titleColor } : null);
+                    const resolvedTitleColor = resolvedTitle?.title
+                      ? (resolvedTitle.color || TITLE_COLOR_MAP[resolvedTitle.title] || '#fbbf24')
+                      : undefined;
                   
                   return (
                     <div className="flex flex-col gap-1">
@@ -1087,9 +1105,9 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
                         </span>
                       </div>
                       {/* 如果有称号变化，也可以显示 */}
-                      {myTitle && (
+                          {resolvedTitle && (
                         <div className="text-sm mt-1 text-blue-200">
-                          当前称号: <span style={{ color: myTitle.color || '#fbbf24' }}>{myTitle.title}</span>
+                              当前称号: <span style={{ color: resolvedTitleColor || '#fbbf24' }}>{resolvedTitle.title}</span>
                         </div>
                       )}
                     </div>
