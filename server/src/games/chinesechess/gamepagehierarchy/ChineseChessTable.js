@@ -307,23 +307,34 @@ class ChineseChessTable extends GameTable {
         console.log(`[ChineseChess] 游戏开始: ${this.tableId}`);
 
         // 通知 AI 控制器游戏开始（如果有 AI 在游戏中且是红方先走）
-        const AIGameController = require('../../../ai/AIGameController');
-        if (AIGameController.hasActiveSession(this.tableId)) {
-            // 确定 AI 的新颜色
-            // 检查哪个玩家是 AI
-            let aiSide = null;
-            if (redPlayer.isAI) aiSide = 'r';
-            else if (blackPlayer.isAI) aiSide = 'b';
-            
-            if (aiSide) {
-                // 更新 AI 的颜色
-                AIGameController.updateSide(this.tableId, aiSide);
+        try {
+            const AIGameController = require('../../../ai/AIGameController');
+            if (AIGameController && typeof AIGameController.hasActiveSession === 'function' && AIGameController.hasActiveSession(this.tableId)) {
+                // 确定 AI 的新颜色
+                // 检查哪个玩家是 AI
+                let aiSide = null;
                 
-                // 如果 AI 是红方（先手），通知它走棋
-                if (this.turn === aiSide) {
-                    AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
+                // 🛡️ 安全检查：确保 redPlayer 和 blackPlayer 存在
+                if (redPlayer && redPlayer.isAI) aiSide = 'r';
+                else if (blackPlayer && blackPlayer.isAI) aiSide = 'b';
+                
+                if (aiSide) {
+                    // 更新 AI 的颜色
+                    if (typeof AIGameController.updateSide === 'function') {
+                        AIGameController.updateSide(this.tableId, aiSide);
+                    }
+                    
+                    // 如果 AI 是红方（先手），通知它走棋
+                    if (this.turn === aiSide) {
+                        if (typeof AIGameController.onTurnChanged === 'function') {
+                            AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
+                        }
+                    }
                 }
             }
+        } catch (err) {
+            console.error(`[ChineseChessTable] Error notifying AI controller:`, err);
+            // 不要让 AI 错误影响游戏开始
         }
     }
 
