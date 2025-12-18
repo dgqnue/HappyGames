@@ -91,12 +91,27 @@ class ChineseChessTable extends GameTable {
             }
 
             // 确定当前的红黑方
-            const isSwap = this.roundCount % 2 === 0;
-            const redPlayer = isSwap ? this.players[1] : this.players[0];
+            // 优先使用持久化存储的 ID，如果不存在（异常情况）则回退到计算逻辑
+            let redUserId = this.redUserId;
+            let blackUserId = this.blackUserId;
+            
+            if (!redUserId || !blackUserId) {
+                console.warn(`[ChineseChessTable] onPlayerLeaveDuringRound: Stored side IDs missing, falling back to calculation.`);
+                const isSwap = this.roundCount % 2 === 0;
+                const redPlayer = isSwap ? this.players[1] : this.players[0];
+                const blackPlayer = isSwap ? this.players[0] : this.players[1];
+                redUserId = redPlayer?.userId;
+                blackUserId = blackPlayer?.userId;
+            }
+            
+            if (!redUserId || !blackUserId) {
+                console.error(`[ChineseChessTable] onPlayerLeaveDuringRound: Could not determine sides! red=${redUserId}, black=${blackUserId}`);
+                return;
+            }
             
             // 判对方获胜
-            const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
-            console.log(`[ChineseChessTable] Forfeiting game. Leaver: ${userId} (${userId === redPlayer.userId ? 'Red' : 'Black'}), WinnerSide: ${winnerSide}`);
+            const winnerSide = userId === redUserId ? 'b' : 'r';
+            console.log(`[ChineseChessTable] Forfeiting game. Leaver: ${userId} (${userId === redUserId ? 'Red' : 'Black'}), WinnerSide: ${winnerSide}`);
             
             // 异步调用 handleWin，并捕获错误
             this.handleWin(winnerSide).catch(err => {
@@ -244,6 +259,12 @@ class ChineseChessTable extends GameTable {
             return;
         }
 
+        // 关键修复：持久化存储本回合的红黑方 UserID
+        // 这样即使玩家中途断线/离开导致 this.players 变化，也能正确判负
+        this.redUserId = redPlayer.userId;
+        this.blackUserId = blackPlayer.userId;
+        console.log(`[ChineseChess] Sides assigned and stored: Red=${this.redUserId}, Black=${this.blackUserId}`);
+
         console.log(`[ChineseChess] Round ${this.roundCount} starting. Red: ${redPlayer?.nickname}, Black: ${blackPlayer?.nickname}`);
 
         // 架构优化：直接使用内存中的玩家状态
@@ -358,16 +379,30 @@ class ChineseChessTable extends GameTable {
         
         try {
             // 确定当前的红黑方
-            const isSwap = this.roundCount % 2 === 0;
-            const redPlayer = isSwap ? this.players[1] : this.players[0];
-            const blackPlayer = isSwap ? this.players[0] : this.players[1];
+            // 优先使用持久化存储的 ID
+            let redUserId = this.redUserId;
+            let blackUserId = this.blackUserId;
 
-            if (!redPlayer || !blackPlayer) {
-                console.error(`[ChineseChessTable] handleWin: Missing players! red=${redPlayer?.userId}, black=${blackPlayer?.userId}`);
+            // 如果存储的 ID 丢失（极罕见），尝试从当前玩家列表恢复
+            if (!redUserId || !blackUserId) {
+                console.warn(`[ChineseChessTable] handleWin: Stored side IDs missing, attempting recovery from players list.`);
+                const isSwap = this.roundCount % 2 === 0;
+                const redPlayer = isSwap ? this.players[1] : this.players[0];
+                const blackPlayer = isSwap ? this.players[0] : this.players[1];
+                redUserId = redPlayer?.userId;
+                blackUserId = blackPlayer?.userId;
             }
 
-            const winnerId = winnerSide === 'r' ? redPlayer.userId : blackPlayer.userId;
-            const loserId = winnerSide === 'r' ? blackPlayer.userId : redPlayer.userId;
+            if (!redUserId || !blackUserId) {
+                console.error(`[ChineseChessTable] handleWin: CRITICAL - Cannot determine player IDs! red=${redUserId}, black=${blackUserId}`);
+                // 无法结算，强制结束回合
+                this.round.end({ winner: winnerSide, error: 'Player IDs missing' });
+                this.endRound({ winner: winnerSide, error: 'Player IDs missing' });
+                return;
+            }
+
+            const winnerId = winnerSide === 'r' ? redUserId : blackUserId;
+            const loserId = winnerSide === 'r' ? blackUserId : redUserId;
             
             console.log(`[ChineseChessTable] Winner: ${winnerId}, Loser: ${loserId}`);
 
@@ -375,31 +410,20 @@ class ChineseChessTable extends GameTable {
             this.round.end({ winner: winnerSide });
 
             // 1. ELO 结算（将更新后的 rating 写入数据库）
-            // 修正：恢复使用 players[0] 和 players[1] 的顺序，但正确计算 resultForP0
-            // 这样前端如果按位置映射 (p0 -> playerA, p1 -> playerB) 就能正确显示
+            // 使用 winnerId 和 loserId 直接结算，不再依赖 this.players[0]/[1] 的存在
+            // 这样即使玩家已经离开房间，也能正确结算
             let eloResult;
-            const p0 = this.players[0];
-            const p1 = this.players[1];
-
-            if (p0 && p1) {
-                // 如果 p0 是赢家，resultForP0 = 1；否则 = 0
-                const resultForP0 = p0.userId === winnerId ? 1 : 0;
-                console.log(`[ChineseChessTable] Processing ELO for p0=${p0.userId}, p1=${p1.userId}, resultForP0=${resultForP0}`);
+            try {
+                console.log(`[ChineseChessTable] Processing ELO for Winner=${winnerId}, Loser=${loserId}`);
                 eloResult = await EloService.processMatchResult(
                     this.gameType,
-                    p0.userId,
-                    p1.userId,
-                    resultForP0
+                    winnerId, // Player A (Winner)
+                    loserId,  // Player B (Loser)
+                    1         // Result for Player A (1 = Win)
                 );
-            } else {
-                console.warn(`[ChineseChessTable] handleWin: One or both players missing from table. p0=${p0?.userId}, p1=${p1?.userId}. Using fallback ELO calculation.`);
-                // 降级处理：如果找不到两个玩家（异常情况），按原逻辑
-                eloResult = await EloService.processMatchResult(
-                    this.gameType,
-                    winnerId,
-                    loserId,
-                    1 // Winner gets 1 point
-                );
+            } catch (eloErr) {
+                console.error(`[ChineseChessTable] ELO calculation failed:`, eloErr);
+                // 继续执行，不要中断流程
             }
             console.log(`[ChineseChessTable] ELO updated:`, eloResult);
 
@@ -416,7 +440,11 @@ class ChineseChessTable extends GameTable {
 
             // Broadcast Win to Lobby
             try {
-                const winnerName = this.players.find(p => p.userId === winnerId)?.nickname || 'Unknown Player';
+                // 尝试从 players 列表获取昵称，如果玩家已离开，则无法获取最新昵称，只能用 ID 或 Unknown
+                // 改进：可以尝试从数据库查询，或者如果之前保存了 playerInfos 可以使用
+                const winnerPlayer = this.players.find(p => p.userId === winnerId);
+                const winnerName = winnerPlayer?.nickname || 'Unknown Player';
+                
                 const winnerTitle = titleResult[winnerId]?.title || '无';
                 const winnerTitleColor = titleResult[winnerId]?.titleColor || '#000000';
                 
@@ -489,16 +517,32 @@ class ChineseChessTable extends GameTable {
         console.log(`[ChineseChess] 玩家断线判负: ${userId}`);
 
         // 确定当前的红黑方 (必须考虑换边逻辑)
-        const isSwap = this.roundCount % 2 === 0;
-        const redPlayer = isSwap ? this.players[1] : this.players[0];
-        const blackPlayer = isSwap ? this.players[0] : this.players[1];
+        // 优先使用持久化存储的 ID
+        let redUserId = this.redUserId;
+        let blackUserId = this.blackUserId;
+        
+        if (!redUserId || !blackUserId) {
+            console.warn(`[ChineseChess] onPlayerDisconnectDuringGame: Stored side IDs missing, falling back to calculation.`);
+            const isSwap = this.roundCount % 2 === 0;
+            const redPlayer = isSwap ? this.players[1] : this.players[0];
+            const blackPlayer = isSwap ? this.players[0] : this.players[1];
+            redUserId = redPlayer?.userId;
+            blackUserId = blackPlayer?.userId;
+        }
 
-        if (!redPlayer || !blackPlayer) return;
+        if (!redUserId || !blackUserId) {
+            console.error(`[ChineseChess] onPlayerDisconnectDuringGame: Cannot determine sides! red=${redUserId}, black=${blackUserId}`);
+            return;
+        }
 
         // 判对手获胜
         // 如果断线的是红方，则黑方(b)获胜；否则红方(r)获胜
-        const winnerSide = userId === redPlayer.userId ? 'b' : 'r';
-        this.handleWin(winnerSide);
+        const winnerSide = userId === redUserId ? 'b' : 'r';
+        
+        // 异步调用 handleWin，并捕获错误
+        this.handleWin(winnerSide).catch(err => {
+            console.error(`[ChineseChessTable] handleWin failed in onPlayerDisconnectDuringGame:`, err);
+        });
     }
 
     getBetAmount() {
