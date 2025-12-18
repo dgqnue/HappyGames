@@ -309,8 +309,21 @@ class ChineseChessTable extends GameTable {
         // 通知 AI 控制器游戏开始（如果有 AI 在游戏中且是红方先走）
         const AIGameController = require('../../../ai/AIGameController');
         if (AIGameController.hasActiveSession(this.tableId)) {
-            // 红方先走，通知 AI
-            AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
+            // 确定 AI 的新颜色
+            // 检查哪个玩家是 AI
+            let aiSide = null;
+            if (redPlayer.isAI) aiSide = 'r';
+            else if (blackPlayer.isAI) aiSide = 'b';
+            
+            if (aiSide) {
+                // 更新 AI 的颜色
+                AIGameController.updateSide(this.tableId, aiSide);
+                
+                // 如果 AI 是红方（先手），通知它走棋
+                if (this.turn === aiSide) {
+                    AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
+                }
+            }
         }
     }
 
@@ -380,16 +393,17 @@ class ChineseChessTable extends GameTable {
             board: this.board
         });
 
-        // 通知 AI 控制器回合变化（如果有 AI 在游戏中）
-        const AIGameController = require('../../../ai/AIGameController');
-        if (AIGameController.hasActiveSession(this.tableId)) {
-            AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
-        }
-
         // 检查胜利条件
         if (result.win) {
             this.handleWin(validation.side); // 当前方获胜
             return;
+        }
+
+        // 通知 AI 控制器回合变化（如果有 AI 在游戏中）
+        // 只有在游戏未结束时才通知 AI，避免 AI 在绝杀后继续计算
+        const AIGameController = require('../../../ai/AIGameController');
+        if (AIGameController.hasActiveSession(this.tableId)) {
+            AIGameController.onTurnChanged(this.tableId, this.board, this.turn);
         }
     }
 

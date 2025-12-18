@@ -113,6 +113,19 @@ class AIGameController {
     }
     
     /**
+     * 更新 AI 的执子颜色 (用于换边)
+     */
+    updateSide(tableId, newSide) {
+        const session = this.activeSessions.get(tableId);
+        if (session) {
+            console.log(`[AIGameController] Updating AI side on table ${tableId}: ${session.aiSide} -> ${newSide}`);
+            session.aiSide = newSide;
+            // 确保会话是活跃的
+            session.isActive = true;
+        }
+    }
+
+    /**
      * 通知 AI 轮到它走棋
      * @param {string} tableId - 游戏桌 ID
      * @param {Array} board - 当前棋盘
