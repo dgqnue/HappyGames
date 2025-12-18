@@ -62,6 +62,7 @@ export interface GameTableState {
     ready: boolean;  // 统一使用ready，而非isReady
     canStart: boolean;
     isRoundEnded?: boolean; // 回合是否结束（用于显示开始按钮）
+    playerSides?: { r: string, b: string }; // 玩家阵营映射 { r: userId, b: userId }
     countdown?: {
         type: 'ready' | 'start' | 'rematch';
         timeout?: number;
@@ -503,6 +504,8 @@ export abstract class GameTableClient {
                 newState.players = data.playerInfos;
             } else if (data.players && !Array.isArray(data.players)) {
                 console.warn(`[${this.gameType}TableClient] data.players is not an array (likely side mapping), ignoring it to prevent state corruption.`);
+                // 保存阵营映射
+                newState.playerSides = data.players;
                 // 删除 players 字段，避免覆盖现有的正确 players 数组
                 delete newState.players;
             }

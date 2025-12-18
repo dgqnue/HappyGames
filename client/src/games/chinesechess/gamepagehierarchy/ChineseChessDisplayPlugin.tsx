@@ -729,8 +729,18 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
     if (!player) return <div className="w-16 h-16" />; // 占位符
 
     // 确定是否轮到该玩家
-    const playerIndex = players.findIndex(p => p.userId === player.userId);
-    const playerSide = playerIndex === 0 ? 'r' : 'b';
+    let playerSide = 'r'; // Default
+    const playerSides = (tableClient?.getState?.() as any)?.playerSides;
+    
+    if (playerSides && playerSides.r && playerSides.b) {
+        if (player.userId === playerSides.r) playerSide = 'r';
+        else if (player.userId === playerSides.b) playerSide = 'b';
+    } else {
+        // Fallback
+        const playerIndex = players.findIndex(p => p.userId === player.userId);
+        playerSide = playerIndex === 0 ? 'r' : 'b';
+    }
+
     const isTurn = currentTurn === playerSide;
     
     return (
@@ -743,14 +753,41 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   };
 
   // 确定上下方玩家
-  // 默认：players[0] (红) 在下，players[1] (黑) 在上
-  // 如果我是黑方 (mySide === 'b')，则翻转：黑在下，红在上
-  let bottomPlayer = players[0]; // 红方
-  let topPlayer = players[1];    // 黑方
+  // 优先使用 playerSides (服务器下发的红黑方映射)
+  const playerSides = (tableClient?.getState?.() as any)?.playerSides;
   
-  if (mySide === 'b') {
-    bottomPlayer = players[1]; // 黑方
-    topPlayer = players[0];    // 红方
+  let bottomPlayer = players[0];
+  let topPlayer = players[1];
+  
+  if (playerSides && playerSides.r && playerSides.b) {
+      // 如果有明确的阵营映射，使用映射来确定红黑方
+      const redPlayer = players.find(p => p.userId === playerSides.r);
+      const blackPlayer = players.find(p => p.userId === playerSides.b);
+
+      if (mySide === 'r') {
+          // 我是红方：我在下(红)，对手在上(黑)
+          bottomPlayer = redPlayer;
+          topPlayer = blackPlayer;
+      } else if (mySide === 'b') {
+          // 我是黑方：我在下(黑)，对手在上(红)
+          // 注意：棋盘会旋转180度，所以黑方在下
+          bottomPlayer = blackPlayer;
+          topPlayer = redPlayer;
+      } else {
+          // 旁观者模式：默认红在下，黑在上
+          bottomPlayer = redPlayer;
+          topPlayer = blackPlayer;
+      }
+  } else {
+      // 降级逻辑（兼容旧代码）
+      // 默认：players[0] (红) 在下，players[1] (黑) 在上
+      bottomPlayer = players[0]; // 默认红方
+      topPlayer = players[1];    // 默认黑方
+      
+      if (mySide === 'b') {
+        bottomPlayer = players[1]; // 黑方
+        topPlayer = players[0];    // 红方
+      }
   }
 
   return (
