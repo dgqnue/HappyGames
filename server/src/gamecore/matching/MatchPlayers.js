@@ -916,14 +916,71 @@ class MatchPlayers {
         
         console.log(`[MatchPlayers] AI ${aiPlayer.nickname} joining table ${this.roomId}`);
         
-        // 让 AI 入座
-        await AIGameController.joinTable(this.table, aiPlayer);
+        // 构造 AI 玩家数据（与真实玩家格式一致）
+        const aiPlayerData = {
+            odid: aiPlayer.odid,
+            odid: aiPlayer.odid,
+            userId: aiPlayer.odid,
+            socketId: `ai_socket_${aiPlayer.odid}`,
+            user: {
+                _id: aiPlayer.id,
+                odid: aiPlayer.odid,
+                userId: aiPlayer.odid,
+                nickname: aiPlayer.nickname,
+                avatar: aiPlayer.avatar
+            },
+            nickname: aiPlayer.nickname,
+            avatar: aiPlayer.avatar,
+            title: aiPlayer.title,
+            titleColor: aiPlayer.titleColor,
+            rating: aiPlayer.rating,
+            winRate: 50,
+            disconnectRate: 0,
+            matchSettings: null,
+            ready: false,
+            isAI: true
+        };
+        
+        // 通过 matchState 添加玩家
+        const result = this.matchState.addPlayer(aiPlayerData);
+        if (!result.success) {
+            console.error(`[MatchPlayers] Failed to add AI to matchState:`, result.error);
+            return;
+        }
+        
+        // 广播房间状态
+        await this.table.broadcastRoomState();
         
         // 确定 AI 的颜色（第二个加入的是黑方）
         const aiSide = this.matchState.players.length === 2 ? 'b' : 'r';
         
         // 创建 AI 游戏会话
         AIGameController.createSession(this.table, aiPlayer, aiSide);
+        
+        // 1-2秒后 AI 自动准备
+        const readyDelay = Math.floor(Math.random() * 1000) + 1000;
+        setTimeout(() => {
+            this.handleAIReady(aiPlayer.odid);
+        }, readyDelay);
+    }
+    
+    /**
+     * AI 准备处理
+     */
+    handleAIReady(aiUserId) {
+        const player = this.matchState.players.find(p => p.odid === aiUserId);
+        if (player) {
+            player.ready = true;
+            console.log(`[MatchPlayers] AI ${player.nickname} is ready on table ${this.roomId}`);
+            
+            // 广播状态更新
+            this.table.broadcastRoomState();
+            
+            // 检查是否可以开始游戏
+            if (this.matchState.players.length === this.maxPlayers) {
+                this.startReadyCheck();
+            }
+        }
     }
 
     /**

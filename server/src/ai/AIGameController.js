@@ -52,26 +52,33 @@ class AIGameController {
     async joinTable(table, aiPlayer) {
         console.log(`[AIGameController] AI ${aiPlayer.nickname} joining table ${table.tableId}`);
         
+        // 使用 User._id.toString() 作为 odid，与真实玩家保持一致
+        const odid = aiPlayer.id.toString();
+        
         // 模拟 AI 玩家数据结构（与真人玩家一致）
         const aiPlayerData = {
-            odid: aiPlayer.odid,
-            odid: aiPlayer.odid,
-            odid: aiPlayer.odid,
+            odid: odid,
+            odid: odid,
+            userId: odid,
             nickname: aiPlayer.nickname,
             avatar: aiPlayer.avatar,
             title: aiPlayer.title,
             titleColor: aiPlayer.titleColor,
+            rating: aiPlayer.rating,
             ready: false,
-            isAI: true, // 内部标记，不发送给客户端
-            // 模拟 socket 对象（AI 没有真实 socket）
-            socketId: `ai_socket_${aiPlayer.odid}`,
+            isAI: true,
+            socketId: `ai_socket_${odid}`,
             user: {
                 _id: aiPlayer.id,
-                odid: aiPlayer.odid,
+                odid: odid,
+                userId: odid,
                 nickname: aiPlayer.nickname,
                 avatar: aiPlayer.avatar
             }
         };
+        
+        // 保存 odid 以便后续使用
+        aiPlayer.odid = odid;
         
         // 添加到游戏桌
         table.players.push(aiPlayerData);
@@ -82,7 +89,7 @@ class AIGameController {
         // 1-2秒后自动准备（模拟真人操作延迟）
         const readyDelay = Math.floor(Math.random() * 1000) + 1000;
         setTimeout(() => {
-            this.setReady(table, aiPlayer.odid);
+            this.setReady(table, odid);
         }, readyDelay);
     }
     
