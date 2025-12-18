@@ -255,26 +255,43 @@ class AIGameController {
      * AI 离开游戏桌
      */
     leaveTable(session) {
+        // 防止重复调用
+        if (!session || session.isLeaving) {
+            console.log(`[AIGameController] leaveTable called but session is null or already leaving`);
+            return;
+        }
+        
+        session.isLeaving = true;
         console.log(`[AIGameController] AI ${session.aiPlayer.nickname} leaving table ${session.tableId}`);
         
-        const mockSocket = {
-            user: {
-                _id: { toString: () => session.aiPlayer.odid },
-                odid: session.aiPlayer.odid,
-                username: session.aiPlayer.nickname
-            },
-            emit: () => {},
-            leave: () => {}
-        };
-
-        if (session.table && session.table.matchPlayers) {
-            session.table.matchPlayers.playerLeave(mockSocket);
-        }
-
-        // 清理会话
+        // 先从 activeSessions 中删除，防止循环调用
         session.isActive = false;
-        AIPlayerManager.releaseAI(session.aiPlayer.odid);
         this.activeSessions.delete(session.tableId);
+        
+        // 释放 AI 资源
+        AIPlayerManager.releaseAI(session.aiPlayer.odid);
+        
+        // 最后通知 MatchPlayers 移除 AI 玩家
+        if (session.table && session.table.matchPlayers) {
+            const mockSocket = {
+                user: {
+                    _id: { toString: () => session.aiPlayer.odid },
+                    odid: session.aiPlayer.odid,
+                    username: session.aiPlayer.nickname
+                },
+                emit: () => {},
+                leave: () => {},
+                rooms: new Set()
+            };
+            
+            // 使用 try-catch 防止错误传播
+            try {
+                session.table.matchPlayers.playerLeave(mockSocket);
+                console.log(`[AIGameController] AI successfully removed from table ${session.tableId}`);
+            } catch (err) {
+                console.error(`[AIGameController] Error removing AI from table:`, err);
+            }
+        }
     }
     
     /**
@@ -289,15 +306,22 @@ class AIGameController {
             return;
         }
         
-        // 如果真人离开，AI 也离开
+        // 防止重复处理
+        if (session.isLeaving) {
+            console.log(`[AIGameController] Session already leaving, ignoring`);
+            return;
+        }
+        
+        // 如果真人离开，AI 立即离开（不再延迟，避免状态不一致）
         if (userId !== session.aiPlayer.odid) {
-            console.log(`[AIGameController] Human player left, AI leaving table ${tableId} in 1s`);
-            // 延迟一点离开，显得自然
-            setTimeout(() => {
-                this.leaveTable(session);
-            }, 1000);
+            console.log(`[AIGameController] Human player left, AI leaving table ${tableId} immediately`);
+            this.leaveTable(session);
         } else {
-            console.log(`[AIGameController] AI itself left (or was removed), no action needed`);
+            console.log(`[AIGameController] AI itself left (or was removed), cleaning up session`);
+            // AI 自己被移除时，也需要清理会话
+            session.isActive = false;
+            this.activeSessions.delete(tableId);
+            AIPlayerManager.releaseAI(session.aiPlayer.odid);
         }
     }
     
