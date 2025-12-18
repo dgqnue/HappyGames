@@ -465,14 +465,17 @@ class ChineseChessTable extends GameTable {
 
             // 2. 全局重新计算所有玩家的排名和称号
             //    因为这两个玩家的 rating 改变，可能影响所有玩家的排名
-            console.log(`[ChineseChessTable] Recalculating all player titles...`);
-            let titleResult = {};
-            try {
-                titleResult = await Grade.updateAllPlayerTitles(this.gameType);
-                console.log(`[ChineseChessTable] All player titles updated:`, titleResult);
-            } catch (err) {
-                console.error(`[ChineseChessTable] Error updating all titles:`, err);
-            }
+            //    ⚠️ 优化：改为异步执行，不阻塞游戏结算流程
+            console.log(`[ChineseChessTable] Triggering background title recalculation...`);
+            Grade.updateAllPlayerTitles(this.gameType).then(titleResult => {
+                console.log(`[ChineseChessTable] Background title update completed.`);
+            }).catch(err => {
+                console.error(`[ChineseChessTable] Background title update failed:`, err);
+            });
+            
+            // 临时使用旧的称号信息，或者简单更新当前玩家（如果需要精确显示）
+            // 这里为了不阻塞，我们跳过等待 titleResult
+            let titleResult = {}; 
 
             // Broadcast Win to Lobby
             try {
@@ -481,8 +484,11 @@ class ChineseChessTable extends GameTable {
                 const winnerPlayer = this.players.find(p => p.userId === winnerId);
                 const winnerName = winnerPlayer?.nickname || 'Unknown Player';
                 
-                const winnerTitle = titleResult[winnerId]?.title || '无';
-                const winnerTitleColor = titleResult[winnerId]?.titleColor || '#000000';
+                // 尝试获取最新称号（如果 ELO 更新了，称号可能变了，但这里为了速度先用旧的或简单的）
+                // 实际上 ELO 已经更新了 UserGameStats，但 updateAllPlayerTitles 还没跑完
+                // 我们可以尝试只更新这两个玩家的称号（快速路径），或者直接用旧的
+                const winnerTitle = winnerPlayer?.title || '无';
+                const winnerTitleColor = winnerPlayer?.titleColor || '#000000';
                 
                 const winItem = new LobbyFeed({
                     type: 'game_win',
