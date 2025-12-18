@@ -1241,6 +1241,13 @@ class MatchPlayers {
         // Remove from spectator list
         const wasSpectator = this.matchState.removeSpectator(userId);
 
+        // 🔧 关键修复：确保玩家离开房间时，也从所有匹配队列中移除
+        // 这样可以防止玩家在房间内点击了开始（加入队列），然后离开房间，导致仍然在队列中
+        if (this.matchMaker) {
+            console.log(`[MatchPlayers] Removing player ${userId} from all match queues due to room leave`);
+            this.matchMaker.removeFromAllQueues(this.gameType, userId);
+        }
+
         const statusAfter = this.matchState.status;
         const playerCountAfter = this.matchState.players.length;
         
