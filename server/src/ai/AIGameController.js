@@ -194,13 +194,74 @@ class AIGameController {
         
         console.log(`[AIGameController] Game ended on table ${tableId}, result:`, result);
         
+        // 如果是因为对手离开导致的游戏结束，AI 也离开
+        if (result && (result.reason === 'opponent_left' || result.reason === 'player_left')) {
+             this.leaveTable(session);
+             return;
+        }
+
+        // 随机延迟后决定是否再来一局 (2-5秒)
+        const delay = 2000 + Math.random() * 3000;
+        
+        setTimeout(() => {
+            // 检查会话是否还存在（可能在等待期间被清理了）
+            if (!this.activeSessions.has(tableId)) return;
+
+            // 70% 概率再来一局，30% 概率离开
+            if (Math.random() < 0.7) {
+                this.rematch(session);
+            } else {
+                this.leaveTable(session);
+            }
+        }, delay);
+    }
+
+    /**
+     * AI 请求再来一局
+     */
+    rematch(session) {
+        console.log(`[AIGameController] AI ${session.aiPlayer.nickname} deciding to rematch on table ${session.tableId}`);
+        
+        const mockSocket = {
+            user: {
+                _id: { toString: () => session.aiPlayer.odid },
+                odid: session.aiPlayer.odid,
+                username: session.aiPlayer.nickname
+            },
+            emit: () => {}
+        };
+        
+        // 调用 MatchPlayers 的 playerReady
+        if (session.table && session.table.matchPlayers) {
+            // 注意：这里调用的是 playerReady，MatchPlayers 会处理 rematch 逻辑
+            session.table.matchPlayers.playerReady(mockSocket);
+        }
+    }
+
+    /**
+     * AI 离开游戏桌
+     */
+    leaveTable(session) {
+        console.log(`[AIGameController] AI ${session.aiPlayer.nickname} leaving table ${session.tableId}`);
+        
+        const mockSocket = {
+            user: {
+                _id: { toString: () => session.aiPlayer.odid },
+                odid: session.aiPlayer.odid,
+                username: session.aiPlayer.nickname
+            },
+            emit: () => {},
+            leave: () => {}
+        };
+
+        if (session.table && session.table.matchPlayers) {
+            session.table.matchPlayers.playerLeave(mockSocket);
+        }
+
+        // 清理会话
         session.isActive = false;
-        
-        // 释放 AI 玩家
         AIPlayerManager.releaseAI(session.aiPlayer.odid);
-        
-        // 移除会话
-        this.activeSessions.delete(tableId);
+        this.activeSessions.delete(session.tableId);
     }
     
     /**
@@ -213,7 +274,10 @@ class AIGameController {
         // 如果真人离开，AI 也离开
         if (userId !== session.aiPlayer.odid) {
             console.log(`[AIGameController] Human player left, AI leaving table ${tableId}`);
-            this.onGameEnd(tableId, { reason: 'opponent_left' });
+            // 延迟一点离开，显得自然
+            setTimeout(() => {
+                this.leaveTable(session);
+            }, 1000);
         }
     }
     

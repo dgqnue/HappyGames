@@ -1167,6 +1167,13 @@ class MatchPlayers {
      */
     _playerLeave(socket) {
         const userId = socket.user._id.toString();
+        
+        // Notify AI Controller that a player is leaving
+        // This allows AI to leave if the human opponent leaves
+        if (AIGameController && typeof AIGameController.onPlayerLeave === 'function') {
+            AIGameController.onPlayerLeave(this.roomId, userId);
+        }
+
         const statusBefore = this.matchState.status;
         const playerCountBefore = this.matchState.players.length;
         
