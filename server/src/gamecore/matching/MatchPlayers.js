@@ -1176,8 +1176,17 @@ class MatchPlayers {
         
         // Notify AI Controller that a player is leaving
         // This allows AI to leave if the human opponent leaves
-        if (AIGameController && typeof AIGameController.onPlayerLeave === 'function') {
-            AIGameController.onPlayerLeave(this.roomId, userId);
+        // 🔧 Fix: Use dynamic require to avoid circular dependency issues
+        try {
+            const AIGameController = require('../../ai/AIGameController');
+            if (AIGameController && typeof AIGameController.onPlayerLeave === 'function') {
+                console.log(`[MatchPlayers] Notifying AIGameController of player leave: ${userId}`);
+                AIGameController.onPlayerLeave(this.roomId, userId);
+            } else {
+                console.warn(`[MatchPlayers] AIGameController not available or invalid`);
+            }
+        } catch (err) {
+            console.error(`[MatchPlayers] Error notifying AIGameController:`, err);
         }
 
         const statusBefore = this.matchState.status;

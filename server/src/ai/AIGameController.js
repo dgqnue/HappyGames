@@ -281,16 +281,23 @@ class AIGameController {
      * 玩家离开处理（真人离开时，AI 也应该离开）
      */
     onPlayerLeave(tableId, userId) {
+        console.log(`[AIGameController] onPlayerLeave called for table ${tableId}, user ${userId}`);
         const session = this.activeSessions.get(tableId);
-        if (!session) return;
+        
+        if (!session) {
+            console.log(`[AIGameController] No active session found for table ${tableId}`);
+            return;
+        }
         
         // 如果真人离开，AI 也离开
         if (userId !== session.aiPlayer.odid) {
-            console.log(`[AIGameController] Human player left, AI leaving table ${tableId}`);
+            console.log(`[AIGameController] Human player left, AI leaving table ${tableId} in 1s`);
             // 延迟一点离开，显得自然
             setTimeout(() => {
                 this.leaveTable(session);
             }, 1000);
+        } else {
+            console.log(`[AIGameController] AI itself left (or was removed), no action needed`);
         }
     }
     
