@@ -62,26 +62,35 @@ class ChineseChessTable extends GameTable {
             // 这样可以避免因为加载慢、网络延迟等问题导致的误判
             // 🔧 Update: Enable for ALL rounds to prevent unfair forfeits on connection blips
             // const isFirstRound = this.roundCount <= 1; // Removed restriction
-            const withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
             
-            console.log(`[ChineseChessTable]   - withinGracePeriod: ${withinGracePeriod} (roundCount: ${this.roundCount})`);
+            // 关键改进：如果已经走棋了（history.length > 0），则不再享受 3秒 保护期
+            // 只要走了棋，离开就是判负
+            // const hasMoves = this.round && this.round.history && this.round.history.length > 0;
+            // let withinGracePeriod = !this.roundStartTime || (Date.now() - this.roundStartTime < 3000);
             
-            if (withinGracePeriod) {
-                console.log(`[ChineseChessTable] Player left within 3s of round start (or before round start). Cancelling game instead of forfeiting.`);
-                this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
+            // if (hasMoves) {
+            //     console.log(`[ChineseChessTable] Player left, but moves have been made (${this.round.history.length}). Disabling grace period.`);
+            //     withinGracePeriod = false;
+            // }
+            
+            // console.log(`[ChineseChessTable]   - withinGracePeriod: ${withinGracePeriod} (roundCount: ${this.roundCount}, hasMoves: ${hasMoves})`);
+            
+            // if (withinGracePeriod) {
+            //     console.log(`[ChineseChessTable] Player left within 3s of round start (or before round start). Cancelling game instead of forfeiting.`);
+            //     this.broadcast('system_notice', { message: '玩家连接不稳定，游戏取消' });
                 
-                // 强制结束回合，但不产生胜负
-                if (this.round) {
-                    this.round.end({ cancelled: true });
-                }
+            //     // 强制结束回合，但不产生胜负
+            //     if (this.round) {
+            //         this.round.end({ cancelled: true });
+            //     }
                 
-                // 通知 MatchPlayers 取消游戏（重置到 IDLE 状态）
-                if (this.matchPlayers && typeof this.matchPlayers.cancelGame === 'function') {
-                    this.matchPlayers.cancelGame();
-                }
+            //     // 通知 MatchPlayers 取消游戏（重置到 IDLE 状态）
+            //     if (this.matchPlayers && typeof this.matchPlayers.cancelGame === 'function') {
+            //         this.matchPlayers.cancelGame();
+            //     }
                 
-                return;
-            }
+            //     return;
+            // }
 
             // 检查回合是否已经结束（例如已经分出胜负，正在等待结算或新回合）
             // 如果已经结束，则不触发判负
