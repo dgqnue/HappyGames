@@ -502,12 +502,26 @@ export abstract class GameTableClient {
             if (data.playerInfos && Array.isArray(data.playerInfos)) {
                 console.log(`[${this.gameType}TableClient] Using playerInfos as players state`);
                 newState.players = data.playerInfos;
-            } else if (data.players && !Array.isArray(data.players)) {
-                console.warn(`[${this.gameType}TableClient] data.players is not an array (likely side mapping), ignoring it to prevent state corruption.`);
+            }
+            
+            // 独立检查 players 字段是否为阵营映射
+            if (data.players && !Array.isArray(data.players)) {
+                console.log(`[${this.gameType}TableClient] data.players is side mapping, saving to playerSides.`);
                 // 保存阵营映射
                 newState.playerSides = data.players;
-                // 删除 players 字段，避免覆盖现有的正确 players 数组
-                delete newState.players;
+                
+                // 如果 newState.players 还没有被设置（即没有 playerInfos），
+                // 且 data.players 不是数组，那么我们需要小心不要让它覆盖掉 state.players
+                // 但通常 playerInfos 会存在。
+                // 如果 data.players 是对象，它不应该赋值给 newState.players
+                if (!newState.players) {
+                     // 如果没有 playerInfos，我们不能使用 data.players (对象) 作为 players 列表
+                     // 这里只能保留原有的 this.state.players
+                     newState.players = this.state.players;
+                }
+            } else if (data.players && Array.isArray(data.players) && !newState.players) {
+                // 如果 data.players 是数组且没有 playerInfos，则使用它
+                newState.players = data.players;
             }
 
             // 更新状态
