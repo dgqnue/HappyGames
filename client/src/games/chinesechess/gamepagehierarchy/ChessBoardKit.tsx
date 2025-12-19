@@ -253,7 +253,8 @@ export function ChessBoardKit({
                     lastMove?.to.col === piece.col;
 
                   // 确保颜色判断不区分大小写，防止 Windows 文件系统大小写不敏感导致的逻辑错误
-                  const isRed = piece.color.toLowerCase() === 'red' || piece.color === 'r';
+                  // 使用 as string 强制转换以避免 TypeScript 检查 'red' | 'black' 与 'r' 的重叠问题
+                  const isRed = (piece.color as string).toLowerCase() === 'red' || (piece.color as string) === 'r';
                   const selectImageSrc = `/images/chinesechess/select/${isRed ? 'r' : 'b'}_select/${isRed ? 'r' : 'b'}_select.png`;
 
                   const getPieceImagePath = () => {
