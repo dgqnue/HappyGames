@@ -264,9 +264,7 @@ export function ChessBoardKit({
                     <div
                       key={`piece-${piece.row}-${piece.col}-${piece.color}-${piece.type}`}
                       className={`absolute cursor-pointer ${
-                        isSelected ? 'ring-4 ring-blue-500 scale-110 z-10' : ''
-                      } ${
-                        isLastMoveTo ? 'ring-4 ring-yellow-400 scale-110' : 'hover:scale-105'
+                        isSelected || isLastMoveTo ? 'z-10' : 'hover:scale-105'
                       }`}
                       style={{
                         left: `${piecePixelX}px`,
@@ -285,6 +283,30 @@ export function ChessBoardKit({
                       }}
                       title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                     >
+                      {/* 选中效果或最后移动效果 - 使用图片 */}
+                      {(isSelected || isLastMoveTo) && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '120%', // 比棋子稍大
+                            height: '120%',
+                            zIndex: 20,
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          <Image
+                            src={`/images/chinesechess/select/${piece.color === 'red' ? 'r' : 'b'}_select/${piece.color === 'red' ? 'r' : 'b'}_select.png`}
+                            alt="selected"
+                            fill
+                            className="object-contain"
+                            priority
+                          />
+                        </div>
+                      )}
+
                       <div className="relative w-full h-full">
                         <Image
                           src={getPieceImagePath()}
