@@ -267,7 +267,7 @@ export function ChessBoardKit({
                   return (
                     <div
                       key={`piece-${piece.row}-${piece.col}-${piece.color}-${piece.type}`}
-                      className={`absolute cursor-pointer ${
+                      className={`absolute cursor-pointer outline-none select-none ${
                         isSelected || isLastMoveTo ? 'z-10' : 'hover:scale-105'
                       }`}
                       style={{
@@ -276,6 +276,7 @@ export function ChessBoardKit({
                         width: `${pieceSize}px`,
                         height: `${pieceSize}px`,
                         transform: `translate(-50%, -50%) ${mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'}`,
+                        WebkitTapHighlightColor: 'transparent', // 移动端点击高亮去除
                       }}
                       onClick={(e) => {
                         e.stopPropagation(); // 防止冒泡到棋盘容器导致二次触发
