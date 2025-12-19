@@ -1174,6 +1174,11 @@ class MatchPlayers {
     _playerLeave(socket) {
         const userId = socket.user._id.toString();
         
+        // Debug: print current players
+        if (this.matchState && this.matchState.players) {
+            console.log(`[MatchPlayers] Current players before leave:`, this.matchState.players.map(p => `${p.nickname} (${p.userId})`));
+        }
+        
         // Notify AI Controller that a player is leaving
         // This allows AI to leave if the human opponent leaves
         // 🔧 Fix: Use dynamic require to avoid circular dependency issues

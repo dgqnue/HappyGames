@@ -53,11 +53,17 @@ class AIGameController {
         console.log(`[AIGameController] AI ${aiPlayer.nickname} joining table ${table.tableId}`);
         
         // 使用 User._id.toString() 作为 odid，与真实玩家保持一致
-        const odid = aiPlayer.id.toString();
+        // 兼容 mongoose document 和 plain object
+        const rawId = aiPlayer.id || aiPlayer._id;
+        const odid = rawId ? rawId.toString() : null;
+        
+        if (!odid) {
+            console.error(`[AIGameController] Failed to get AI ID for ${aiPlayer.nickname}`);
+            return;
+        }
         
         // 模拟 AI 玩家数据结构（与真人玩家一致）
         const aiPlayerData = {
-            odid: odid,
             odid: odid,
             userId: odid,
             nickname: aiPlayer.nickname,
@@ -69,7 +75,7 @@ class AIGameController {
             isAI: true,
             socketId: `ai_socket_${odid}`,
             user: {
-                _id: aiPlayer.id,
+                _id: rawId,
                 odid: odid,
                 userId: odid,
                 nickname: aiPlayer.nickname,
@@ -103,12 +109,21 @@ class AIGameController {
             console.log(`[AIGameController] AI ${player.nickname} is ready on table ${table.tableId}`);
             
             // 通知 MatchPlayers 检查是否可以开始
-            if (table.matchPlayers) {
-                table.matchPlayers.handlePlayerReady(aiUserId);
+            if (table.matchPlayers && typeof table.matchPlayers.handleAIReady === 'function') {
+                table.matchPlayers.handleAIReady(aiUserId);
+            } else {
+                // 备用方案：直接设置准备状态并广播
+                console.warn(`[AIGameController] handleAIReady not available, using fallback`);
+                if (table.matchPlayers && table.matchPlayers.matchState) {
+                    const result = table.matchPlayers.matchState.setPlayerReady(aiUserId, true);
+                    table.broadcastRoomState();
+                    
+                    if (result === 'all_ready') {
+                        console.log(`[AIGameController] All players ready, triggering game start`);
+                        table.matchPlayers.startRoundCountdown();
+                    }
+                }
             }
-            
-            // 广播状态更新
-            table.broadcastRoomState();
         }
     }
     
@@ -273,10 +288,15 @@ class AIGameController {
         
         // 最后通知 MatchPlayers 移除 AI 玩家
         if (session.table && session.table.matchPlayers) {
+            const aiId = session.aiPlayer.odid;
+            console.log(`[AIGameController] Constructing mock socket for AI removal: ${aiId}`);
+            
             const mockSocket = {
+                id: `ai_socket_${aiId}`,
                 user: {
-                    _id: { toString: () => session.aiPlayer.odid },
-                    odid: session.aiPlayer.odid,
+                    _id: aiId, // MatchPlayers uses .toString() on this
+                    odid: aiId,
+                    userId: aiId,
                     username: session.aiPlayer.nickname
                 },
                 emit: () => {},
