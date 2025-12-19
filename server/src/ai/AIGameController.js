@@ -335,6 +335,8 @@ class AIGameController {
      */
     onPlayerLeave(tableId, userId) {
         console.log(`[AIGameController] onPlayerLeave called for table ${tableId}, user ${userId}`);
+        console.log(`[AIGameController] Active sessions:`, Array.from(this.activeSessions.keys()));
+        
         const session = this.activeSessions.get(tableId);
         
         if (!session) {
@@ -342,26 +344,29 @@ class AIGameController {
             return;
         }
         
+        console.log(`[AIGameController] Session found: AI=${session.aiPlayer.nickname}, aiOdid=${session.aiPlayer.odid}, leavingUserId=${userId}`);
+        console.log(`[AIGameController] Comparison: userId(${typeof userId})=${userId} vs aiOdid(${typeof session.aiPlayer.odid})=${session.aiPlayer.odid}`);
+        
         // 防止重复处理
         if (session.isLeaving) {
             console.log(`[AIGameController] Session already leaving, ignoring`);
             return;
         }
         
-        // 如果真人离开，AI 延迟 2-5 秒后离开（模拟真人反应时间）
+        if (session.pendingLeave) {
+            console.log(`[AIGameController] Session already has pending leave, ignoring`);
+            return;
+        }
+        
+        // 如果真人离开，AI 立即离开（不再延迟，因为延迟会导致问题）
         if (userId !== session.aiPlayer.odid) {
-            const delay = 2000 + Math.floor(Math.random() * 3000); // 2-5秒随机延迟
-            console.log(`[AIGameController] Human player left, AI leaving table ${tableId} in ${delay}ms`);
+            console.log(`[AIGameController] Human player left (${userId} !== ${session.aiPlayer.odid}), AI leaving immediately`);
             
             // 标记为即将离开，防止重复触发
             session.pendingLeave = true;
             
-            setTimeout(() => {
-                // 再次检查会话是否还存在（可能已被清理）
-                if (this.activeSessions.has(tableId) && !session.isLeaving) {
-                    this.leaveTable(session);
-                }
-            }, delay);
+            // 立即离开，不再延迟
+            this.leaveTable(session);
         } else {
             console.log(`[AIGameController] AI itself left (or was removed), cleaning up session`);
             // AI 自己被移除时，也需要清理会话
