@@ -309,7 +309,11 @@ class ChineseChessTable extends GameTable {
         // 通知 AI 控制器游戏开始（如果有 AI 在游戏中且是红方先走）
         try {
             const AIGameController = require('../../../ai/AIGameController');
-            if (AIGameController && typeof AIGameController.hasActiveSession === 'function' && AIGameController.hasActiveSession(this.tableId)) {
+            console.log(`[ChineseChessTable] Checking for AI session: tableId=${this.tableId}`);
+            const hasSession = AIGameController && typeof AIGameController.hasActiveSession === 'function' && AIGameController.hasActiveSession(this.tableId);
+            console.log(`[ChineseChessTable] hasActiveSession(${this.tableId}) = ${hasSession}`);
+            
+            if (hasSession) {
                 // 确定 AI 的新颜色
                 // 检查哪个玩家是 AI
                 let aiSide = null;

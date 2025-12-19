@@ -27,6 +27,8 @@ class AIGameController {
      * @param {string} aiSide - AI 执的颜色 ('r' 或 'b')
      */
     createSession(table, aiPlayer, aiSide) {
+        console.log(`[AIGameController] createSession called: tableId=${table.tableId}, aiPlayer=${aiPlayer.nickname}, aiSide=${aiSide}, aiPlayer.odid=${aiPlayer.odid}`);
+        
         const session = {
             tableId: table.tableId,
             table: table,
@@ -39,7 +41,7 @@ class AIGameController {
         this.activeSessions.set(table.tableId, session);
         AIPlayerManager.markAsBusy(aiPlayer.odid, table.tableId);
         
-        console.log(`[AIGameController] Session created for table ${table.tableId}, AI: ${aiPlayer.nickname} (${aiSide})`);
+        console.log(`[AIGameController] Session created for table ${table.tableId}, AI: ${aiPlayer.nickname} (${aiSide}), total sessions: ${this.activeSessions.size}`);
         
         return session;
     }
@@ -147,13 +149,27 @@ class AIGameController {
      * @param {string} turn - 当前回合 ('r' 或 'b')
      */
     async onTurnChanged(tableId, board, turn) {
+        console.log(`[AIGameController] onTurnChanged called: tableId=${tableId}, turn=${turn}`);
+        
         const session = this.activeSessions.get(tableId);
-        if (!session || !session.isActive) return;
+        if (!session) {
+            console.log(`[AIGameController] No session found for table ${tableId}`);
+            return;
+        }
+        if (!session.isActive) {
+            console.log(`[AIGameController] Session exists but not active for table ${tableId}`);
+            return;
+        }
+        
+        console.log(`[AIGameController] Session found: aiSide=${session.aiSide}, isActive=${session.isActive}, aiPlayer=${session.aiPlayer?.nickname}`);
         
         // 检查是否轮到 AI
-        if (turn !== session.aiSide) return;
+        if (turn !== session.aiSide) {
+            console.log(`[AIGameController] Not AI's turn (turn=${turn}, aiSide=${session.aiSide})`);
+            return;
+        }
         
-        console.log(`[AIGameController] AI's turn on table ${tableId}`);
+        console.log(`[AIGameController] AI's turn on table ${tableId}, calculating move...`);
         
         try {
             // 计算最佳走法

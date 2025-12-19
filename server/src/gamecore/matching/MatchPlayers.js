@@ -631,15 +631,24 @@ class MatchRoomState {
     }
 
     setPlayerReady(userId, ready = true) {
+        console.log(`[MatchRoomState] setPlayerReady called: userId=${userId}, ready=${ready}`);
+        console.log(`[MatchRoomState] All players:`, this.players.map(p => ({ odid: p.odid, odid: p.odid, ready: p.ready })));
+        
         const player = this.players.find(p => p.userId === userId);
-        if (!player) return false;
+        if (!player) {
+            console.log(`[MatchRoomState] Player not found with userId=${userId}`);
+            return false;
+        }
 
         player.ready = ready;
+        console.log(`[MatchRoomState] Player ${player.nickname} ready status set to ${ready}`);
 
         if (this.allPlayersReady()) {
+            console.log(`[MatchRoomState] All players ready!`);
             this.cancelReadyCheck();
             return 'all_ready';
         }
+        console.log(`[MatchRoomState] Not all players ready yet`);
         return true;
     }
 
@@ -954,6 +963,8 @@ class MatchPlayers {
         // 确定 AI 的颜色（第二个加入的是黑方）
         const aiSide = this.matchState.players.length === 2 ? 'b' : 'r';
         
+        console.log(`[MatchPlayers] Creating AI session: tableId=${this.table.tableId}, aiPlayer.odid=${aiPlayer.odid}, aiSide=${aiSide}`);
+        
         // 创建 AI 游戏会话
         AIGameController.createSession(this.table, aiPlayer, aiSide);
         
@@ -968,10 +979,22 @@ class MatchPlayers {
      * AI 准备处理
      */
     handleAIReady(aiUserId) {
+        console.log(`[MatchPlayers] handleAIReady called for AI ${aiUserId}`);
+        
+        // Debug: print all players and their ready status
+        console.log(`[MatchPlayers] Current players:`, this.matchState.players.map(p => ({
+            odid: p.odid,
+            userId: p.userId,
+            nickname: p.nickname,
+            ready: p.ready,
+            isAI: p.isAI
+        })));
+        
         // 使用 setPlayerReady 来正确处理状态转换（包括检查是否所有人都准备好了）
         const result = this.matchState.setPlayerReady(aiUserId, true);
+        console.log(`[MatchPlayers] setPlayerReady result: ${result}`);
         
-        const player = this.matchState.players.find(p => p.odid === aiUserId);
+        const player = this.matchState.players.find(p => p.odid === aiUserId || p.userId === aiUserId);
         if (player) {
             console.log(`[MatchPlayers] AI ${player.nickname} is ready on table ${this.roomId}, result: ${result}`);
             
@@ -1118,10 +1141,14 @@ class MatchPlayers {
             // 真人满员，取消 AI 匹配计时器
             this.cancelAIMatchTimer();
             this.startReadyCheck();
-        } else if (this.matchState.players.length === 1) {
-            // 只有一个玩家时，启动 AI 匹配计时器（8-15秒后 AI 入场）
-            this.startAIMatchTimer(stats?.rating || 1200);
-        } else if (this.matchState.players.length > 1) {
+        }
+        // 🔧 修复：AI 匹配计时器应该在玩家准备后启动，而不是加入时
+        // 这样可以确保真人玩家准备好了才匹配 AI
+        // else if (this.matchState.players.length === 1) {
+        //     // 只有一个玩家时，启动 AI 匹配计时器（8-15秒后 AI 入场）
+        //     this.startAIMatchTimer(stats?.rating || 1200);
+        // }
+        else if (this.matchState.players.length > 1) {
             // 第二个真人加入，取消 AI 匹配计时器
             this.cancelAIMatchTimer();
         }
@@ -1508,6 +1535,21 @@ class MatchPlayers {
 
         if (result === 'all_ready') {
             this.startRoundCountdown();
+        } else if (this.matchState.players.length === 1) {
+            // 🔧 修复：只有一个玩家准备好了，启动 AI 匹配计时器
+            // 获取玩家的 rating 来匹配合适等级的 AI
+            const UserGameStats = require('../../models/UserGameStats');
+            UserGameStats.findOne({
+                userId: socket.user._id,
+                gameType: this.gameType
+            }).then(stats => {
+                const playerRating = stats?.rating || 1200;
+                console.log(`[MatchPlayers] Single player ready, starting AI match timer with rating ${playerRating}`);
+                this.startAIMatchTimer(playerRating);
+            }).catch(err => {
+                console.error(`[MatchPlayers] Failed to get player rating:`, err);
+                this.startAIMatchTimer(1200); // 默认 rating
+            });
         }
     }
 
