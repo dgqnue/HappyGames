@@ -196,6 +196,22 @@ export abstract class GameTableClient {
             });
         });
 
+        // 🔧 强制刷新事件（服务端检测到状态不同步时发送）
+        this.socket.on('force_refresh', (data: any) => {
+            console.warn(`[${this.gameType}TableClient] Force refresh received:`, data);
+            // 重置本地状态到初始状态
+            this.updateState({
+                status: 'idle',
+                players: [],
+                ready: false,
+                canStart: false,
+                countdown: null,
+                isRoundEnded: false
+            });
+            // 请求最新的桌子状态
+            this.socket.emit('request_table_state');
+        });
+
         // 游戏开始倒计时
         this.socket.on('game_countdown', (data: any) => {
             console.log('[GameTableClient] game_countdown event received:', data);

@@ -760,7 +760,21 @@ class ChineseChessTable extends GameTable {
         
         // 检查当前在这个房间的 socket 数量
         const room = this.io.sockets.adapter.rooms.get(this.tableId);
-        console.log(`[ChineseChessTable] Sockets in room ${this.tableId}:`, room ? room.size : 0, 'ids:', room ? Array.from(room) : []);
+        const socketsInRoom = room ? Array.from(room) : [];
+        console.log(`[ChineseChessTable] Sockets in room ${this.tableId}: count=${socketsInRoom.length}, ids=`, socketsInRoom);
+        
+        // 调试：如果玩家数为0但房间里还有socket，可能是状态不同步
+        if (currentPlayers.length === 0 && socketsInRoom.length > 0) {
+            console.warn(`[ChineseChessTable] ⚠️ POTENTIAL DESYNC: Table ${this.tableId} has 0 players but ${socketsInRoom.length} sockets still in room!`);
+            // 主动通知这些 socket 桌子已空
+            socketsInRoom.forEach(socketId => {
+                const sock = this.io.sockets.sockets.get(socketId);
+                if (sock) {
+                    console.log(`[ChineseChessTable] Sending force_refresh to orphan socket ${socketId}`);
+                    sock.emit('force_refresh', { reason: 'table_empty', tableId: this.tableId });
+                }
+            });
+        }
         
         // 🔧 关键修复：确保所有玩家的 socket 都在广播室中
         // 这可以处理 socket 重连后没有重新加入广播室的情况
