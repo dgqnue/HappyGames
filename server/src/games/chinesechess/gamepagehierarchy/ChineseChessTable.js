@@ -756,7 +756,12 @@ class ChineseChessTable extends GameTable {
             } : {})
         };
 
+        // 调试：打印调用栈以追踪状态变化
         console.log(`[ChineseChessTable] Broadcasting room state for table ${this.tableId}: status=${currentStatus}, players=${currentPlayers.length}`);
+        console.log(`[ChineseChessTable] matchState.status=${this.matchPlayers.matchState?.status}, roundEnded=${this.matchPlayers.roundEnded}`);
+        // 打印简化的调用栈
+        const stack = new Error().stack.split('\n').slice(1, 6).join('\n');
+        console.log(`[ChineseChessTable] broadcastRoomState called from:\n${stack}`);
         
         // 检查当前在这个房间的 socket 数量
         const room = this.io.sockets.adapter.rooms.get(this.tableId);

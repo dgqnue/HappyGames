@@ -92,33 +92,33 @@ class AIGameController {
         table.players.push(aiPlayerData);
         
         // 广播玩家加入
-        table.broadcastRoomState();
+        await table.broadcastRoomState();
         
         // 1-2秒后自动准备（模拟真人操作延迟）
         const readyDelay = Math.floor(Math.random() * 1000) + 1000;
-        setTimeout(() => {
-            this.setReady(table, odid);
+        setTimeout(async () => {
+            await this.setReady(table, odid);
         }, readyDelay);
     }
     
     /**
      * AI 准备
      */
-    setReady(table, aiUserId) {
+    async setReady(table, aiUserId) {
         const player = table.players.find(p => p.odid === aiUserId);
         if (player) {
             player.ready = true;
             console.log(`[AIGameController] AI ${player.nickname} is ready on table ${table.tableId}`);
             
-            // 通知 MatchPlayers 检查是否可以开始
+            // 通知 MatchPlayers 检查是否可以开始 - handleAIReady 现在是 async
             if (table.matchPlayers && typeof table.matchPlayers.handleAIReady === 'function') {
-                table.matchPlayers.handleAIReady(aiUserId);
+                await table.matchPlayers.handleAIReady(aiUserId);
             } else {
                 // 备用方案：直接设置准备状态并广播
                 console.warn(`[AIGameController] handleAIReady not available, using fallback`);
                 if (table.matchPlayers && table.matchPlayers.matchState) {
                     const result = table.matchPlayers.matchState.setPlayerReady(aiUserId, true);
-                    table.broadcastRoomState();
+                    await table.broadcastRoomState();
                     
                     if (result === 'all_ready') {
                         console.log(`[AIGameController] All players ready, triggering game start`);

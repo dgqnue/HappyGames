@@ -970,15 +970,15 @@ class MatchPlayers {
         
         // 1-2秒后 AI 自动准备
         const readyDelay = Math.floor(Math.random() * 1000) + 1000;
-        setTimeout(() => {
-            this.handleAIReady(aiPlayer.odid);
+        setTimeout(async () => {
+            await this.handleAIReady(aiPlayer.odid);
         }, readyDelay);
     }
     
     /**
      * AI 准备处理
      */
-    handleAIReady(aiUserId) {
+    async handleAIReady(aiUserId) {
         console.log(`[MatchPlayers] handleAIReady called for AI ${aiUserId}`);
         
         // Debug: print all players and their ready status
@@ -998,8 +998,8 @@ class MatchPlayers {
         if (player) {
             console.log(`[MatchPlayers] AI ${player.nickname} is ready on table ${this.roomId}, result: ${result}`);
             
-            // 广播状态更新
-            this.table.broadcastRoomState();
+            // 广播状态更新 - 必须 await 以避免竞争条件
+            await this.table.broadcastRoomState();
             
             // 检查是否可以开始游戏
             if (result === 'all_ready') {
@@ -1142,12 +1142,14 @@ class MatchPlayers {
             this.cancelAIMatchTimer();
             this.startReadyCheck();
         }
-        // 🔧 修复：AI 匹配计时器应该在玩家准备后启动，而不是加入时
-        // 这样可以确保真人玩家准备好了才匹配 AI
-        // else if (this.matchState.players.length === 1) {
-        //     // 只有一个玩家时，启动 AI 匹配计时器（8-15秒后 AI 入场）
-        //     this.startAIMatchTimer(stats?.rating || 1200);
-        // }
+        // 🔧 修复：AI 匹配计时器应该在玩家入座后就启动
+        // 模拟真人可能随时入座的行为
+        else if (this.matchState.players.length === 1) {
+            // 只有一个玩家时，启动 AI 匹配计时器（8-15秒后 AI 入场）
+            const playerRating = stats?.rating || 1200;
+            console.log(`[MatchPlayers] First player joined, starting AI match timer with rating ${playerRating}`);
+            this.startAIMatchTimer(playerRating);
+        }
         else if (this.matchState.players.length > 1) {
             // 第二个真人加入，取消 AI 匹配计时器
             this.cancelAIMatchTimer();
@@ -1482,7 +1484,7 @@ class MatchPlayers {
     /**
      * Player ready - Internal implementation
      */
-    _playerReady(socket) {
+    async _playerReady(socket) {
         const userId = socket.user._id.toString();
         
         // 🔧 如果回合已结束（roundEnded=true），玩家点击"再来一局"应该开始下一回合
@@ -1505,7 +1507,7 @@ class MatchPlayers {
             if (allPlayersRequested) {
                 console.log(`[MatchPlayers] All players requested next round, starting...`);
                 this._nextRoundRequests.clear();
-                this.startRound();
+                await this.startRound();
             }
             return;
         }
@@ -1531,26 +1533,13 @@ class MatchPlayers {
 
         const result = this.matchState.setPlayerReady(userId, true);
 
-        this.table.broadcastRoomState();
+        // 必须 await 以避免竞争条件
+        await this.table.broadcastRoomState();
 
         if (result === 'all_ready') {
             this.startRoundCountdown();
-        } else if (this.matchState.players.length === 1) {
-            // 🔧 修复：只有一个玩家准备好了，启动 AI 匹配计时器
-            // 获取玩家的 rating 来匹配合适等级的 AI
-            const UserGameStats = require('../../models/UserGameStats');
-            UserGameStats.findOne({
-                userId: socket.user._id,
-                gameType: this.gameType
-            }).then(stats => {
-                const playerRating = stats?.rating || 1200;
-                console.log(`[MatchPlayers] Single player ready, starting AI match timer with rating ${playerRating}`);
-                this.startAIMatchTimer(playerRating);
-            }).catch(err => {
-                console.error(`[MatchPlayers] Failed to get player rating:`, err);
-                this.startAIMatchTimer(1200); // 默认 rating
-            });
         }
+        // 注意：AI 匹配计时器已在玩家入座时启动，这里不需要再启动
     }
 
     /**
@@ -1657,7 +1646,10 @@ class MatchPlayers {
             console.log(`[MatchPlayers] Not first round (roundCount > 0), starting game immediately`);
             
             // 直接开始游戏，不发送倒计时，也不等待
-            this.startRound();
+            // 使用 async IIFE 来处理 await
+            (async () => {
+                await this.startRound();
+            })().catch(err => console.error('[MatchPlayers] Error starting round:', err));
             return;
         }
 
@@ -1686,8 +1678,8 @@ class MatchPlayers {
                 // 发送 0 倒计时作为开始信号（仅第一局）
                 this.table.broadcast('game_countdown', { count: 0, message: 'Game Start!' });
 
-                setTimeout(() => {
-                    this.startRound();
+                setTimeout(async () => {
+                    await this.startRound();
                 }, 500);
             }
         }, 1000);
@@ -1752,7 +1744,7 @@ class MatchPlayers {
     /**
      * Start round (开始回合)
      */
-    startRound() {
+    async startRound() {
         console.log(`[DEBUG_TRACE] [MatchPlayers] startRound called for room ${this.roomId}`);
         console.log(`[DEBUG_TRACE] [MatchPlayers] startRound state before reset: gameEnded=${this.gameEnded}, roundEnded=${this.roundEnded}, status=${this.matchState.status}, readyCheckCancelled=${this.readyCheckCancelled}`);
         
@@ -1827,7 +1819,7 @@ class MatchPlayers {
         // Broadcast state update, ensure all clients (including lobby) know status is playing
         // Now the board data will be fresh
         console.log(`[MatchPlayers] Broadcasting room state...`);
-        this.table.broadcastRoomState();
+        await this.table.broadcastRoomState();
     }
 
     /**
