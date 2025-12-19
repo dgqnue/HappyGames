@@ -267,7 +267,7 @@ export function ChessBoardKit({
                   return (
                     <div
                       key={`piece-${piece.row}-${piece.col}-${piece.color}-${piece.type}`}
-                      className={`absolute cursor-pointer outline-none select-none ${
+                      className={`absolute cursor-pointer ${
                         isSelected || isLastMoveTo ? 'z-10' : 'hover:scale-105'
                       }`}
                       style={{
@@ -276,7 +276,6 @@ export function ChessBoardKit({
                         width: `${pieceSize}px`,
                         height: `${pieceSize}px`,
                         transform: `translate(-50%, -50%) ${mySide === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'}`,
-                        WebkitTapHighlightColor: 'transparent', // 移动端点击高亮去除
                       }}
                       onClick={(e) => {
                         e.stopPropagation(); // 防止冒泡到棋盘容器导致二次触发
@@ -361,34 +360,6 @@ export function ChessBoardKit({
                     }}
                   />
                 ))}
-              </div>
-            )}
-
-            {/* 选中棋子的高亮效果 */}
-            {selectedPiece && showPieces && (
-              <div
-                className="absolute pointer-events-none transition-all"
-                style={{
-                  left: `${boardStartX + selectedPiece.col * cellWidth}px`,
-                  top: `${boardStartY + selectedPiece.row * cellHeight}px`,
-                  width: `${cellWidth}px`,
-                  height: `${cellHeight}px`,
-                  transform: 'translate(-50%, -50%)',
-                  zIndex: 9,
-                }}
-              >
-                <div className="relative w-full h-full">
-                  <Image
-                    src={pieces.find(p => p.row === selectedPiece.row && p.col === selectedPiece.col)?.color === 'red' 
-                      ? '/images/chinesechess/select/r_select/r_select.png'
-                      : '/images/chinesechess/select/b_select/b_select.png'
-                    }
-                    alt="selected"
-                    fill
-                    className="object-contain"
-                    priority={false}
-                  />
-                </div>
               </div>
             )}
           </div>
