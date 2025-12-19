@@ -509,7 +509,8 @@ export abstract class GameTableClient {
                 ...data,
                 canStart: false, // 游戏开始后不能再开始
                 ready: false, // 重置准备状态
-                isRoundEnded: false // 新回合开始，重置回合结束标记
+                isRoundEnded: false, // 新回合开始，重置回合结束标记
+                lastMove: null // 新回合开始，清除上一局的走棋记录
             };
 
             // 关键修复：处理 players 字段的数据类型不一致问题
@@ -748,6 +749,15 @@ export abstract class GameTableClient {
      */
     public sendMove(fromX: number, fromY: number, toX: number, toY: number): void {
         console.log(`[${this.gameType}TableClient] Sending move: (${fromX}, ${fromY}) → (${toX}, ${toY})`);
+        
+        // 立即更新本地状态，显示自己的走棋选中效果
+        this.updateState({
+            lastMove: {
+                from: { row: fromY, col: fromX },
+                to: { row: toY, col: toX }
+            }
+        });
+        
         this.socket.emit(`${this.gameType}_move`, { fromX, fromY, toX, toY });
     }
 

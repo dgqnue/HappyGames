@@ -401,7 +401,12 @@ class ChineseChessTable extends GameTable {
         console.log(`[ChineseChessTable] Broadcasting move: captured=${result.captured ? result.captured : null}, from=(${fromX},${fromY}) to=(${toX},${toY}), new turn=${this.turn}, check=${isCheck}, win=${result.win}`);
         
         this.broadcast('move', {
-            move,
+            move: {
+                fromX: fromX,
+                fromY: fromY,
+                toX: toX,
+                toY: toY
+            },
             captured: result.captured ? result.captured : null,
             check: isCheck,
             turn: this.turn,

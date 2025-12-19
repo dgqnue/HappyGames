@@ -92,11 +92,22 @@ export class ChineseChessTableClient extends GameTableClient {
         let lastMove = null;
         if (data.move) {
             const moveData = data.move;
-            if (moveData.from && moveData.to) {
+            console.log(`[ChineseChessTableClient] Move data details:`, {
+                fromX: moveData.fromX,
+                fromY: moveData.fromY,
+                toX: moveData.toX,
+                toY: moveData.toY
+            });
+            if (moveData.fromX !== undefined && moveData.fromY !== undefined && 
+                moveData.toX !== undefined && moveData.toY !== undefined) {
                 lastMove = {
-                    from: { row: moveData.from.row, col: moveData.from.col },
-                    to: { row: moveData.to.row, col: moveData.to.col }
+                    from: { row: moveData.fromY, col: moveData.fromX },
+                    to: { row: moveData.toY, col: moveData.toX }
                 };
+                console.log(`[ChineseChessTableClient] Converted to row/col format:`, lastMove);
+                console.log(`[ChineseChessTableClient] Selection should display on piece at row=${lastMove.to.row}, col=${lastMove.to.col}`);
+            } else {
+                console.warn(`[ChineseChessTableClient] Move data incomplete:`, moveData);
             }
         }
         
