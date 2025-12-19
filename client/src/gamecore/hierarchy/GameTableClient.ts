@@ -491,17 +491,6 @@ export abstract class GameTableClient {
     protected handleGameStart(data: any): void {
         console.log(`[${this.gameType}TableClient] Game starting event received:`, data);
 
-        // 调试：检查接收到的玩家头像
-        if (data.playerInfos) {
-            data.playerInfos.forEach((p: any) => {
-                if (!p.avatar) {
-                    console.warn(`[${this.gameType}TableClient] Player ${p.userId} has NO avatar in game_start!`, p);
-                } else {
-                    console.log(`[${this.gameType}TableClient] Player ${p.userId} avatar: ${p.avatar}`);
-                }
-            });
-        }
-
         try {
             // 准备新的状态对象
             const newState: any = {

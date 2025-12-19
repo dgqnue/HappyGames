@@ -361,10 +361,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       const lastMoveData = state?.lastMove || null;
       setLastMove(lastMoveData);
       
-      if (lastMoveData) {
-        console.log('[ChineseChessDisplay] lastMove updated:', lastMoveData);
-      }
-      
       // 获取玩家信息
       const currentPlayers = state?.players || [];
       setPlayers(currentPlayers);

@@ -81,33 +81,18 @@ export class ChineseChessTableClient extends GameTableClient {
      */
     protected handleMove(data: any): void {
         // 更新棋盘和回合
-        console.log(`[ChineseChessTableClient] handleMove: Received move event from server:`, { 
-            move: data.move, 
-            captured: data.captured, 
-            turn: data.turn,
-            boardSize: data.board ? data.board.length : 'null'
-        });
+        console.log(`[ChineseChessTableClient] handleMove: Received move event from server`);
         
         // 提取对方的走棋位置（from 和 to）
         let lastMove = null;
         if (data.move) {
             const moveData = data.move;
-            console.log(`[ChineseChessTableClient] Move data details:`, {
-                fromX: moveData.fromX,
-                fromY: moveData.fromY,
-                toX: moveData.toX,
-                toY: moveData.toY
-            });
             if (moveData.fromX !== undefined && moveData.fromY !== undefined && 
                 moveData.toX !== undefined && moveData.toY !== undefined) {
                 lastMove = {
                     from: { row: moveData.fromY, col: moveData.fromX },
                     to: { row: moveData.toY, col: moveData.toX }
                 };
-                console.log(`[ChineseChessTableClient] Converted to row/col format:`, lastMove);
-                console.log(`[ChineseChessTableClient] Selection should display on piece at row=${lastMove.to.row}, col=${lastMove.to.col}`);
-            } else {
-                console.warn(`[ChineseChessTableClient] Move data incomplete:`, moveData);
             }
         }
         

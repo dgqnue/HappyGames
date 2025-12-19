@@ -105,7 +105,6 @@ export function ChessBoardKit({
     img.onload = () => {
       const ratio = img.width / img.height;
       setImageAspectRatio(ratio);
-      console.log(`[ChessBoardKit] 棋盘图片宽高比: ${ratio.toFixed(3)}`);
     };
     img.src = '/images/chinesechess/board/board.png';
   }, []);
@@ -253,6 +252,10 @@ export function ChessBoardKit({
                     lastMove?.to.row === piece.row &&
                     lastMove?.to.col === piece.col;
 
+                  // 确保颜色判断不区分大小写，防止 Windows 文件系统大小写不敏感导致的逻辑错误
+                  const isRed = piece.color.toLowerCase() === 'red' || piece.color === 'r';
+                  const selectImageSrc = `/images/chinesechess/select/${isRed ? 'r' : 'b'}_select/${isRed ? 'r' : 'b'}_select.png`;
+
                   const getPieceImagePath = () => {
                     return `/images/chinesechess/pieces/${piece.color}/${piece.type}.png`;
                   };
@@ -298,11 +301,13 @@ export function ChessBoardKit({
                           }}
                         >
                           <Image
-                            src={`/images/chinesechess/select/${piece.color === 'red' ? 'r' : 'b'}_select/${piece.color === 'red' ? 'r' : 'b'}_select.png`}
+                            key={selectImageSrc} // 确保图片源变化时重新渲染
+                            src={selectImageSrc}
                             alt="selected"
                             fill
                             className="object-contain"
                             priority
+                            unoptimized // 防止图片优化导致的潜在渲染问题
                           />
                         </div>
                       )}
