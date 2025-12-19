@@ -264,6 +264,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
+  const [lastMove, setLastMove] = useState<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null);
 
   // 资源预加载
   useEffect(() => {
@@ -356,6 +357,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
       setIsPlaying(isGamePlaying);
       setIsRoundEnded(state?.isRoundEnded || false);
       
+      // 获取对方最后一步棋
+      const lastMoveData = state?.lastMove || null;
+      setLastMove(lastMoveData);
+      
       // 获取玩家信息
       const currentPlayers = state?.players || [];
       setPlayers(currentPlayers);
@@ -367,7 +372,8 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         isRoundEnded: state?.isRoundEnded,
         boardRows: newBoardData ? newBoardData.length : 'null',
         tableState: state?.status,
-        playersCount: currentPlayers.length
+        playersCount: currentPlayers.length,
+        lastMove: lastMoveData
       });
 
       setBoardData(newBoardData);
@@ -871,6 +877,7 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             showGridLines={false}
             showPieces={true}
             mySide={mySide}
+            lastMove={lastMove}
           />
 
           {/* 游戏结束结算弹窗 (移至棋盘容器内) */}

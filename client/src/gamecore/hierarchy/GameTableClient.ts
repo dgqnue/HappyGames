@@ -63,6 +63,7 @@ export interface GameTableState {
     canStart: boolean;
     isRoundEnded?: boolean; // 回合是否结束（用于显示开始按钮）
     playerSides?: { r: string, b: string }; // 玩家阵营映射 { r: userId, b: userId }
+    lastMove?: { from: { row: number, col: number }, to: { row: number, col: number } } | null; // 对方最后一步棋
     countdown?: {
         type: 'ready' | 'start' | 'rematch';
         timeout?: number;

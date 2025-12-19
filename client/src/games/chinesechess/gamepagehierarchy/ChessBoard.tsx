@@ -35,12 +35,14 @@ interface ChessPiece {
  * @property selectedPiece - 当前选中的棋子位置（null表示无选中）
  * @property onPieceClick - 棋子点击回调函数
  * @property isMyTable - 是否是当前玩家的棋盘
+ * @property lastMove - 对方最后一步棋的位置信息（from和to）
  */
 interface ChessBoardProps {
   pieces: ChessPiece[];
   selectedPiece: { row: number; col: number } | null;
   onPieceClick: (row: number, col: number) => void;
   isMyTable: boolean;
+  lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null;
 }
 
 // ======================== 常量定义 ========================
@@ -99,7 +101,7 @@ const measureBoardImage = () => {
  * @param props - 组件属性对象
  * @returns React组件
  */
-export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: ChessBoardProps) {
+export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable, lastMove }: ChessBoardProps) {
   // ======================== 状态变量 ========================
   
   /** 容器DOM引用，用于获取容器尺寸 */
@@ -302,6 +304,11 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                   selectedPiece?.row === piece.row && 
                   selectedPiece?.col === piece.col;
                 
+                // 判断该棋子是否是对方最后一步棋的来源或目标
+                const isLastMoveTo =
+                  lastMove?.to.row === piece.row &&
+                  lastMove?.to.col === piece.col;
+                
                 /**
                  * 获取棋子图片路径
                  * 路径格式：/images/chinesechess/pieces/{颜色}/{棋子类型}.png
@@ -335,6 +342,26 @@ export function ChessBoard({ pieces, selectedPiece, onPieceClick, isMyTable }: C
                     onClick={() => handleCellClick(piece.row, piece.col)}
                     title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                   >
+                    {/* 对方走过的棋子显示选中效果 */}
+                    {isLastMoveTo && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: '-10px',
+                          zIndex: 20
+                        }}
+                      >
+                        <Image
+                          src={`/images/chinesechess/select/${piece.color === 'red' ? 'r' : 'b'}_select/${piece.color === 'red' ? 'r' : 'b'}_select.png`}
+                          alt="last-move"
+                          fill
+                          className="object-contain"
+                          priority={false}
+                          sizes={`${pieceSize + 20}px`}
+                        />
+                      </div>
+                    )}
+                    
                     {/* 棋子图片容器 */}
                     <div className="relative w-full h-full">
                       <Image

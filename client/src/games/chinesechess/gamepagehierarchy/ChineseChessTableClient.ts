@@ -88,9 +88,22 @@ export class ChineseChessTableClient extends GameTableClient {
             boardSize: data.board ? data.board.length : 'null'
         });
         
+        // 提取对方的走棋位置（from 和 to）
+        let lastMove = null;
+        if (data.move) {
+            const moveData = data.move;
+            if (moveData.from && moveData.to) {
+                lastMove = {
+                    from: { row: moveData.from.row, col: moveData.from.col },
+                    to: { row: moveData.to.row, col: moveData.to.col }
+                };
+            }
+        }
+        
         this.updateState({
             board: data.board,
-            turn: data.turn
+            turn: data.turn,
+            lastMove: lastMove  // 记录对方的最后一步棋
         });
         
         // 触发移动回调

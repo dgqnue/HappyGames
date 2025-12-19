@@ -34,6 +34,7 @@ interface ChessBoardKitProps {
   showGridLines?: boolean; // 是否显示网格线
   showPieces?: boolean;    // 是否显示棋子
   mySide?: 'r' | 'b';      // 玩家阵营（用于棋子旋转补偿）
+  lastMove?: { from: { row: number; col: number }; to: { row: number; col: number } } | null; // 对方最后一步棋
 }
 
 // ======================== 常量定义 ========================
@@ -91,7 +92,8 @@ export function ChessBoardKit({
   isMyTable,
   showGridLines = false,
   showPieces = true,
-  mySide
+  mySide,
+  lastMove
 }: ChessBoardKitProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -245,6 +247,11 @@ export function ChessBoardKit({
                   const isSelected = 
                     selectedPiece?.row === piece.row && 
                     selectedPiece?.col === piece.col;
+                  
+                  // 判断该棋子是否是对方最后一步棋的目标
+                  const isLastMoveTo =
+                    lastMove?.to.row === piece.row &&
+                    lastMove?.to.col === piece.col;
 
                   const getPieceImagePath = () => {
                     return `/images/chinesechess/pieces/${piece.color}/${piece.type}.png`;
@@ -276,6 +283,26 @@ export function ChessBoardKit({
                       }}
                       title={`${piece.color === 'red' ? '红' : '黑'}${PIECE_NAMES[piece.type]}`}
                     >
+                      {/* 对方走过的棋子显示选中效果 */}
+                      {isLastMoveTo && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: '-10px',
+                            zIndex: 20
+                          }}
+                        >
+                          <Image
+                            src={`/images/chinesechess/select/${piece.color === 'red' ? 'r' : 'b'}_select/${piece.color === 'red' ? 'r' : 'b'}_select.png`}
+                            alt="last-move"
+                            fill
+                            className="object-contain"
+                            priority={false}
+                            sizes={`${pieceSize + 20}px`}
+                          />
+                        </div>
+                      )}
+                      
                       <div className="relative w-full h-full">
                         <Image
                           src={getPieceImagePath()}
