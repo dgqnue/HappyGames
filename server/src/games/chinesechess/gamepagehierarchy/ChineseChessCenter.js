@@ -1,6 +1,8 @@
 const GameCenter = require('../../../gamecore/hierarchy/GameCenter');
 const ChineseChessTable = require('./ChineseChessTable');
 const ChineseChessRoom = require('./ChineseChessRoom');
+const AIGameController = require('../../../ai/AIGameController');
+const AIPlayerManager = require('../../../ai/AIPlayerManager');
 
 /**
  * 中国象棋游戏中心 (ChineseChessCenter)
@@ -402,7 +404,9 @@ class ChineseChessCenter extends GameCenter {
         if (!gameRoom) {
             console.error(`[ChineseChessCenter] 找不到房间: ${roomId}`);
             players.forEach(p => {
-                p.socket.emit('match_failed', { message: '游戏房间不存在' });
+                if (p.socket) {
+                    p.socket.emit('match_failed', { message: '游戏房间不存在' });
+                }
             });
             return;
         }
@@ -415,29 +419,46 @@ class ChineseChessCenter extends GameCenter {
 
         console.log(`[${this.gameType}] 分配桌子: ${table.tableId}`);
 
+        // 检查是否有 AI 玩家
+        const humanPlayer = players.find(p => !p.isAI);
+        const aiPlayer = players.find(p => p.isAI);
+
         // 将玩家加入桌子
         for (const p of players) {
-            // 🔧 关键：先让玩家加入房间级别的广播室，确保能收到状态更新
-            const broadcastRoom = `${this.gameType}_${roomId}`;
-            p.socket.join(broadcastRoom);
-            console.log(`[${this.gameType}] 玩家 ${p.userId} 加入广播室: ${broadcastRoom}`);
-            
-            // 通知前端匹配成功
-            p.socket.emit('match_found', {
-                roomId: table.tableId,
-                tableId: table.tableId,
-                roomType: roomId,
-                message: '匹配成功！正在进入游戏...'
-            });
+            if (p.isAI) {
+                // AI 玩家处理
+                console.log(`[${this.gameType}] AI 玩家 ${p.nickname} 加入桌子 ${table.tableId}`);
+                
+                // 标记 AI 为忙碌状态
+                AIPlayerManager.markAsBusy(p.odid, table.tableId);
+                
+                // 使用 AIGameController 让 AI 加入桌子
+                await AIGameController.joinTable(table, p.aiPlayer || p);
+            } else {
+                // 人类玩家处理
+                // 🔧 关键：先让玩家加入房间级别的广播室，确保能收到状态更新
+                const broadcastRoom = `${this.gameType}_${roomId}`;
+                p.socket.join(broadcastRoom);
+                console.log(`[${this.gameType}] 玩家 ${p.userId} 加入广播室: ${broadcastRoom}`);
+                
+                // 通知前端匹配成功
+                p.socket.emit('match_found', {
+                    roomId: table.tableId,
+                    tableId: table.tableId,
+                    roomType: roomId,
+                    message: '匹配成功！正在进入游戏...',
+                    isAIMatch: !!aiPlayer  // 告知前端这是 AI 匹配
+                });
 
-            // 执行加入逻辑 - 使用 joinTable 方法，canPlay = true
-            await table.joinTable(p.socket, true);
+                // 执行加入逻辑 - 使用 joinTable 方法，canPlay = true
+                await table.joinTable(p.socket, true);
 
-            p.socket.currentRoomId = table.tableId;
-            p.socket.currentGameId = this.gameType;
+                p.socket.currentRoomId = table.tableId;
+                p.socket.currentGameId = this.gameType;
 
-            // 自动准备
-            table.playerReady(p.socket);
+                // 自动准备
+                table.playerReady(p.socket);
+            }
         }
 
         // 广播房间列表更新

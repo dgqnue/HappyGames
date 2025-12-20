@@ -174,6 +174,10 @@ class RoomLevelMatchMaker {
         this.roomQueues = new Map();
         this.checkInterval = null;
         this.handlers = new Map();
+        // AI 匹配定时器: key = `${gameType}_${roomId}_${userId}`, value = timerId
+        this.aiMatchTimers = new Map();
+        // AI 匹配等待时间（毫秒）- 等待 10 秒后匹配 AI
+        this.AI_MATCH_DELAY = 10000;
         this.start();
     }
 
@@ -249,6 +253,9 @@ class RoomLevelMatchMaker {
             console.error(`[RoomLevelMatchMaker] Error in matchRoom:`, err);
         }
 
+        // 启动 AI 匹配定时器（如果玩家仍在队列中，超时后匹配 AI）
+        this.startAIMatchTimer(gameType, roomId, player);
+
         return { success: true };
     }
 
@@ -263,6 +270,8 @@ class RoomLevelMatchMaker {
         const index = queue.findIndex(p => p.userId === userId);
         if (index !== -1) {
             queue.splice(index, 1);
+            // 取消该玩家的 AI 匹配定时器
+            this.cancelAIMatchTimer(gameType, roomId, userId);
             console.log(`[RoomLevelMatchMaker] Player ${userId} left ${roomId} queue`);
             return true;
         }
@@ -331,6 +340,10 @@ class RoomLevelMatchMaker {
                     matchedIndices.add(i);
                     matchedIndices.add(j);
 
+                    // 取消两个玩家的 AI 匹配定时器
+                    this.cancelAIMatchTimer(gameType, roomId, p1.userId);
+                    this.cancelAIMatchTimer(gameType, roomId, p2.userId);
+
                     console.log(`[RoomLevelMatchMaker] Match found in ${roomId}: ${p1.userId} vs ${p2.userId}`);
                     handler([p1, p2], roomId);
                     break;
@@ -389,6 +402,109 @@ class RoomLevelMatchMaker {
             count: queue.length,
             roomId: roomId
         };
+    }
+
+    /**
+     * 启动 AI 匹配定时器
+     * @param {string} gameType - 游戏类型
+     * @param {string} roomId - 房间ID
+     * @param {Object} player - 玩家信息
+     */
+    startAIMatchTimer(gameType, roomId, player) {
+        const timerKey = `${gameType}_${roomId}_${player.userId}`;
+        
+        // 如果已有定时器，先取消
+        if (this.aiMatchTimers.has(timerKey)) {
+            clearTimeout(this.aiMatchTimers.get(timerKey));
+        }
+        
+        console.log(`[RoomLevelMatchMaker] Starting AI match timer for ${player.userId} in ${roomId}, delay: ${this.AI_MATCH_DELAY}ms`);
+        
+        const timerId = setTimeout(() => {
+            this.onAIMatchTimeout(gameType, roomId, player);
+        }, this.AI_MATCH_DELAY);
+        
+        this.aiMatchTimers.set(timerKey, timerId);
+    }
+
+    /**
+     * 取消 AI 匹配定时器
+     * @param {string} gameType - 游戏类型
+     * @param {string} roomId - 房间ID
+     * @param {string} userId - 玩家ID
+     */
+    cancelAIMatchTimer(gameType, roomId, userId) {
+        const timerKey = `${gameType}_${roomId}_${userId}`;
+        if (this.aiMatchTimers.has(timerKey)) {
+            clearTimeout(this.aiMatchTimers.get(timerKey));
+            this.aiMatchTimers.delete(timerKey);
+            console.log(`[RoomLevelMatchMaker] Cancelled AI match timer for ${userId}`);
+        }
+    }
+
+    /**
+     * AI 匹配超时回调
+     * @param {string} gameType - 游戏类型
+     * @param {string} roomId - 房间ID
+     * @param {Object} player - 玩家信息
+     */
+    onAIMatchTimeout(gameType, roomId, player) {
+        const queueKey = this.getQueueKey(gameType, roomId);
+        const queue = this.roomQueues.get(queueKey);
+        
+        // 检查玩家是否还在队列中
+        if (!queue || !queue.find(p => p.userId === player.userId)) {
+            console.log(`[RoomLevelMatchMaker] AI match timeout but player ${player.userId} no longer in queue`);
+            return;
+        }
+        
+        // 清除定时器记录
+        const timerKey = `${gameType}_${roomId}_${player.userId}`;
+        this.aiMatchTimers.delete(timerKey);
+        
+        console.log(`[RoomLevelMatchMaker] AI match timeout for ${player.userId} in ${roomId}`);
+        
+        // 获取合适的 AI 对手
+        const playerRating = player.stats?.rating || 1200;
+        const aiPlayer = AIPlayerManager.getAvailableAI(playerRating);
+        
+        if (!aiPlayer) {
+            console.warn(`[RoomLevelMatchMaker] No available AI player for rating ${playerRating}`);
+            // 可以选择重新启动定时器，或者通知玩家
+            return;
+        }
+        
+        console.log(`[RoomLevelMatchMaker] Matched ${player.userId} with AI ${aiPlayer.nickname} (rating: ${aiPlayer.rating})`);
+        
+        // 从队列中移除玩家
+        const index = queue.findIndex(p => p.userId === player.userId);
+        if (index !== -1) {
+            queue.splice(index, 1);
+        }
+        
+        // 构造 AI 玩家格式（与人类玩家格式一致，但标记为 AI）
+        const aiPlayerForMatch = {
+            userId: aiPlayer.odid,
+            odid: aiPlayer.odid,
+            socket: null,  // AI 没有 socket
+            stats: {
+                rating: aiPlayer.rating,
+                title: aiPlayer.title,
+                titleColor: aiPlayer.titleColor
+            },
+            nickname: aiPlayer.nickname,
+            avatar: aiPlayer.avatar,
+            isAI: true,
+            aiPlayer: aiPlayer  // 保存原始 AI 玩家对象，供后续使用
+        };
+        
+        // 调用 handler，让后续流程处理分配桌子等
+        const handler = this.handlers.get(gameType);
+        if (handler) {
+            handler([player, aiPlayerForMatch], roomId);
+        } else {
+            console.error(`[RoomLevelMatchMaker] No handler for ${gameType}`);
+        }
     }
 }
 
