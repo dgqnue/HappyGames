@@ -19,17 +19,21 @@ const AIMatchConfig = require('./AIMatchConfig');
 // 目标 AI 玩家数量
 const TARGET_AI_PLAYER_COUNT = 200;
 
+// 所有强度等级（100分一档，共13级）
+const ALL_STRENGTH_LEVELS = [
+    'rating_800', 'rating_900', 'rating_1000', 'rating_1100',
+    'rating_1200', 'rating_1300', 'rating_1400', 'rating_1500',
+    'rating_1600', 'rating_1700', 'rating_1800', 'rating_1900',
+    'rating_2000'
+];
+
 class AIPlayerManager {
     constructor() {
-        // AI 玩家池（按分数段分类）
-        this.aiPlayerPool = {
-            beginner: [],   // 800-1000
-            easy: [],       // 1000-1200
-            medium: [],     // 1200-1400
-            hard: [],       // 1400-1600
-            expert: [],     // 1600-1800
-            master: []      // 1800+
-        };
+        // AI 玩家池（按分数段分类，100分一档）
+        this.aiPlayerPool = {};
+        ALL_STRENGTH_LEVELS.forEach(level => {
+            this.aiPlayerPool[level] = [];
+        });
         
         // 当前正在游戏中的 AI（userId -> gameInfo）
         this.busyAIPlayers = new Map();
@@ -118,15 +122,10 @@ class AIPlayerManager {
     }
     
     /**
-     * 根据 rating 获取强度等级
+     * 根据 rating 获取强度等级 (100分一档)
      */
     getStrengthByRating(rating) {
-        if (rating < 1000) return 'beginner';
-        if (rating < 1200) return 'easy';
-        if (rating < 1400) return 'medium';
-        if (rating < 1600) return 'hard';
-        if (rating < 1800) return 'expert';
-        return 'master';
+        return ChessAIEngine.getStrengthLevelByRating(rating);
     }
     
     /**
@@ -183,14 +182,13 @@ class AIPlayerManager {
      * 获取分数段搜索顺序（优先匹配接近的段位）
      */
     getSearchOrder(targetStrength) {
-        const allLevels = ['beginner', 'easy', 'medium', 'hard', 'expert', 'master'];
-        const targetIndex = allLevels.indexOf(targetStrength);
+        const targetIndex = ALL_STRENGTH_LEVELS.indexOf(targetStrength);
         
         // 从目标段位开始，交替向上下搜索
         const order = [targetStrength];
-        for (let i = 1; i < allLevels.length; i++) {
-            if (targetIndex - i >= 0) order.push(allLevels[targetIndex - i]);
-            if (targetIndex + i < allLevels.length) order.push(allLevels[targetIndex + i]);
+        for (let i = 1; i < ALL_STRENGTH_LEVELS.length; i++) {
+            if (targetIndex - i >= 0) order.push(ALL_STRENGTH_LEVELS[targetIndex - i]);
+            if (targetIndex + i < ALL_STRENGTH_LEVELS.length) order.push(ALL_STRENGTH_LEVELS[targetIndex + i]);
         }
         return order;
     }

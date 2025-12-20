@@ -9,9 +9,11 @@
 const AIPlayerManager = require('./AIPlayerManager');
 const AIGameController = require('./AIGameController');
 const ChessAIEngine = require('./ChessAIEngine');
+const OpeningBook = require('./OpeningBook');
 
 module.exports = {
     AIPlayerManager,
     AIGameController,
-    ChessAIEngine
+    ChessAIEngine,
+    OpeningBook
 };

@@ -63,14 +63,21 @@ const AVATARS = [
     '/images/avatars/ai/avatar_10.png'
 ];
 
-// 分数分布配置（rating 范围 -> 玩家数量）
+// 分数分布配置（rating 范围 -> 玩家数量，100分一档）
 const RATING_DISTRIBUTION = [
-    { min: 800, max: 1000, count: 30, strength: 'beginner' },   // 新手级
-    { min: 1000, max: 1200, count: 40, strength: 'easy' },      // 初级
-    { min: 1200, max: 1400, count: 50, strength: 'medium' },    // 中级
-    { min: 1400, max: 1600, count: 40, strength: 'hard' },      // 高级
-    { min: 1600, max: 1800, count: 25, strength: 'expert' },    // 专家级
-    { min: 1800, max: 2000, count: 15, strength: 'master' }     // 大师级
+    { min: 800, max: 900, count: 12, strength: 'rating_800' },    // 入门级
+    { min: 900, max: 1000, count: 14, strength: 'rating_900' },   // 新手级
+    { min: 1000, max: 1100, count: 16, strength: 'rating_1000' }, // 初学级
+    { min: 1100, max: 1200, count: 18, strength: 'rating_1100' }, // 入门进阶
+    { min: 1200, max: 1300, count: 20, strength: 'rating_1200' }, // 中级入门
+    { min: 1300, max: 1400, count: 22, strength: 'rating_1300' }, // 中级
+    { min: 1400, max: 1500, count: 20, strength: 'rating_1400' }, // 中高级
+    { min: 1500, max: 1600, count: 18, strength: 'rating_1500' }, // 高级
+    { min: 1600, max: 1700, count: 16, strength: 'rating_1600' }, // 专家入门
+    { min: 1700, max: 1800, count: 14, strength: 'rating_1700' }, // 专家级
+    { min: 1800, max: 1900, count: 12, strength: 'rating_1800' }, // 大师入门
+    { min: 1900, max: 2000, count: 10, strength: 'rating_1900' }, // 大师级
+    { min: 2000, max: 2100, count: 8, strength: 'rating_2000' }   // 宗师级
 ];
 
 /**
