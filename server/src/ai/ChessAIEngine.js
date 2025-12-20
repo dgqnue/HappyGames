@@ -36,6 +36,59 @@ const POSITION_BONUS = {
     }
 };
 
+// 历史走法记录（用于检测重复走法）
+// 格式: { 'roomId': [{ from: {x,y}, to: {x,y}, piece }, ...] }
+const moveHistory = new Map();
+
+// 清理历史记录
+function clearMoveHistory(roomId) {
+    if (roomId) {
+        moveHistory.delete(roomId);
+    } else {
+        moveHistory.clear();
+    }
+}
+
+// 记录走法
+function recordMove(roomId, move) {
+    if (!moveHistory.has(roomId)) {
+        moveHistory.set(roomId, []);
+    }
+    const history = moveHistory.get(roomId);
+    history.push({
+        from: { x: move.from.x, y: move.from.y },
+        to: { x: move.to.x, y: move.to.y },
+        piece: move.piece
+    });
+    // 只保留最近30步
+    if (history.length > 30) {
+        history.shift();
+    }
+}
+
+// 检测是否是重复走法（同一棋子在两个位置之间来回）
+function isRepeatedMove(roomId, move) {
+    if (!moveHistory.has(roomId)) return false;
+    
+    const history = moveHistory.get(roomId);
+    if (history.length < 2) return false;
+    
+    // 检查最近6步内是否有相同棋子的来回移动
+    const recentMoves = history.slice(-6);
+    let backAndForth = 0;
+    
+    for (const prevMove of recentMoves) {
+        // 同一棋子，从当前目标位置移动到当前起始位置 = 走回去
+        if (prevMove.piece === move.piece &&
+            prevMove.from.x === move.to.x && prevMove.from.y === move.to.y &&
+            prevMove.to.x === move.from.x && prevMove.to.y === move.from.y) {
+            backAndForth++;
+        }
+    }
+    
+    return backAndForth >= 1; // 如果发现一次来回就标记为重复
+}
+
 /**
  * AI 棋力等级配置 (100分一档，共13个等级)
  * 
@@ -236,6 +289,82 @@ function getAllLegalMoves(board, turn) {
 }
 
 /**
+ * 检查某个位置的棋子是否被敌方威胁
+ * @param {Array} board - 棋盘
+ * @param {number} x - x坐标
+ * @param {number} y - y坐标
+ * @returns {boolean} 是否被威胁
+ */
+function isPieceUnderThreat(board, x, y) {
+    const piece = board[y][x];
+    if (!piece) return false;
+    
+    const isRed = ChineseChessRules.isRed(piece);
+    const enemySide = isRed ? 'b' : 'r';
+    
+    // 检查敌方是否有棋子可以吃掉这个位置
+    for (let ey = 0; ey < 10; ey++) {
+        for (let ex = 0; ex < 9; ex++) {
+            const enemyPiece = board[ey][ex];
+            if (!enemyPiece) continue;
+            
+            const enemyIsRed = ChineseChessRules.isRed(enemyPiece);
+            if ((enemyIsRed && enemySide === 'r') || (!enemyIsRed && enemySide === 'b')) continue;
+            
+            // 检查敌方棋子是否可以移动到目标位置
+            if (ChineseChessRules.isValidMoveV2(board, ex, ey, x, y, enemySide)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * 检查某个位置的棋子是否被己方保护
+ * @param {Array} board - 棋盘
+ * @param {number} x - x坐标
+ * @param {number} y - y坐标
+ * @returns {boolean} 是否被保护
+ */
+function isPieceProtected(board, x, y) {
+    const piece = board[y][x];
+    if (!piece) return false;
+    
+    const isRed = ChineseChessRules.isRed(piece);
+    const friendSide = isRed ? 'r' : 'b';
+    
+    // 临时移除该棋子，检查己方是否有棋子可以移动到这个位置
+    const tempPiece = board[y][x];
+    board[y][x] = null;
+    
+    let isProtected = false;
+    
+    for (let fy = 0; fy < 10; fy++) {
+        for (let fx = 0; fx < 9; fx++) {
+            const friendPiece = board[fy][fx];
+            if (!friendPiece) continue;
+            if (fx === x && fy === y) continue;
+            
+            const friendIsRed = ChineseChessRules.isRed(friendPiece);
+            if ((friendIsRed && friendSide === 'r') || (!friendIsRed && friendSide === 'b')) {
+                if (ChineseChessRules.isValidMoveV2(board, fx, fy, x, y, friendSide)) {
+                    isProtected = true;
+                    break;
+                }
+            }
+        }
+        if (isProtected) break;
+    }
+    
+    // 恢复棋子
+    board[y][x] = tempPiece;
+    
+    return isProtected;
+}
+
+/**
  * 局面评估函数
  * @param {Array} board - 棋盘
  * @returns {number} 评估分数（红方视角，正数对红方有利）
@@ -251,6 +380,7 @@ function evaluateBoard(board) {
             const isRed = ChineseChessRules.isRed(piece);
             const baseValue = PIECE_VALUES[piece] || 0;
             let positionBonus = 0;
+            let safetyPenalty = 0;
             
             const pieceType = piece.toLowerCase();
             
@@ -269,7 +399,23 @@ function evaluateBoard(board) {
                     break;
             }
             
-            const totalValue = baseValue + positionBonus;
+            // 安全性检测：被威胁且未被保护的棋子要扣分
+            // 只对高价值棋子进行检测（车、马、炮）以提高性能
+            if (pieceType === 'r' || pieceType === 'n' || pieceType === 'c') {
+                const underThreat = isPieceUnderThreat(board, x, y);
+                if (underThreat) {
+                    const isProtected = isPieceProtected(board, x, y);
+                    if (!isProtected) {
+                        // 未被保护的棋子被威胁，扣除70%的价值
+                        safetyPenalty = baseValue * 0.7;
+                    } else {
+                        // 被保护但被威胁，小幅扣分（可能有交换）
+                        safetyPenalty = baseValue * 0.1;
+                    }
+                }
+            }
+            
+            const totalValue = baseValue + positionBonus - safetyPenalty;
             score += isRed ? totalValue : -totalValue;
         }
     }
@@ -340,12 +486,13 @@ function minimax(board, depth, alpha, beta, isMaximizing, aiColor) {
  * @param {string} aiColor - AI 执的颜色 ('r' 或 'b')
  * @param {number} rating - AI 玩家的等级分（用于确定棋力）
  * @param {number} moveCount - 当前回合数（用于开局库判断）
+ * @param {string} roomId - 房间ID（用于追踪历史走法，防止重复）
  * @returns {Object} { move, thinkTime }
  */
-function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
+function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0, roomId = null) {
     const strength = getStrengthByRating(rating);
     
-    console.log(`[ChessAIEngine] Calculating move for ${aiColor}, rating=${rating}, depth=${strength.depth}, moveCount=${moveCount}`);
+    console.log(`[ChessAIEngine] Calculating move for ${aiColor}, rating=${rating}, depth=${strength.depth}, moveCount=${moveCount}, roomId=${roomId}`);
     
     // 获取所有合法走法（提前获取，用于验证开局库走法）
     const allMoves = getAllLegalMoves(board, aiColor);
@@ -418,8 +565,10 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
     
     if (allMoves.length === 1) {
         // 只有一个选择，直接返回
+        const selectedMove = allMoves[0];
+        if (roomId) recordMove(roomId, selectedMove);
         return {
-            move: allMoves[0],
+            move: selectedMove,
             thinkTime: randomInRange(500, 1000)
         };
     }
@@ -434,7 +583,15 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
         newBoard[move.from.y][move.from.x] = null;
         
         const result = minimax(newBoard, strength.depth - 1, -Infinity, Infinity, false, aiColor);
-        moveScores.push({ move, score: -result.score });
+        let score = -result.score;
+        
+        // 重复走法惩罚：如果这步是来回跳，大幅扣分
+        if (roomId && isRepeatedMove(roomId, move)) {
+            console.log(`[ChessAIEngine] Penalizing repeated move: ${move.piece} (${move.from.x},${move.from.y}) -> (${move.to.x},${move.to.y})`);
+            score -= 200; // 扣200分，相当于2个兵的价值
+        }
+        
+        moveScores.push({ move, score });
     }
     
     // 按分数排序（高分在前）
@@ -487,6 +644,11 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
         }
     }
     
+    // 记录走法到历史
+    if (roomId) {
+        recordMove(roomId, selectedMove);
+    }
+    
     // 随机思考时间
     const thinkTime = randomInRange(strength.thinkTimeRange[0], strength.thinkTimeRange[1]);
     
@@ -511,5 +673,6 @@ module.exports = {
     evaluateBoard,
     getStrengthByRating,
     getStrengthLevelByRating,
+    clearMoveHistory,
     AI_STRENGTH_CONFIG
 };

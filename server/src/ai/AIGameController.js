@@ -173,12 +173,13 @@ class AIGameController {
         console.log(`[AIGameController] AI's turn on table ${tableId}, calculating move... (moveCount=${session.moveCount})`);
         
         try {
-            // 计算最佳走法（传入 moveCount 用于开局库判断）
+            // 计算最佳走法（传入 moveCount 和 roomId 用于开局库判断和重复走法检测）
             const result = await AIPlayerManager.calculateMove(
                 board, 
                 session.aiSide, 
                 session.aiPlayer.odid,
-                session.moveCount
+                session.moveCount,
+                tableId  // roomId 用于追踪走法历史
             );
             
             if (!result || !result.move) {
@@ -304,6 +305,9 @@ class AIGameController {
         // 先从 activeSessions 中删除，防止循环调用
         session.isActive = false;
         this.activeSessions.delete(session.tableId);
+        
+        // 清理走法历史
+        AIPlayerManager.clearRoomHistory(session.tableId);
         
         // 释放 AI 资源
         AIPlayerManager.releaseAI(session.aiPlayer.odid);
