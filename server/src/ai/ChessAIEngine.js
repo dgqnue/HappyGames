@@ -50,89 +50,89 @@ const AI_STRENGTH_CONFIG = {
     // rating 800-900: 入门级
     rating_800: {
         depth: 1,
-        randomFactor: 0.35,
-        blunderChance: 0.18,
-        candidateRange: 50,
+        randomFactor: 0.30,
+        blunderChance: 0.12,
+        candidateRange: 25,
         thinkTimeRange: [2500, 5000]
     },
     // rating 900-1000: 新手级
     rating_900: {
         depth: 1,
-        randomFactor: 0.30,
-        blunderChance: 0.15,
-        candidateRange: 45,
+        randomFactor: 0.25,
+        blunderChance: 0.10,
+        candidateRange: 22,
         thinkTimeRange: [2000, 4500]
     },
     // rating 1000-1100: 初学级
     rating_1000: {
         depth: 2,
-        randomFactor: 0.25,
-        blunderChance: 0.12,
-        candidateRange: 40,
+        randomFactor: 0.20,
+        blunderChance: 0.08,
+        candidateRange: 20,
         thinkTimeRange: [1800, 4000]
     },
     // rating 1100-1200: 入门进阶
     rating_1100: {
         depth: 2,
-        randomFactor: 0.20,
-        blunderChance: 0.09,
-        candidateRange: 35,
+        randomFactor: 0.16,
+        blunderChance: 0.06,
+        candidateRange: 18,
         thinkTimeRange: [1500, 3500]
     },
     // rating 1200-1300: 中级入门
     rating_1200: {
         depth: 2,
-        randomFactor: 0.15,
-        blunderChance: 0.06,
-        candidateRange: 30,
+        randomFactor: 0.12,
+        blunderChance: 0.04,
+        candidateRange: 16,
         thinkTimeRange: [1300, 3000]
     },
     // rating 1300-1400: 中级
     rating_1300: {
         depth: 2,
-        randomFactor: 0.12,
-        blunderChance: 0.04,
-        candidateRange: 25,
+        randomFactor: 0.10,
+        blunderChance: 0.03,
+        candidateRange: 14,
         thinkTimeRange: [1100, 2800]
     },
     // rating 1400-1500: 中高级
     rating_1400: {
         depth: 3,
-        randomFactor: 0.10,
-        blunderChance: 0.025,
-        candidateRange: 22,
+        randomFactor: 0.08,
+        blunderChance: 0.02,
+        candidateRange: 12,
         thinkTimeRange: [1000, 2500]
     },
     // rating 1500-1600: 高级
     rating_1500: {
         depth: 3,
-        randomFactor: 0.08,
-        blunderChance: 0.015,
-        candidateRange: 20,
+        randomFactor: 0.06,
+        blunderChance: 0.01,
+        candidateRange: 10,
         thinkTimeRange: [900, 2300]
     },
     // rating 1600-1700: 专家入门
     rating_1600: {
         depth: 3,
-        randomFactor: 0.06,
-        blunderChance: 0.008,
-        candidateRange: 18,
+        randomFactor: 0.04,
+        blunderChance: 0.005,
+        candidateRange: 8,
         thinkTimeRange: [800, 2000]
     },
     // rating 1700-1800: 专家级
     rating_1700: {
         depth: 3,
-        randomFactor: 0.04,
-        blunderChance: 0.004,
-        candidateRange: 15,
+        randomFactor: 0.03,
+        blunderChance: 0.002,
+        candidateRange: 6,
         thinkTimeRange: [600, 1800]
     },
     // rating 1800-1900: 大师入门
     rating_1800: {
         depth: 4,
         randomFactor: 0.02,
-        blunderChance: 0.002,
-        candidateRange: 12,
+        blunderChance: 0.001,
+        candidateRange: 5,
         thinkTimeRange: [500, 1500]
     },
     // rating 1900-2000: 大师级
@@ -140,7 +140,7 @@ const AI_STRENGTH_CONFIG = {
         depth: 4,
         randomFactor: 0.01,
         blunderChance: 0,
-        candidateRange: 10,
+        candidateRange: 4,
         thinkTimeRange: [400, 1300]
     },
     // rating 2000+: 宗师级
@@ -148,7 +148,7 @@ const AI_STRENGTH_CONFIG = {
         depth: 5,
         randomFactor: 0,
         blunderChance: 0,
-        candidateRange: 8,
+        candidateRange: 3,
         thinkTimeRange: [300, 1000]
     }
 };
@@ -355,6 +355,36 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
         return null;
     }
     
+    // 尝试使用经典棋谱（前20步）
+    try {
+        const ClassicGames = require('./ClassicGames');
+        if (moveCount < 20) {
+            const classicMove = ClassicGames.findClassicMove(board, aiColor, moveCount, rating);
+            if (classicMove) {
+                // 验证经典棋谱走法是否在合法走法列表中
+                const isValidClassic = allMoves.some(m => 
+                    m.from.x === classicMove.from.x && 
+                    m.from.y === classicMove.from.y &&
+                    m.to.x === classicMove.to.x && 
+                    m.to.y === classicMove.to.y
+                );
+                
+                if (isValidClassic) {
+                    console.log(`[ChessAIEngine] Using classic game move: (${classicMove.from.x},${classicMove.from.y}) -> (${classicMove.to.x},${classicMove.to.y})`);
+                    const thinkTime = randomInRange(1000, 2500);
+                    return {
+                        move: classicMove,
+                        thinkTime
+                    };
+                } else {
+                    console.log(`[ChessAIEngine] Classic game move is invalid for current position`);
+                }
+            }
+        }
+    } catch (err) {
+        console.log('[ChessAIEngine] Classic games error:', err.message);
+    }
+    
     // 尝试使用开局库（前8步）
     try {
         const OpeningBook = require('./OpeningBook');
@@ -396,28 +426,45 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
     
     let selectedMove;
     
-    // 是否犯错（随机走一步不好的棋）
-    if (Math.random() < strength.blunderChance) {
+    // 正常计算：评估所有走法的分数
+    const moveScores = [];
+    for (const move of allMoves) {
+        const newBoard = board.map(row => [...row]);
+        newBoard[move.to.y][move.to.x] = newBoard[move.from.y][move.from.x];
+        newBoard[move.from.y][move.from.x] = null;
+        
+        const result = minimax(newBoard, strength.depth - 1, -Infinity, Infinity, false, aiColor);
+        moveScores.push({ move, score: -result.score });
+    }
+    
+    // 按分数排序（高分在前）
+    moveScores.sort((a, b) => b.score - a.score);
+    
+    const bestScore = moveScores[0].score;
+    const worstScore = moveScores[moveScores.length - 1].score;
+    
+    // 是否犯错（随机走一步较差的棋）
+    // 修复：从评估过的走法中选择，而不是未评估的走法
+    // 限制 blunder 不会选择太差的走法（最多差 200 分，避免送掉大子）
+    if (Math.random() < strength.blunderChance && moveScores.length > 1) {
         console.log('[ChessAIEngine] AI making a blunder...');
-        // 从后半部分（较差的走法）中随机选一个
-        const worstHalf = allMoves.slice(Math.floor(allMoves.length / 2));
-        selectedMove = worstHalf[Math.floor(Math.random() * worstHalf.length)];
-    } else {
-        // 正常计算：评估所有走法的分数
-        const moveScores = [];
-        for (const move of allMoves) {
-            const newBoard = board.map(row => [...row]);
-            newBoard[move.to.y][move.to.x] = newBoard[move.from.y][move.from.x];
-            newBoard[move.from.y][move.from.x] = null;
-            
-            const result = minimax(newBoard, strength.depth - 1, -Infinity, Infinity, false, aiColor);
-            moveScores.push({ move, score: -result.score });
+        // 从中间偏下的走法中选择（分数在中位数附近，但不选最差的）
+        // 避免选择会丢失大子的走法（评分差距超过150分的走法可能涉及丢子）
+        const blunderThreshold = Math.max(bestScore - 150, worstScore);
+        const blunderCandidates = moveScores.filter(ms => 
+            ms.score < bestScore - 20 && ms.score >= blunderThreshold
+        );
+        
+        if (blunderCandidates.length > 0) {
+            const randomIndex = Math.floor(Math.random() * blunderCandidates.length);
+            selectedMove = blunderCandidates[randomIndex].move;
+            console.log(`[ChessAIEngine] Blunder selected (score: ${blunderCandidates[randomIndex].score} vs best: ${bestScore})`);
+        } else {
+            // 没有合适的 blunder 走法，走最优
+            selectedMove = moveScores[0].move;
+            console.log('[ChessAIEngine] No suitable blunder, using best move');
         }
-        
-        // 按分数排序（高分在前）
-        moveScores.sort((a, b) => b.score - a.score);
-        
-        const bestScore = moveScores[0].score;
+    } else {
         const candidateRange = strength.candidateRange || 15;
         
         // 多候选随机选择：选取分数在 bestScore - candidateRange 范围内的所有走法
