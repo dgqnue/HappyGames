@@ -14,6 +14,7 @@ const User = require('../models/User');
 const UserGameStats = require('../models/UserGameStats');
 const ChessAIEngine = require('./ChessAIEngine');
 const { ensureAIPlayers } = require('./generateAIPlayers');
+const AIMatchConfig = require('./AIMatchConfig');
 
 // 目标 AI 玩家数量
 const TARGET_AI_PLAYER_COUNT = 200;
@@ -216,26 +217,29 @@ class AIPlayerManager {
     }
     
     /**
-     * 开始 AI 匹配计时器（8-15秒后触发）
+     * 开始 AI 匹配计时器（配置的延迟后触发）
      * @param {string} tableId - 游戏桌 ID
      * @param {number} playerRating - 人类玩家等级分
      * @param {Function} onTimeout - 超时回调（传入选中的 AI 玩家）
+     * @param {string} gameType - 游戏类型（用于获取配置）
      */
-    startMatchTimer(tableId, playerRating, onTimeout) {
+    startMatchTimer(tableId, playerRating, onTimeout, gameType = 'chinesechess') {
         // 如果已有计时器，先清除
         this.cancelMatchTimer(tableId);
         
-        // 8-15 秒随机延迟
-        const delay = Math.floor(Math.random() * 7000) + 8000;
+        // 从配置获取延迟时间，加上随机浮动 (0-3秒)
+        const baseDelay = AIMatchConfig.getTableMatchDelay(gameType);
+        const delay = baseDelay + Math.floor(Math.random() * 3000);
         
-        console.log(`[AIPlayerManager] Starting match timer for table ${tableId}, delay: ${delay}ms`);
+        console.log(`[AIPlayerManager] Starting match timer for table ${tableId}, delay: ${delay}ms (base: ${baseDelay}ms)`);
         
         const timerId = setTimeout(() => {
             console.log(`[AIPlayerManager] Match timer triggered for table ${tableId}`);
             this.matchTimers.delete(tableId);
             
-            // 获取合适的 AI
-            const aiPlayer = this.getAvailableAI(playerRating);
+            // 获取合适的 AI（使用配置的分数容差）
+            const ratingTolerance = AIMatchConfig.getRatingTolerance(gameType);
+            const aiPlayer = this.getAvailableAI(playerRating, ratingTolerance);
             if (aiPlayer) {
                 onTimeout(aiPlayer);
             } else {

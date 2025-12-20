@@ -13,6 +13,7 @@
 const AIPlayerManager = require('./AIPlayerManager');
 const ChessAIEngine = require('./ChessAIEngine');
 const UserGameStats = require('../models/UserGameStats');
+const AIMatchConfig = require('./AIMatchConfig');
 
 class AIGameController {
     constructor() {
@@ -236,12 +237,15 @@ class AIGameController {
         const session = this.activeSessions.get(tableId);
         if (!session) return;
         
+        const gameType = session.table?.gameType || 'chinesechess';
         console.log(`[AIGameController] Game ended on table ${tableId}, result:`, result);
         
-        // 如果是因为对手离开导致的游戏结束，AI 也离开
+        // 检查配置：人类离开时 AI 是否应该离开
         if (result && (result.reason === 'opponent_left' || result.reason === 'player_left')) {
-             this.leaveTable(session);
-             return;
+            if (AIMatchConfig.shouldAILeaveOnHumanLeave(gameType)) {
+                this.leaveTable(session);
+                return;
+            }
         }
 
         // 随机延迟后决定是否再来一局 (2-5秒)
@@ -251,8 +255,9 @@ class AIGameController {
             // 检查会话是否还存在（可能在等待期间被清理了）
             if (!this.activeSessions.has(tableId)) return;
 
-            // 70% 概率再来一局，30% 概率离开
-            if (Math.random() < 0.7) {
+            // 从配置获取再来一局概率
+            const rematchProbability = AIMatchConfig.getRematchProbability(gameType);
+            if (Math.random() < rematchProbability) {
                 this.rematch(session);
             } else {
                 this.leaveTable(session);
