@@ -421,20 +421,11 @@ class ChineseChessCenter extends GameCenter {
 
         // 检查是否有 AI 玩家
         const humanPlayer = players.find(p => !p.isAI);
-        const aiPlayer = players.find(p => p.isAI);
+        const aiPlayerInfo = players.find(p => p.isAI);
 
-        // 将玩家加入桌子
+        // 先让人类玩家加入桌子
         for (const p of players) {
-            if (p.isAI) {
-                // AI 玩家处理
-                console.log(`[${this.gameType}] AI 玩家 ${p.nickname} 加入桌子 ${table.tableId}`);
-                
-                // 标记 AI 为忙碌状态
-                AIPlayerManager.markAsBusy(p.odid, table.tableId);
-                
-                // 使用 AIGameController 让 AI 加入桌子
-                await AIGameController.joinTable(table, p.aiPlayer || p);
-            } else {
+            if (!p.isAI) {
                 // 人类玩家处理
                 // 🔧 关键：先让玩家加入房间级别的广播室，确保能收到状态更新
                 const broadcastRoom = `${this.gameType}_${roomId}`;
@@ -447,7 +438,7 @@ class ChineseChessCenter extends GameCenter {
                     tableId: table.tableId,
                     roomType: roomId,
                     message: '匹配成功！正在进入游戏...',
-                    isAIMatch: !!aiPlayer  // 告知前端这是 AI 匹配
+                    isAIMatch: !!aiPlayerInfo  // 告知前端这是 AI 匹配
                 });
 
                 // 执行加入逻辑 - 使用 joinTable 方法，canPlay = true
@@ -458,6 +449,63 @@ class ChineseChessCenter extends GameCenter {
 
                 // 自动准备
                 table.playerReady(p.socket);
+            }
+        }
+
+        // 然后让 AI 玩家加入（使用与桌级匹配相同的方式）
+        if (aiPlayerInfo) {
+            const aiPlayer = aiPlayerInfo.aiPlayer || aiPlayerInfo;
+            console.log(`[${this.gameType}] AI 玩家 ${aiPlayer.nickname} 加入桌子 ${table.tableId}`);
+            
+            // 标记 AI 为忙碌状态
+            AIPlayerManager.markAsBusy(aiPlayer.odid, table.tableId);
+            
+            // 构造 AI 玩家数据（与真实玩家格式一致）
+            const aiPlayerData = {
+                odid: aiPlayer.odid,
+                odid: aiPlayer.odid,
+                userId: aiPlayer.odid,
+                socketId: `ai_socket_${aiPlayer.odid}`,
+                user: {
+                    _id: aiPlayer.id,
+                    odid: aiPlayer.odid,
+                    userId: aiPlayer.odid,
+                    nickname: aiPlayer.nickname,
+                    avatar: aiPlayer.avatar
+                },
+                nickname: aiPlayer.nickname,
+                avatar: aiPlayer.avatar,
+                title: aiPlayer.title,
+                titleColor: aiPlayer.titleColor,
+                rating: aiPlayer.rating,
+                winRate: 50,
+                disconnectRate: 0,
+                matchSettings: null,
+                ready: false,
+                isAI: true
+            };
+            
+            // 通过 matchState 添加玩家（与桌级匹配相同）
+            const result = table.matchPlayers.matchState.addPlayer(aiPlayerData);
+            if (!result.success) {
+                console.error(`[${this.gameType}] Failed to add AI to matchState:`, result.error);
+            } else {
+                // 广播房间状态，让前端看到 AI 入座
+                await table.broadcastRoomState();
+                
+                // 确定 AI 的颜色（第二个加入的是黑方）
+                const aiSide = table.matchPlayers.matchState.players.length === 2 ? 'b' : 'r';
+                
+                console.log(`[${this.gameType}] Creating AI session: tableId=${table.tableId}, aiPlayer.odid=${aiPlayer.odid}, aiSide=${aiSide}`);
+                
+                // 创建 AI 游戏会话（关键！这样 AI 才会走棋）
+                AIGameController.createSession(table, aiPlayer, aiSide);
+                
+                // 1-2秒后 AI 自动准备
+                const readyDelay = Math.floor(Math.random() * 1000) + 1000;
+                setTimeout(async () => {
+                    await table.matchPlayers.handleAIReady(aiPlayer.odid);
+                }, readyDelay);
             }
         }
 
