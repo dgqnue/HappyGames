@@ -170,14 +170,15 @@ class AIGameController {
             return;
         }
         
-        console.log(`[AIGameController] AI's turn on table ${tableId}, calculating move...`);
+        console.log(`[AIGameController] AI's turn on table ${tableId}, calculating move... (moveCount=${session.moveCount})`);
         
         try {
-            // 计算最佳走法
+            // 计算最佳走法（传入 moveCount 用于开局库判断）
             const result = await AIPlayerManager.calculateMove(
                 board, 
                 session.aiSide, 
-                session.aiPlayer.odid
+                session.aiPlayer.odid,
+                session.moveCount
             );
             
             if (!result || !result.move) {

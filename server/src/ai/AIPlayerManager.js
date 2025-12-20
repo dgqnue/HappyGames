@@ -264,9 +264,10 @@ class AIPlayerManager {
      * @param {Array} board - 当前棋盘
      * @param {string} aiColor - AI 执的颜色
      * @param {string} aiUserId - AI 玩家 ID (ObjectId 字符串)
+     * @param {number} moveCount - 当前回合数（用于开局库判断）
      * @returns {Promise<Object>} { move, thinkTime }
      */
-    async calculateMove(board, aiColor, aiUserId) {
+    async calculateMove(board, aiColor, aiUserId, moveCount = 0) {
         const mongoose = require('mongoose');
         
         // 获取 AI 的 rating（使用 ObjectId 查询）
@@ -285,8 +286,8 @@ class AIPlayerManager {
         
         const rating = stats?.rating || 1200;
         
-        // 调用 AI 引擎计算
-        return ChessAIEngine.calculateBestMove(board, aiColor, rating);
+        // 调用 AI 引擎计算（传入 moveCount）
+        return ChessAIEngine.calculateBestMove(board, aiColor, rating, moveCount);
     }
     
     /**

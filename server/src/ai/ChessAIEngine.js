@@ -345,34 +345,45 @@ function minimax(board, depth, alpha, beta, isMaximizing, aiColor) {
 function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0) {
     const strength = getStrengthByRating(rating);
     
-    console.log(`[ChessAIEngine] Calculating move for ${aiColor}, rating=${rating}, depth=${strength.depth}`);
+    console.log(`[ChessAIEngine] Calculating move for ${aiColor}, rating=${rating}, depth=${strength.depth}, moveCount=${moveCount}`);
     
-    // 尝试使用开局库（前8步）
-    let openingMove = null;
-    try {
-        const OpeningBook = require('./OpeningBook');
-        if (moveCount < 8) {
-            openingMove = OpeningBook.getOpeningMove(board, aiColor, moveCount, rating);
-            if (openingMove) {
-                console.log(`[ChessAIEngine] Using opening book move`);
-                const thinkTime = randomInRange(800, 2000);
-                return {
-                    move: openingMove,
-                    thinkTime
-                };
-            }
-        }
-    } catch (err) {
-        // 开局库不存在或出错，继续使用搜索
-        console.log('[ChessAIEngine] Opening book not available, using search');
-    }
-    
-    // 获取所有合法走法
+    // 获取所有合法走法（提前获取，用于验证开局库走法）
     const allMoves = getAllLegalMoves(board, aiColor);
     
     if (allMoves.length === 0) {
         console.warn('[ChessAIEngine] No legal moves available!');
         return null;
+    }
+    
+    // 尝试使用开局库（前8步）
+    try {
+        const OpeningBook = require('./OpeningBook');
+        if (moveCount < 8) {
+            const openingMove = OpeningBook.getOpeningMove(board, aiColor, moveCount, rating);
+            if (openingMove) {
+                // 验证开局库走法是否在合法走法列表中
+                const isValidOpening = allMoves.some(m => 
+                    m.from.x === openingMove.from.x && 
+                    m.from.y === openingMove.from.y &&
+                    m.to.x === openingMove.to.x && 
+                    m.to.y === openingMove.to.y
+                );
+                
+                if (isValidOpening) {
+                    console.log(`[ChessAIEngine] Using opening book move: (${openingMove.from.x},${openingMove.from.y}) -> (${openingMove.to.x},${openingMove.to.y})`);
+                    const thinkTime = randomInRange(800, 2000);
+                    return {
+                        move: openingMove,
+                        thinkTime
+                    };
+                } else {
+                    console.log(`[ChessAIEngine] Opening book move is invalid for current position, using search`);
+                }
+            }
+        }
+    } catch (err) {
+        // 开局库不存在或出错，继续使用搜索
+        console.log('[ChessAIEngine] Opening book error:', err.message);
     }
     
     if (allMoves.length === 1) {
