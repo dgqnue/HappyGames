@@ -81,17 +81,17 @@ class AIPlayerManager {
             // 使用 ObjectId 字符串作为 key
             allStats.forEach(s => statsMap.set(s.userId.toString(), s));
             
-            // 按分数段分类
+            // 按分数段分类（根据 rating 动态计算 strengthLevel，不使用数据库中的旧值）
             for (const user of aiUsers) {
                 const stats = statsMap.get(user._id.toString());
                 const rating = stats?.rating || 1200;
-                const strengthLevel = user.aiConfig?.strengthLevel || this.getStrengthByRating(rating);
+                // 始终根据 rating 计算 strengthLevel，确保匹配新的分段格式
+                const strengthLevel = this.getStrengthByRating(rating);
                 
                 const odid = user._id.toString();
                 const aiPlayer = {
                     id: user._id,                           // ObjectId
                     odid: odid,                              // 使用 ObjectId 字符串，与真实玩家一致
-                    odid: odid,
                     userId: odid,                           // 也保存为 userId
                     originalUserId: user.userId,            // 保留原始的 userId 字符串（如 ai_player_0001）
                     nickname: user.nickname,
