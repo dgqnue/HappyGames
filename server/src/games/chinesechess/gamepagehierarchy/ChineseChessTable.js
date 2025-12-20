@@ -284,9 +284,13 @@ class ChineseChessTable extends GameTable {
                 userId: p.userId,
                 nickname: p.nickname || 'Unknown',
                 title: p.title || '无',
+                titleColor: p.titleColor || '#000000',
                 avatar: getFullAvatarUrl(p.avatar) // 信任内存状态
             };
         }).filter(p => p !== null); // Filter out nulls
+
+        // 保存玩家信息快照，用于游戏结束时的公告（即使玩家已离开也能获取正确信息）
+        this.playerInfoSnapshot = playerInfos;
 
         // 发送初始状态给所有玩家
         this.players.forEach((player) => {
@@ -499,16 +503,25 @@ class ChineseChessTable extends GameTable {
 
             // Broadcast Win to Lobby
             try {
-                // 尝试从 players 列表获取昵称，如果玩家已离开，则无法获取最新昵称，只能用 ID 或 Unknown
-                // 改进：可以尝试从数据库查询，或者如果之前保存了 playerInfos 可以使用
-                const winnerPlayer = this.players.find(p => p.userId === winnerId);
-                const winnerName = winnerPlayer?.nickname || 'Unknown Player';
+                // 优先使用游戏开始时保存的玩家信息快照
+                // 这样即使玩家已离开，也能获取正确的昵称和称号
+                let winnerInfo = this.playerInfoSnapshot?.find(p => p.userId === winnerId);
                 
-                // 尝试获取最新称号（如果 ELO 更新了，称号可能变了，但这里为了速度先用旧的或简单的）
-                // 实际上 ELO 已经更新了 UserGameStats，但 updateAllPlayerTitles 还没跑完
-                // 我们可以尝试只更新这两个玩家的称号（快速路径），或者直接用旧的
-                const winnerTitle = winnerPlayer?.title || '无';
-                const winnerTitleColor = winnerPlayer?.titleColor || '#000000';
+                // 如果快照中没有，尝试从当前玩家列表查找
+                if (!winnerInfo) {
+                    const winnerPlayer = this.players.find(p => p.userId === winnerId);
+                    if (winnerPlayer) {
+                        winnerInfo = {
+                            nickname: winnerPlayer.nickname,
+                            title: winnerPlayer.title,
+                            titleColor: winnerPlayer.titleColor
+                        };
+                    }
+                }
+                
+                const winnerName = winnerInfo?.nickname || 'Unknown Player';
+                const winnerTitle = winnerInfo?.title || '无';
+                const winnerTitleColor = winnerInfo?.titleColor || '#000000';
                 
                 const winItem = new LobbyFeed({
                     type: 'game_win',
