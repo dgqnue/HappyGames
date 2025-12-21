@@ -880,15 +880,10 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         <div ref={menuRef} style={{ position: 'relative', zIndex: 99999 }}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
-            style={{
-              background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #8B4513 100%)',
-              border: '2px solid #D4A574',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
-            }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 bg-red-100/30 backdrop-blur-md border border-red-200/30"
           >
             <svg 
-              className="w-6 h-6 text-amber-100" 
+              className="w-6 h-6 text-blue-100" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -900,16 +895,14 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           {/* 下拉菜单 */}
           {isMenuOpen && (
             <div 
+              className="bg-red-100/30 backdrop-blur-md border border-red-200/30 shadow-lg"
               style={{
                 position: 'absolute',
                 right: 0,
                 marginTop: '8px',
                 padding: '8px 0',
                 borderRadius: '12px',
-                background: 'linear-gradient(180deg, #4a3728 0%, #3d2d22 100%)',
-                border: '2px solid #8B4513',
                 minWidth: '160px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                 zIndex: 99999,
                 overflow: 'hidden'
               }}
@@ -917,71 +910,71 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
               {/* 催促 */}
               <button
                 onClick={() => { console.log('催促'); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
               >
                 <img src="/images/chinesechess/buttoms/urge.png?v=new" alt="催促" className="w-8 h-8" />
-                <span className="text-amber-100 font-medium">催促</span>
+                <span className="text-blue-100 font-medium">催促</span>
               </button>
               
               {/* 复盘 */}
               <button
                 onClick={() => { console.log('复盘'); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
               >
                 <img src="/images/chinesechess/buttoms/review.png?v=new" alt="复盘" className="w-8 h-8" />
-                <span className="text-amber-100 font-medium">复盘</span>
+                <span className="text-blue-100 font-medium">复盘</span>
               </button>
               
               {/* 开始 */}
               <button
                 onClick={() => { handleStart(); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
                 style={{
                   opacity: (!isPlaying || roundResult || isRoundEnded) ? 1 : 0.5,
                   pointerEvents: (!isPlaying || roundResult || isRoundEnded) ? 'auto' : 'none'
                 }}
               >
                 <img src="/images/chinesechess/buttoms/start.png?v=new" alt="开始" className="w-8 h-8" />
-                <span className="text-amber-100 font-medium">开始</span>
+                <span className="text-blue-100 font-medium">开始</span>
               </button>
               
               {/* 悔棋 */}
               <button
                 onClick={() => { console.log('悔棋'); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
               >
                 <img src="/images/chinesechess/buttoms/undo.png?v=new" alt="悔棋" className="w-8 h-8" />
-                <span className="text-amber-100 font-medium">悔棋</span>
+                <span className="text-blue-100 font-medium">悔棋</span>
               </button>
               
               {/* 认输 */}
               <button
                 onClick={() => { console.log('认输'); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
               >
                 <img src="/images/chinesechess/buttoms/resign.png?v=new" alt="认输" className="w-8 h-8" />
-                <span className="text-amber-100 font-medium">认输</span>
+                <span className="text-blue-100 font-medium">认输</span>
               </button>
               
               {/* 讲和 */}
               <button
                 onClick={() => { console.log('讲和'); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
               >
                 <img src="/images/chinesechess/buttoms/draw.png?v=new" alt="讲和" className="w-8 h-8" />
-                <span className="text-amber-100 font-medium">讲和</span>
+                <span className="text-blue-100 font-medium">讲和</span>
               </button>
               
               {/* 分隔线 */}
-              <div className="my-1 border-t border-amber-700/50"></div>
+              <div className="my-1 border-t border-red-200/30"></div>
               
               {/* 退出 */}
               <button
                 onClick={() => { onLeaveTable(); setIsMenuOpen(false); }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-900/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/20 transition-colors"
               >
                 <img src="/images/chinesechess/buttoms/exit.png?v=new" alt="退出" className="w-8 h-8" />
-                <span className="text-red-300 font-medium">退出</span>
+                <span className="text-red-400 font-medium">退出</span>
               </button>
             </div>
           )}
