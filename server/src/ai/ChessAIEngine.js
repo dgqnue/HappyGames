@@ -987,26 +987,49 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0, roomId 
         if (move.captured) {
             const captureValue = PIECE_VALUES[move.captured] || 0;
             const capturedType = move.captured.toLowerCase();
+            const attackerType = move.piece.toLowerCase();
             
-            // 开局阶段（前10步）的吃子策略
-            if (moveCount < 10) {
-                // 开局吃马/炮通常是陷阱，大幅降低奖励甚至惩罚
-                if (capturedType === 'n' || capturedType === 'c') {
+            // 开局阶段（前12步）的吃子策略 - 更加保守
+            if (moveCount < 12) {
+                // 开局吃马是经典陷阱！大幅惩罚
+                if (capturedType === 'n') {
                     // 检查吃完后自己的棋子是否会被攻击
-                    const pieceAfterCapture = newBoard[move.to.y][move.to.x];
                     const willBeAttacked = isPieceUnderThreat(newBoard, move.to.x, move.to.y);
                     const willBeProtected = isPieceProtected(newBoard, move.to.x, move.to.y);
                     
                     if (willBeAttacked && !willBeProtected) {
-                        // 吃完会被反吃，这可能是陷阱，大幅惩罚
-                        score -= captureValue * 0.5;
-                        console.log(`[ChessAIEngine] Opening trap detected: capturing ${capturedType} would expose piece`);
+                        // 吃完会被反吃，绝对陷阱，严重惩罚
+                        score -= captureValue * 1.5;
+                        console.log(`[ChessAIEngine] Opening trap: capturing knight would lose piece!`);
                     } else if (willBeAttacked) {
-                        // 吃完虽然被攻击但有保护，小幅惩罚（可能是换子）
-                        score -= captureValue * 0.1;
+                        // 吃完会被攻击（可能换子），惩罚
+                        score -= captureValue * 0.8;
+                        console.log(`[ChessAIEngine] Opening caution: capturing knight leads to exchange`);
                     } else {
-                        // 吃完不会被攻击，正常小额奖励
-                        score += captureValue * 0.1;
+                        // 即使吃完不会被攻击，开局吃马也要谨慎
+                        // 因为可能是对手故意送马引诱你的大子离开
+                        if (attackerType === 'r' || attackerType === 'c') {
+                            // 用车或炮吃马，可能是陷阱，惩罚
+                            score -= captureValue * 0.5;
+                            console.log(`[ChessAIEngine] Opening caution: using ${attackerType} to capture knight is risky`);
+                        } else {
+                            // 用其他子吃马，小幅惩罚
+                            score -= captureValue * 0.2;
+                        }
+                    }
+                } else if (capturedType === 'c') {
+                    // 开局吃炮也要谨慎
+                    const willBeAttacked = isPieceUnderThreat(newBoard, move.to.x, move.to.y);
+                    const willBeProtected = isPieceProtected(newBoard, move.to.x, move.to.y);
+                    
+                    if (willBeAttacked && !willBeProtected) {
+                        score -= captureValue * 1.2;
+                        console.log(`[ChessAIEngine] Opening trap: capturing cannon would lose piece!`);
+                    } else if (willBeAttacked) {
+                        score -= captureValue * 0.5;
+                    } else {
+                        // 吃炮不会被反吃，但开局仍然谨慎
+                        score -= captureValue * 0.1;
                     }
                 } else if (capturedType === 'r') {
                     // 开局吃车通常是好事，但也要检查是否是陷阱
@@ -1024,19 +1047,28 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0, roomId 
             }
         }
         
-        // 开局阶段优先发展子力
-        if (moveCount < 10) {
+        // 开局阶段优先发展子力（增强）
+        if (moveCount < 12) {
             const pieceType = move.piece.toLowerCase();
+            const isRedPiece = ChineseChessRules.isRed(move.piece);
+            const homeRow = isRedPiece ? 9 : 0;
+            const secondRow = isRedPiece ? 7 : 2;
+            
             // 鼓励出动车、马、炮（从初始位置移动）
             if (pieceType === 'r' || pieceType === 'n' || pieceType === 'c') {
-                // 检查是否是从初始位置出动
-                const isRedPiece = ChineseChessRules.isRed(move.piece);
-                const homeRow = isRedPiece ? 9 : 0;
-                const secondRow = isRedPiece ? 7 : 2;
-                
                 if (move.from.y === homeRow || move.from.y === secondRow) {
-                    // 从初始位置出动，给予小额奖励
-                    score += 15;
+                    // 从初始位置出动，给予奖励
+                    score += 30;
+                }
+            }
+            
+            // 鼓励挺兵（中兵和边兵）
+            if (pieceType === 'p') {
+                const centerX = 4;
+                if (move.from.x === centerX) {
+                    score += 20; // 中兵优先
+                } else if (move.from.x === 2 || move.from.x === 6) {
+                    score += 10; // 边兵次优
                 }
             }
         }
