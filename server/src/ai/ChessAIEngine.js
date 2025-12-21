@@ -590,10 +590,62 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0, roomId 
         let score = result.score; // 不需要取反，分数已经是从 AI 视角的评估
         
         // 吃子奖励：如果这步能吃子，给予额外奖励，确保 AI 不会错过明显的吃子机会
+        // 但在开局阶段（前10步），要谨慎吃子，避免落入陷阱
         if (move.captured) {
             const captureValue = PIECE_VALUES[move.captured] || 0;
-            // 额外奖励吃子走法，奖励值为被吃棋子价值的20%
-            score += captureValue * 0.2;
+            const capturedType = move.captured.toLowerCase();
+            
+            // 开局阶段（前10步）的吃子策略
+            if (moveCount < 10) {
+                // 开局吃马/炮通常是陷阱，大幅降低奖励甚至惩罚
+                if (capturedType === 'n' || capturedType === 'c') {
+                    // 检查吃完后自己的棋子是否会被攻击
+                    const pieceAfterCapture = newBoard[move.to.y][move.to.x];
+                    const willBeAttacked = isPieceUnderThreat(newBoard, move.to.x, move.to.y);
+                    const willBeProtected = isPieceProtected(newBoard, move.to.x, move.to.y);
+                    
+                    if (willBeAttacked && !willBeProtected) {
+                        // 吃完会被反吃，这可能是陷阱，大幅惩罚
+                        score -= captureValue * 0.5;
+                        console.log(`[ChessAIEngine] Opening trap detected: capturing ${capturedType} would expose piece`);
+                    } else if (willBeAttacked) {
+                        // 吃完虽然被攻击但有保护，小幅惩罚（可能是换子）
+                        score -= captureValue * 0.1;
+                    } else {
+                        // 吃完不会被攻击，正常小额奖励
+                        score += captureValue * 0.1;
+                    }
+                } else if (capturedType === 'r') {
+                    // 开局吃车通常是好事，但也要检查是否是陷阱
+                    const willBeAttacked = isPieceUnderThreat(newBoard, move.to.x, move.to.y);
+                    if (!willBeAttacked) {
+                        score += captureValue * 0.2;
+                    }
+                } else {
+                    // 吃兵/士/象，正常小额奖励
+                    score += captureValue * 0.1;
+                }
+            } else {
+                // 中局以后，正常奖励吃子走法，奖励值为被吃棋子价值的20%
+                score += captureValue * 0.2;
+            }
+        }
+        
+        // 开局阶段优先发展子力
+        if (moveCount < 10) {
+            const pieceType = move.piece.toLowerCase();
+            // 鼓励出动车、马、炮（从初始位置移动）
+            if (pieceType === 'r' || pieceType === 'n' || pieceType === 'c') {
+                // 检查是否是从初始位置出动
+                const isRedPiece = ChineseChessRules.isRed(move.piece);
+                const homeRow = isRedPiece ? 9 : 0;
+                const secondRow = isRedPiece ? 7 : 2;
+                
+                if (move.from.y === homeRow || move.from.y === secondRow) {
+                    // 从初始位置出动，给予小额奖励
+                    score += 15;
+                }
+            }
         }
         
         // 重复走法惩罚：如果这步是来回跳，大幅扣分
