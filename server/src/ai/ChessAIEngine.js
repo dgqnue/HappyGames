@@ -103,97 +103,97 @@ const AI_STRENGTH_CONFIG = {
     // rating 800-900: 入门级
     rating_800: {
         depth: 2,
-        randomFactor: 0.30,
-        blunderChance: 0.12,
-        candidateRange: 25,
+        randomFactor: 0.20,
+        blunderChance: 0.08,
+        candidateRange: 15,
         thinkTimeRange: [2500, 5000]
     },
     // rating 900-1000: 新手级
     rating_900: {
         depth: 2,
-        randomFactor: 0.25,
-        blunderChance: 0.10,
-        candidateRange: 22,
+        randomFactor: 0.15,
+        blunderChance: 0.06,
+        candidateRange: 12,
         thinkTimeRange: [2000, 4500]
     },
     // rating 1000-1100: 初学级
     rating_1000: {
         depth: 3,
-        randomFactor: 0.20,
-        blunderChance: 0.08,
-        candidateRange: 20,
+        randomFactor: 0.12,
+        blunderChance: 0.04,
+        candidateRange: 10,
         thinkTimeRange: [1800, 4000]
     },
     // rating 1100-1200: 入门进阶
     rating_1100: {
         depth: 3,
-        randomFactor: 0.16,
-        blunderChance: 0.06,
-        candidateRange: 18,
+        randomFactor: 0.10,
+        blunderChance: 0.03,
+        candidateRange: 8,
         thinkTimeRange: [1500, 3500]
     },
     // rating 1200-1300: 中级入门
     rating_1200: {
         depth: 3,
-        randomFactor: 0.12,
-        blunderChance: 0.04,
-        candidateRange: 16,
+        randomFactor: 0.08,
+        blunderChance: 0.02,
+        candidateRange: 6,
         thinkTimeRange: [1300, 3000]
     },
     // rating 1300-1400: 中级
     rating_1300: {
         depth: 4,
-        randomFactor: 0.10,
-        blunderChance: 0.03,
-        candidateRange: 14,
+        randomFactor: 0.06,
+        blunderChance: 0.01,
+        candidateRange: 5,
         thinkTimeRange: [1100, 2800]
     },
     // rating 1400-1500: 中高级
     rating_1400: {
         depth: 4,
-        randomFactor: 0.08,
-        blunderChance: 0.02,
-        candidateRange: 12,
+        randomFactor: 0.04,
+        blunderChance: 0.005,
+        candidateRange: 4,
         thinkTimeRange: [1000, 2500]
     },
     // rating 1500-1600: 高级
     rating_1500: {
         depth: 4,
-        randomFactor: 0.06,
-        blunderChance: 0.01,
-        candidateRange: 10,
+        randomFactor: 0.03,
+        blunderChance: 0.002,
+        candidateRange: 3,
         thinkTimeRange: [900, 2300]
     },
     // rating 1600-1700: 专家入门
     rating_1600: {
         depth: 5,
-        randomFactor: 0.04,
-        blunderChance: 0.005,
-        candidateRange: 8,
+        randomFactor: 0.02,
+        blunderChance: 0.001,
+        candidateRange: 3,
         thinkTimeRange: [800, 2000]
     },
     // rating 1700-1800: 专家级
     rating_1700: {
         depth: 5,
-        randomFactor: 0.03,
-        blunderChance: 0.002,
-        candidateRange: 6,
+        randomFactor: 0.01,
+        blunderChance: 0,
+        candidateRange: 2,
         thinkTimeRange: [600, 1800]
     },
     // rating 1800-1900: 大师入门
     rating_1800: {
         depth: 5,
-        randomFactor: 0.02,
-        blunderChance: 0.001,
-        candidateRange: 5,
+        randomFactor: 0.005,
+        blunderChance: 0,
+        candidateRange: 2,
         thinkTimeRange: [500, 1500]
     },
     // rating 1900-2000: 大师级
     rating_1900: {
         depth: 6,
-        randomFactor: 0.01,
+        randomFactor: 0,
         blunderChance: 0,
-        candidateRange: 4,
+        candidateRange: 1,
         thinkTimeRange: [400, 1300]
     },
     // rating 2000+: 宗师级
@@ -201,7 +201,7 @@ const AI_STRENGTH_CONFIG = {
         depth: 6,
         randomFactor: 0,
         blunderChance: 0,
-        candidateRange: 3,
+        candidateRange: 0,
         thinkTimeRange: [300, 1000]
     }
 };
@@ -588,6 +588,13 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0, roomId 
         // minimax 返回的分数从 AI 角度评估，分数越高对 AI 越有利
         const result = minimax(newBoard, strength.depth - 1, -Infinity, Infinity, false, aiColor);
         let score = result.score; // 不需要取反，分数已经是从 AI 视角的评估
+        
+        // 吃子奖励：如果这步能吃子，给予额外奖励，确保 AI 不会错过明显的吃子机会
+        if (move.captured) {
+            const captureValue = PIECE_VALUES[move.captured] || 0;
+            // 额外奖励吃子走法，奖励值为被吃棋子价值的20%
+            score += captureValue * 0.2;
+        }
         
         // 重复走法惩罚：如果这步是来回跳，大幅扣分
         if (roomId && isRepeatedMove(roomId, move)) {
