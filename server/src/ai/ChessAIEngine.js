@@ -93,7 +93,7 @@ function isRepeatedMove(roomId, move) {
  * AI 棋力等级配置 (100分一档，共13个等级)
  * 
  * 参数说明：
- * - depth: 搜索深度（1-5层）
+ * - depth: 搜索深度（2-6层）
  * - randomFactor: 走次优解的概率（增加变化性）
  * - blunderChance: 犯错概率（走较差走法）
  * - candidateRange: 多候选走法的分数容差（用于随机选择）
@@ -102,7 +102,7 @@ function isRepeatedMove(roomId, move) {
 const AI_STRENGTH_CONFIG = {
     // rating 800-900: 入门级
     rating_800: {
-        depth: 1,
+        depth: 2,
         randomFactor: 0.30,
         blunderChance: 0.12,
         candidateRange: 25,
@@ -110,7 +110,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 900-1000: 新手级
     rating_900: {
-        depth: 1,
+        depth: 2,
         randomFactor: 0.25,
         blunderChance: 0.10,
         candidateRange: 22,
@@ -118,7 +118,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1000-1100: 初学级
     rating_1000: {
-        depth: 2,
+        depth: 3,
         randomFactor: 0.20,
         blunderChance: 0.08,
         candidateRange: 20,
@@ -126,7 +126,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1100-1200: 入门进阶
     rating_1100: {
-        depth: 2,
+        depth: 3,
         randomFactor: 0.16,
         blunderChance: 0.06,
         candidateRange: 18,
@@ -134,7 +134,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1200-1300: 中级入门
     rating_1200: {
-        depth: 2,
+        depth: 3,
         randomFactor: 0.12,
         blunderChance: 0.04,
         candidateRange: 16,
@@ -142,7 +142,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1300-1400: 中级
     rating_1300: {
-        depth: 2,
+        depth: 4,
         randomFactor: 0.10,
         blunderChance: 0.03,
         candidateRange: 14,
@@ -150,7 +150,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1400-1500: 中高级
     rating_1400: {
-        depth: 3,
+        depth: 4,
         randomFactor: 0.08,
         blunderChance: 0.02,
         candidateRange: 12,
@@ -158,7 +158,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1500-1600: 高级
     rating_1500: {
-        depth: 3,
+        depth: 4,
         randomFactor: 0.06,
         blunderChance: 0.01,
         candidateRange: 10,
@@ -166,7 +166,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1600-1700: 专家入门
     rating_1600: {
-        depth: 3,
+        depth: 5,
         randomFactor: 0.04,
         blunderChance: 0.005,
         candidateRange: 8,
@@ -174,7 +174,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1700-1800: 专家级
     rating_1700: {
-        depth: 3,
+        depth: 5,
         randomFactor: 0.03,
         blunderChance: 0.002,
         candidateRange: 6,
@@ -182,7 +182,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1800-1900: 大师入门
     rating_1800: {
-        depth: 4,
+        depth: 5,
         randomFactor: 0.02,
         blunderChance: 0.001,
         candidateRange: 5,
@@ -190,7 +190,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 1900-2000: 大师级
     rating_1900: {
-        depth: 4,
+        depth: 6,
         randomFactor: 0.01,
         blunderChance: 0,
         candidateRange: 4,
@@ -198,7 +198,7 @@ const AI_STRENGTH_CONFIG = {
     },
     // rating 2000+: 宗师级
     rating_2000: {
-        depth: 5,
+        depth: 6,
         randomFactor: 0,
         blunderChance: 0,
         candidateRange: 3,
