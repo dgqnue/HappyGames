@@ -872,15 +872,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         <>
       {/* Background removed to match Game Center style */}
 
-      {/* 顶部区域：玩家信息 + 右上角菜单按钮 */}
-      <div className="w-full flex justify-between items-start px-4 py-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
-        {/* 顶部玩家信息 */}
-        <div className="flex-1">
-          {renderPlayerInfo(topPlayer, true)}
-        </div>
+      {/* 顶部玩家信息栏 */}
+      <div className="w-full flex justify-start px-4 py-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
+        {renderPlayerInfo(topPlayer, true)}
+      </div>
         
-        {/* 右上角菜单按钮 */}
-        <div className="relative" ref={menuRef}>
+      {/* 右上角固定菜单按钮 */}
+      <div className="fixed top-4 right-4 z-[20000]" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
@@ -903,12 +901,13 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
           {/* 下拉菜单 */}
           {isMenuOpen && (
             <div 
-              className="absolute right-0 mt-2 py-2 rounded-xl shadow-2xl z-[10002] overflow-hidden"
+              className="absolute right-0 mt-2 py-2 rounded-xl shadow-2xl overflow-hidden"
               style={{
                 background: 'linear-gradient(180deg, #4a3728 0%, #3d2d22 100%)',
                 border: '2px solid #8B4513',
                 minWidth: '160px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                zIndex: 20001
               }}
             >
               {/* 催促 */}
@@ -983,7 +982,6 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
             </div>
           )}
         </div>
-      </div>
 
       {/* 棋盘套件容器 */}
       <div 
