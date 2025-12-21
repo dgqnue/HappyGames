@@ -265,6 +265,27 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
   const [lastMove, setLastMove] = useState<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null);
+  
+  // 右上角菜单状态
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  
+  // 点击外部关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // 资源预加载
   useEffect(() => {
@@ -851,9 +872,117 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         <>
       {/* Background removed to match Game Center style */}
 
-      {/* 顶部玩家信息栏 (绝对定位或作为第一项) */}
-      <div className="w-full flex justify-start px-4 py-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
-        {renderPlayerInfo(topPlayer, true)}
+      {/* 顶部区域：玩家信息 + 右上角菜单按钮 */}
+      <div className="w-full flex justify-between items-start px-4 py-4" style={{ maxWidth: '500px', margin: '0 auto' }}>
+        {/* 顶部玩家信息 */}
+        <div className="flex-1">
+          {renderPlayerInfo(topPlayer, true)}
+        </div>
+        
+        {/* 右上角菜单按钮 */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+            style={{
+              background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #8B4513 100%)',
+              border: '2px solid #D4A574',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
+            }}
+          >
+            <svg 
+              className="w-6 h-6 text-amber-100" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          
+          {/* 下拉菜单 */}
+          {isMenuOpen && (
+            <div 
+              className="absolute right-0 mt-2 py-2 rounded-xl shadow-2xl z-[10002] overflow-hidden"
+              style={{
+                background: 'linear-gradient(180deg, #4a3728 0%, #3d2d22 100%)',
+                border: '2px solid #8B4513',
+                minWidth: '160px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+              }}
+            >
+              {/* 催促 */}
+              <button
+                onClick={() => { console.log('催促'); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+              >
+                <img src="/images/chinesechess/buttoms/urge.png?v=new" alt="催促" className="w-8 h-8" />
+                <span className="text-amber-100 font-medium">催促</span>
+              </button>
+              
+              {/* 复盘 */}
+              <button
+                onClick={() => { console.log('复盘'); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+              >
+                <img src="/images/chinesechess/buttoms/review.png?v=new" alt="复盘" className="w-8 h-8" />
+                <span className="text-amber-100 font-medium">复盘</span>
+              </button>
+              
+              {/* 开始 */}
+              <button
+                onClick={() => { handleStart(); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+                style={{
+                  opacity: (!isPlaying || roundResult || isRoundEnded) ? 1 : 0.5,
+                  pointerEvents: (!isPlaying || roundResult || isRoundEnded) ? 'auto' : 'none'
+                }}
+              >
+                <img src="/images/chinesechess/buttoms/start.png?v=new" alt="开始" className="w-8 h-8" />
+                <span className="text-amber-100 font-medium">开始</span>
+              </button>
+              
+              {/* 悔棋 */}
+              <button
+                onClick={() => { console.log('悔棋'); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+              >
+                <img src="/images/chinesechess/buttoms/undo.png?v=new" alt="悔棋" className="w-8 h-8" />
+                <span className="text-amber-100 font-medium">悔棋</span>
+              </button>
+              
+              {/* 认输 */}
+              <button
+                onClick={() => { console.log('认输'); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+              >
+                <img src="/images/chinesechess/buttoms/resign.png?v=new" alt="认输" className="w-8 h-8" />
+                <span className="text-amber-100 font-medium">认输</span>
+              </button>
+              
+              {/* 讲和 */}
+              <button
+                onClick={() => { console.log('讲和'); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-900/50 transition-colors"
+              >
+                <img src="/images/chinesechess/buttoms/draw.png?v=new" alt="讲和" className="w-8 h-8" />
+                <span className="text-amber-100 font-medium">讲和</span>
+              </button>
+              
+              {/* 分隔线 */}
+              <div className="my-1 border-t border-amber-700/50"></div>
+              
+              {/* 退出 */}
+              <button
+                onClick={() => { onLeaveTable(); setIsMenuOpen(false); }}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-900/50 transition-colors"
+              >
+                <img src="/images/chinesechess/buttoms/exit.png?v=new" alt="退出" className="w-8 h-8" />
+                <span className="text-red-300 font-medium">退出</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 棋盘套件容器 */}
@@ -923,10 +1052,11 @@ function ChineseChessDisplay({ tableClient, isMyTable, onLeaveTable }: ChineseCh
         {renderPlayerInfo(bottomPlayer, false)}
       </div>
 
-      {/* 游戏操作按钮栏 */}
+      {/* 游戏操作按钮栏 - 已移至右上角下拉菜单，此处隐藏 */}
+      {/* 保留代码以便将来恢复或作为参考 */}
       <div 
         style={{
-          display: 'flex',
+          display: 'none', // 隐藏底部按钮栏，功能已移至右上角菜单
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
