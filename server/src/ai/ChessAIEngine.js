@@ -308,8 +308,9 @@ function isPieceUnderThreat(board, x, y) {
             const enemyPiece = board[ey][ex];
             if (!enemyPiece) continue;
             
-            const enemyIsRed = ChineseChessRules.isRed(enemyPiece);
-            if ((enemyIsRed && enemySide === 'r') || (!enemyIsRed && enemySide === 'b')) continue;
+            // 跳过己方棋子，只检查敌方棋子
+            const enemyPieceIsRed = ChineseChessRules.isRed(enemyPiece);
+            if (enemyPieceIsRed === isRed) continue; // 同一方的棋子，跳过
             
             // 检查敌方棋子是否可以移动到目标位置
             if (ChineseChessRules.isValidMoveV2(board, ex, ey, x, y, enemySide)) {
@@ -347,8 +348,9 @@ function isPieceProtected(board, x, y) {
             if (!friendPiece) continue;
             if (fx === x && fy === y) continue;
             
-            const friendIsRed = ChineseChessRules.isRed(friendPiece);
-            if ((friendIsRed && friendSide === 'r') || (!friendIsRed && friendSide === 'b')) {
+            // 只检查己方棋子
+            const friendPieceIsRed = ChineseChessRules.isRed(friendPiece);
+            if (friendPieceIsRed === isRed) { // 同一方的棋子
                 if (ChineseChessRules.isValidMoveV2(board, fx, fy, x, y, friendSide)) {
                     isProtected = true;
                     break;
@@ -582,8 +584,10 @@ function calculateBestMove(board, aiColor, rating = 1200, moveCount = 0, roomId 
         newBoard[move.to.y][move.to.x] = newBoard[move.from.y][move.from.x];
         newBoard[move.from.y][move.from.x] = null;
         
+        // 走完这步后，轮到对手走（isMaximizing=false）
+        // minimax 返回的分数从 AI 角度评估，分数越高对 AI 越有利
         const result = minimax(newBoard, strength.depth - 1, -Infinity, Infinity, false, aiColor);
-        let score = -result.score;
+        let score = result.score; // 不需要取反，分数已经是从 AI 视角的评估
         
         // 重复走法惩罚：如果这步是来回跳，大幅扣分
         if (roomId && isRepeatedMove(roomId, move)) {
